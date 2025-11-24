@@ -1,11 +1,7 @@
 import React from "react";
 import LogoMark from "../assets/rethrive-logo.svg";
 
-interface LogoProps {
-  size?: "sm" | "lg";
-}
-
-const Logo: React.FC<LogoProps> = ({ size = "sm" }) => {
+const Logo = ({ size = "sm" }) => {
   const isLarge = size === "lg";
 
   const logoSize = isLarge ? "h-16 w-16" : "h-10 w-10";

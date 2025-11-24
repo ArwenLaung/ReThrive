@@ -1,10 +1,15 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, ArrowRight, CalendarDays } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { EVENTS_DATA } from '../constants';
+import React, { useRef, useState, useEffect } from "react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ArrowRight,
+  CalendarDays,
+} from "lucide-react";
+import { Link } from "react-router-dom";
+import { EVENTS_DATA } from "../constants";
 
-const EventsSection: React.FC = () => {
-  const scrollRef = useRef<HTMLDivElement>(null);
+const EventsSection = () => {
+  const scrollRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
@@ -18,16 +23,16 @@ const EventsSection: React.FC = () => {
 
   useEffect(() => {
     checkScroll();
-    window.addEventListener('resize', checkScroll);
-    return () => window.removeEventListener('resize', checkScroll);
+    window.addEventListener("resize", checkScroll);
+    return () => window.removeEventListener("resize", checkScroll);
   }, []);
 
-  const scroll = (direction: 'left' | 'right') => {
+  const scroll = (direction) => {
     if (scrollRef.current) {
       const scrollAmount = 340; // card width + gap
       scrollRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth',
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
       });
       // Allow time for scroll to complete before checking again
       setTimeout(checkScroll, 300);
@@ -45,9 +50,11 @@ const EventsSection: React.FC = () => {
         <div className="relative flex items-center">
           {/* Left Arrow */}
           <button
-            onClick={() => scroll('left')}
+            onClick={() => scroll("left")}
             className={`absolute -left-2 md:-left-8 z-10 p-2 text-brand-brown hover:text-[#c2884a] transition-all transform hover:scale-125 ${
-              !canScrollLeft ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'
+              !canScrollLeft
+                ? "opacity-30 cursor-not-allowed"
+                : "cursor-pointer"
             }`}
             disabled={!canScrollLeft}
             aria-label="Previous events"
@@ -56,25 +63,25 @@ const EventsSection: React.FC = () => {
           </button>
 
           {/* Carousel Container */}
-          <div 
+          <div
             ref={scrollRef}
             onScroll={checkScroll}
             className="flex overflow-x-auto gap-6 py-8 px-2 scroll-smooth snap-x snap-mandatory hide-scrollbar"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {EVENTS_DATA.map((event) => (
-              <div 
+              <div
                 key={event.id}
                 className="flex-shrink-0 w-72 md:w-80 bg-white rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] transition-shadow duration-300 p-4 snap-center border border-gray-50"
               >
                 <div className="w-full h-48 rounded-2xl overflow-hidden mb-5 bg-gray-100">
-                  <img 
-                    src={event.image} 
+                  <img
+                    src={event.image}
                     alt={event.title}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" 
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                   />
                 </div>
-                
+
                 <div className="px-2 pb-2 space-y-3">
                   <h3 className="font-bold text-xl text-brand-darkText">
                     {event.title}
@@ -83,13 +90,16 @@ const EventsSection: React.FC = () => {
                     <CalendarDays size={16} className="text-brand-purple" />
                     {event.date}
                   </p>
-                  
-                  <Link 
+
+                  <Link
                     to={`/events/${event.id}`}
                     className="inline-flex items-center text-brand-purple font-bold text-sm hover:text-brand-green transition-colors group"
                   >
                     More Info
-                    <ArrowRight size={16} className="ml-2 transform group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight
+                      size={16}
+                      className="ml-2 transform group-hover:translate-x-1 transition-transform"
+                    />
                   </Link>
                 </div>
               </div>
@@ -98,9 +108,11 @@ const EventsSection: React.FC = () => {
 
           {/* Right Arrow */}
           <button
-            onClick={() => scroll('right')}
+            onClick={() => scroll("right")}
             className={`absolute -right-2 md:-right-8 z-10 p-2 text-brand-brown hover:text-[#c2884a] transition-all transform hover:scale-125 ${
-              !canScrollRight ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'
+              !canScrollRight
+                ? "opacity-30 cursor-not-allowed"
+                : "cursor-pointer"
             }`}
             disabled={!canScrollRight}
             aria-label="Next events"

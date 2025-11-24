@@ -4,7 +4,7 @@ import { ArrowLeft, CalendarDays, Clock, MapPin, Leaf } from "lucide-react";
 import Header from "../components/Header";
 import { EVENTS_DATA } from "../constants";
 
-const EventDetail: React.FC = () => {
+const EventDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const event = EVENTS_DATA.find((item) => item.id === Number(id));

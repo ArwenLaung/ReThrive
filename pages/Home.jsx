@@ -4,7 +4,7 @@ import Hero from "../components/Hero";
 import StatsSection from "../components/StatsSection";
 import EventsSection from "../components/EventsSection";
 
-const Home: React.FC = () => {
+const Home = () => {
   return (
     <div className="min-h-screen bg-white">
       <Header />

@@ -22,18 +22,28 @@ export const STATS_DATA = [
   {
     id: 2,
     icon: Users,
-    target: 15000,
+    target: 13759,
     label: "Active Users",
-    postIncrementStep: 10,
-    postIncrementInterval: 5000,
+    fluctuation: {
+      increaseRange: [1, 20],
+      decreaseRange: [1, 15],
+      interval: 4500,
+      minValue: 14000,
+      maxValue: 17500,
+    },
   },
   {
     id: 3,
     icon: ShoppingBasket,
     target: 5000,
     label: "Available Items",
-    postIncrementStep: 1,
-    postIncrementInterval: 7000,
+    fluctuation: {
+      increaseRange: [1, 5],
+      decreaseRange: [1, 4],
+      interval: 5200,
+      minValue: 4700,
+      maxValue: 5600,
+    },
   },
   {
     id: 4,
@@ -95,7 +105,7 @@ export const EVENTS_DATA = [
   {
     id: 4,
     title: "Hostel Cleanup",
-    image: "https://picsum.photos/id/237/400/300",
+    image: "/images/restu.jpg",
     date: "15 Feb 2025",
     time: "7:30 AM – 11:30 AM",
     location: "Desasiswa Restu",

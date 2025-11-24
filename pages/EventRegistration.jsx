@@ -4,18 +4,11 @@ import { ArrowLeft, CheckCircle } from "lucide-react";
 import Header from "../components/Header";
 import { EVENTS_DATA } from "../constants";
 
-interface RegistrationForm {
-  fullName: string;
-  email: string;
-  studentId: string;
-  faculty: string;
-}
-
-const EventRegistration: React.FC = () => {
+const EventRegistration = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const event = EVENTS_DATA.find((item) => item.id === Number(id));
-  const [formData, setFormData] = useState<RegistrationForm>({
+  const [formData, setFormData] = useState({
     fullName: "",
     email: "",
     studentId: "",
@@ -43,12 +36,12 @@ const EventRegistration: React.FC = () => {
     );
   }
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (event) => {
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (eventSubmit: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (eventSubmit) => {
     eventSubmit.preventDefault();
     setSubmitted(true);
     setTimeout(() => {
