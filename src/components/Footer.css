@@ -1,24 +1,24 @@
 .footer {
   width: 100%;
-  height: 80px;
+  min-height: 80px;
+  height: auto;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 30px 30px;
-  /*background-color: #3d0b37;*/
+  padding: 20px 30px;
   background: linear-gradient(to top, #1e051b 0%, #3d0b37 30%);
 }
 
 .declaration {
-  font-size: 16px;
+  font-size: clamp(12px, 2.5vw, 16px);
   color: #ffffff;
+  line-height: 1.3;
 }
 
 .social-media-icons {
-  width: 550px;
   display: flex;
-  justify-content: right;
   align-items: center;
+  justify-content: right;
   gap: 50px;
 }
 
@@ -37,10 +37,10 @@
 
 .tooltip {
   position: relative;
-  display: inline-block;
 }
 
 .tooltip-text {
+  opacity: 0;
   visibility: hidden;
   background-color: #818181;
   color: #fff;
@@ -58,6 +58,19 @@
 }
 
 .tooltip:hover .tooltip-text {
-  visibility: visible;
   opacity: 0.75;
+  visibility: visible;
+}
+
+@media (max-width: 1024px) {
+  .footer {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+
+  .social-media-icons {
+    gap: 15px;
+    justify-content: center;
+  }
 }
