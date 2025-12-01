@@ -1,7 +1,6 @@
 import React from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, CalendarDays, Clock, MapPin, Leaf } from "lucide-react";
-import Header from "../components/Header";
 import { EVENTS_DATA } from "../constants";
 
 const EventDetail = () => {
@@ -12,7 +11,6 @@ const EventDetail = () => {
   if (!event) {
     return (
       <div className="min-h-screen bg-white">
-        <Header />
         <main className="max-w-3xl mx-auto px-4 py-16 text-center">
           <p className="text-2xl font-semibold text-brand-darkText mb-6">
             That event moved or no longer exists.
@@ -31,7 +29,6 @@ const EventDetail = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header />
       <main className="max-w-5xl mt-7 mx-auto px-4 py-12">
         <Link
           to="/"

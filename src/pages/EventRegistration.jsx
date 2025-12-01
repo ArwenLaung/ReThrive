@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, CheckCircle } from "lucide-react";
-import Header from "../components/Header";
 import { EVENTS_DATA } from "../constants";
 
 const EventRegistration = () => {
@@ -19,7 +18,6 @@ const EventRegistration = () => {
   if (!event) {
     return (
       <div className="min-h-screen bg-white">
-        <Header />
         <main className="max-w-3xl mx-auto px-4 py-16 text-center">
           <p className="text-2xl font-semibold text-brand-darkText mb-6">
             We could not find that registration link.
@@ -51,7 +49,6 @@ const EventRegistration = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header />
       <main className="max-w-3xl mt-7 mx-auto px-4 py-12">
         <Link
           to="/"
