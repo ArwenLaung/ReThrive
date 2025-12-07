@@ -105,7 +105,7 @@ export const EVENTS_DATA = [
   {
     id: 4,
     title: "Hostel Cleanup",
-    image: "/images/restu.jpg",
+    image: "/src/assets/restu.jpg",
     date: "15 Feb 2025",
     time: "7:30 AM – 11:30 AM",
     location: "Desasiswa Restu",
@@ -134,4 +134,77 @@ export const EVENTS_DATA = [
       "Fundraising for green tech",
     ],
   },
+];
+
+export const VOUCHERS_DATA = [
+  {
+    id: 1,
+    sponsor: "Starbucks",
+    value: 10,
+    points: 80,
+    image: "https://zuscoffee.com/wp-content/uploads/2025/07/app-logo-resize-256x256-1.png",
+  },
+  {
+    id: 2,
+    sponsor: "Tealive",
+    value: 8,
+    points: 70,
+    image: "https://zuscoffee.com/wp-content/uploads/2025/07/app-logo-resize-256x256-1.png",
+  },
+  {
+    id: 3,
+    sponsor: "Subway",
+    value: 12,
+    points: 100,
+    image: "https://zuscoffee.com/wp-content/uploads/2025/07/app-logo-resize-256x256-1.png",
+  },
+  {
+    id: 4,
+    sponsor: "FamilyMart",
+    value: 5,
+    points: 40,
+    image: "https://zuscoffee.com/wp-content/uploads/2025/07/app-logo-resize-256x256-1.png",
+  },
+  {
+    id: 5,
+    sponsor: "KFC",
+    value: 15,
+    points: 120,
+    image: "https://zuscoffee.com/wp-content/uploads/2025/07/app-logo-resize-256x256-1.png",
+  },
+  {
+    id: 6,
+    sponsor: "Domino's Pizza",
+    value: 20,
+    points: 150,
+    image: "https://zuscoffee.com/wp-content/uploads/2025/07/app-logo-resize-256x256-1.png",
+  },
+  {
+    id: 7,
+    sponsor: "Watsons",
+    value: 10,
+    points: 85,
+    image: "https://zuscoffee.com/wp-content/uploads/2025/07/app-logo-resize-256x256-1.png",
+  },
+  {
+    id: 8,
+    sponsor: "Burger King",
+    value: 12,
+    points: 95,
+    image: "https://zuscoffee.com/wp-content/uploads/2025/07/app-logo-resize-256x256-1.png",
+  },
+  {
+    id: 9,
+    sponsor: "7-Eleven",
+    value: 6,
+    points: 50,
+    image: "https://zuscoffee.com/wp-content/uploads/2025/07/app-logo-resize-256x256-1.png",
+  },
+  {
+    id: 10,
+    sponsor: "Haagen-Dazs",
+    value: 15,
+    points: 130,
+    image: "https://zuscoffee.com/wp-content/uploads/2025/07/app-logo-resize-256x256-1.png",
+  }
 ];

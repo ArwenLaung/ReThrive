@@ -1,0 +1,384 @@
+.myrewards-page-body {
+  padding-top: calc(80px + 1rem);
+  padding-left: 3.5rem;
+  padding-right: 3.5rem;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.back-link-container {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.back-link {
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+  gap: 2px;
+  transition: 0.15s ease;
+  color: #3d0b37;
+}
+
+.back-link:hover {
+  color: #8cc63f;
+}
+
+.ecopoints-icon-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  padding: 20px;
+}
+
+.points-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  color: #3d0b37;
+}
+
+.number {
+  font-size: 44px;
+  font-weight: bold;
+  margin: 0;
+}
+
+.words {
+  font-size: 18px;
+  font-weight: bold;
+  margin: 0;
+}
+
+.daily-check-in-section {
+  margin: 50px;
+  padding: 10px 10px;
+  background-color: rgb(254, 250, 224, 0.5);
+  border-radius: 30px;
+  box-shadow: 2px 2px 5px rgba(182, 182, 182, 0.25);
+  display: flex;
+  flex-direction: column;
+}
+
+.daily-check-in-title {
+  font-size: 32px;
+  font-weight: bold;
+  color: #3d0b37;
+  padding: 10px 30px;
+}
+
+.daily-check-in-box {
+  display: flex;
+  padding: 30px 30px;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.daily-check-in {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.check-in-icon {
+  fill: #606c38;
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.25));
+}
+
+.day {
+  font-weight: bold;
+  padding-top: 10px;
+  color: #606c38;
+  text-shadow: 0 3px 4px rgb(182, 182, 182, 0.25);
+}
+
+.daily-check-in.available {
+  transition: 0.2s ease;
+  cursor: pointer;
+}
+
+.daily-check-in.available:hover {
+  transform: scale(1.08);
+}
+
+.daily-check-in.available .check-in-icon {
+  fill: #606c38;
+  opacity: 1;
+}
+
+.daily-check-in.available .day {
+  color: #606c38;
+  opacity: 1;
+}
+
+.daily-check-in.checked .check-in-icon {
+  fill: #DDA15E;
+  opacity: 0.6;
+}
+
+.daily-check-in.checked .day {
+  color: #DDA15E;
+  opacity: 0.6;
+}
+
+.daily-check-in.locked .check-in-icon {
+  fill: #606c38;
+  opacity: 0.4;
+}
+
+.daily-check-in.locked .day {
+  color: #606c38;
+  opacity: 0.4;
+}
+
+.claim-vouchers-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.claim-vouchers-title {
+  text-align: center;
+  color: #3d0b37;
+  font-weight: bold;
+  font-size: 32px;
+}
+
+.available-vouchers-container {
+  display: flex;
+  justify-content: center;
+}
+
+.scroll-left-button,
+.scroll-right-button {
+  color: #3d0b37;
+  transition: all 0.2s ease;
+}
+
+.scroll-left-button:hover {
+  transform: scale(1.25);
+  color: #8cc63f;
+}
+
+.scroll-right-button:hover {
+  transform: scale(1.25);
+  color: #8cc63f;
+}
+
+.scroll-left-button:disabled,
+.scroll-left-button:disabled * {
+  opacity: 0.3;
+  cursor: not-allowed !important;
+}
+
+.scroll-right-button:disabled,
+.scroll-right-button:disabled * {
+  opacity: 0.3;
+  cursor: not-allowed !important;
+}
+
+.available-vouchers-section {
+  display: flex;
+  overflow-x: auto;
+  gap: 24px;
+  padding: 32px 8px;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  /* Firefox hide scrollbar */
+  -ms-overflow-style: none;
+}
+
+.available-vouchers-section::-webkit-scrollbar {
+  display: none;
+}
+
+.voucher {
+  flex-shrink: 0;
+  width: 288px;
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 30px;
+  border: 1px solid #f8f8f8;
+  scroll-snap-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.voucher:hover {
+  transform: scale(1.04);
+  box-shadow: 0 4px 20px #b6b6b6cc;
+}
+
+.voucher-description {
+  padding: 10px 0px;
+}
+
+.redemption-points {
+  font-size: 150%;
+  color: #3d0b37;
+  font-weight: bold;
+  padding-bottom: 5px;
+}
+
+.voucher-sponsor {
+  font-weight: bold;
+}
+
+.claim-now-button {
+  color: #ffffff;
+  font-weight: bold;
+  background-color: #a266c7;
+  border-radius: 10px;
+  width: 100%;
+  padding: 10px 0px;
+  transition: all 0.2s ease;
+}
+
+.claim-now-button:hover {
+  background-color: #8cc63f;
+}
+
+.how-this-works-section {
+  margin: 50px;
+  padding: 10px 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.how-this-works-title {
+  text-align: center;
+  color: #3d0b37;
+  font-weight: bold;
+  font-size: 32px;
+}
+
+.how-this-works-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 30px 0px;
+}
+
+.step-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.step-description {
+  padding: 20px 0px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .myrewards-page-body {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .number {
+    font-size: 36px;
+  }
+
+  .words {
+    font-size: 16px;
+  }
+
+  .daily-check-in-section {
+    margin: 30px 0;
+    padding: 5px 5px;
+  }
+
+  .daily-check-in-title,
+  .claim-vouchers-title,
+  .how-this-works-title {
+    font-size: 24px;
+    text-align: center;
+    padding: 10px 15px;
+  }
+
+  .daily-check-in-box {
+    padding: 15px 5px;
+    gap: 5px;
+    overflow-x: auto;
+    justify-content: space-between;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    /* Hide scrollbar for Firefox */
+  }
+
+  .daily-check-in-box::-webkit-scrollbar {
+    display: none;
+    /* Hide scrollbar for Chrome/Safari */
+  }
+
+  .check-in-icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .day {
+    font-size: 12px;
+  }
+
+  /* Vouchers: Hide scroll buttons on mobile, rely on touch scroll */
+  .scroll-left-button-container,
+  .scroll-right-button-container {
+    display: none;
+  }
+
+  .available-vouchers-section {
+    padding: 20px 0px;
+  }
+
+  .voucher {
+    width: 250px;
+    padding: 20px;
+
+    /* Reset hover effect for touch screens */
+    &:hover {
+      transform: none;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+  }
+
+  /* How This Works: Stack the steps vertically */
+  .how-this-works-section {
+    margin: 30px 0;
+  }
+
+  .how-this-works-container {
+    flex-direction: column;
+    gap: 30px;
+    padding: 20px 10px;
+  }
+}
+
+/* Tablet Devices (max-width: 1024px) */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .myrewards-page-body {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+
+  .daily-check-in-section {
+    margin: 40px 10px;
+  }
+
+  .how-this-works-container {
+    padding: 20px 0;
+  }
+
+  .daily-check-in-title,
+  .claim-vouchers-title,
+  .how-this-works-title {
+    font-size: 28px;
+  }
+}
