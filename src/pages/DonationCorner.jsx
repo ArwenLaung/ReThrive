@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Search, Filter, MapPin, Heart, Plus, Loader2, Gift } from 'lucide-react';
 
 // --- FIREBASE IMPORTS ---
@@ -9,6 +9,8 @@ import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 const CATEGORIES = ["All", "Hostel Essentials", "Books", "Electronics", "Stationery", "Fashion & Accessories", "Others"];
 
 const DonationCorner = () => {
+  const navigate = useNavigate();
+  
   // State for Data
   const [items, setItems] = useState([]); // Stores the real list from Firebase
   const [loading, setLoading] = useState(true); // Shows spinner while loading
@@ -144,9 +146,11 @@ const DonationCorner = () => {
             {filteredItems.length > 0 ? (
               filteredItems.map((item) => (
                   <div 
-                    key={item.id} 
+                    key={item.id}
+                    onClick={() => navigate(`/donation/${item.id}`)}
                     className="group bg-white rounded-2xl border border-[#7db038] overflow-hidden hover:shadow-xl hover:shadow-[#7db038]/50 hover:-translate-y-1 transition-all duration-300 cursor-pointer transform-gpu [mask-image:radial-gradient(white,black)]"
-                  >                  {/* Image Container */}
+                  >
+                  {/* Image Container */}
                   <div className="relative aspect-square bg-[#7db038]/5 overflow-hidden">
                     <img 
                       src={item.image} 
@@ -154,7 +158,13 @@ const DonationCorner = () => {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                     
-                    <div className="absolute top-3 right-3">
+                    <div 
+                      className="absolute top-3 right-3"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Handle favorite action
+                      }}
+                    >
                       <button className="p-2 bg-white/90 backdrop-blur-sm rounded-full text-gray-400 hover:text-red-500 hover:bg-white shadow-sm transition-all opacity-0 group-hover:opacity-100">
                         <Heart size={18} />
                       </button>

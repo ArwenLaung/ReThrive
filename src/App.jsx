@@ -6,8 +6,10 @@ import Home from "./pages/Home";
 import EventDetail from "./pages/EventDetail";
 import EventRegistration from "./pages/EventRegistration";
 import Marketplace from "./pages/Marketplace";
+import ItemDetail from "./pages/ItemDetail";
 import SellItem from "./pages/SellItem";
 import DonationCorner from "./pages/DonationCorner";
+import DonationDetail from "./pages/DonationDetail";
 import DonateItem from "./pages/DonateItem";
 import MyAccount from "./pages/MyAccount";
 import AccountDetails from './pages/AccountDetails';
@@ -37,8 +39,10 @@ function App() {
             <Route path="/events/:id" element={<EventDetail />} />
             <Route path="/register/:id" element={<EventRegistration />} />
             <Route path="/marketplace" element={<Marketplace />} />
+            <Route path="/item/:id" element={<ItemDetail />} />
             <Route path="/sellitem" element={<SellItem />} />
             <Route path="/donationcorner" element={<DonationCorner />} />
+            <Route path="/donation/:id" element={<DonationDetail />} />
             <Route path="/donateitem" element={<DonateItem />} />
             <Route path="/myaccount" element={<MyAccount />} />
             <Route path="/login" element={<LoginPlaceholder />} />

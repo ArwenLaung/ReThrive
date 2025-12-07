@@ -24,6 +24,11 @@ const SellItem = () => {
   const [locationSelection, setLocationSelection] = useState("Desasiswa Restu");
   const [customLocation, setCustomLocation] = useState("");
 
+  // Seller Details (for autofill)
+  const [sellerName, setSellerName] = useState("");
+  const [sellerEmail, setSellerEmail] = useState("");
+  const [sellerId, setSellerId] = useState("");
+
   // Loading States
   const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
   const [isGeneratingText, setIsGeneratingText] = useState(false);
@@ -32,10 +37,16 @@ const SellItem = () => {
   // User state (optional - for seller info)
   const [currentUser, setCurrentUser] = useState(null);
   
-  // Get current user if authenticated
+  // Get current user if authenticated and autofill seller info
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
+      if (user) {
+        // Autofill seller information from logged-in user
+        setSellerId(user.uid);
+        setSellerName(user.displayName || user.email || "");
+        setSellerEmail(user.email || "");
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -215,16 +226,10 @@ const SellItem = () => {
         image: imageUrls[0], // Primary image for listing
         createdAt: serverTimestamp(),
         status: "active", // Default status
-        // Seller information - will be autofilled from logged-in user
-        // PLACEHOLDER: userName - will be autofilled from currentUser.displayName or currentUser.email
-        // PLACEHOLDER: userID - will be autofilled from currentUser.uid
-        // PLACEHOLDER: userEmail - will be autofilled from currentUser.email
-        // Add seller information if user is authenticated
-        ...(currentUser && {
-          sellerId: currentUser.uid, // userID placeholder
-          sellerName: currentUser.displayName || currentUser.email || "Anonymous", // userName placeholder
-          sellerEmail: currentUser.email || null, // userEmail placeholder
-        }),
+        // Seller information - autofilled from logged-in user or form fields
+        sellerId: sellerId || (currentUser ? currentUser.uid : null), // userID
+        sellerName: sellerName || (currentUser ? (currentUser.displayName || currentUser.email || "Anonymous") : ""), // userName
+        sellerEmail: sellerEmail || (currentUser ? currentUser.email : null), // userEmail
       };
 
       // Step 3: Save to Firestore
@@ -387,6 +392,35 @@ const SellItem = () => {
                   <div className="space-y-4">
                     <div><label className="block text-sm font-semibold text-gray-700 mb-2">Title</label><input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#59287a] outline-none font-bold text-gray-800" /></div>
                     <div><label className="block text-sm font-semibold text-gray-700 mb-2">Description</label><textarea value={description} onChange={(e) => setDescription(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#59287a] outline-none h-32" /></div>
+                  </div>
+                </div>
+              </div>
+
+              <hr className="border-gray-100" />
+
+              {/* Seller Information Section */}
+              <div>
+                <h2 className="text-lg font-bold text-gray-800 mb-4">Your Details</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Your Name</label>
+                    <input 
+                      type="text" 
+                      value={sellerName} 
+                      onChange={e => setSellerName(e.target.value)} 
+                      placeholder="Display Name" 
+                      className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#59287a] outline-none" 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Email / Contact (Optional)</label>
+                    <input 
+                      type="text" 
+                      value={sellerEmail} 
+                      onChange={e => setSellerEmail(e.target.value)} 
+                      placeholder="How can buyers reach you?" 
+                      className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#59287a] outline-none" 
+                    />
                   </div>
                 </div>
               </div>

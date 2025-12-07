@@ -25,3 +25,9 @@ dist-ssr
 
 # Security
 .env
+
+DEBUGGING_GUIDE.md
+QUICK_DEBUG_STEPS.md
+FIRESTORE_SETUP_GUIDE.md
+firestore.rules
+QUICK_DEBUG_STEPS.md

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Search, Filter, MapPin, Heart, Plus, Loader2, ShoppingBag } from 'lucide-react';
 
 // --- FIREBASE IMPORTS ---
@@ -9,6 +9,8 @@ import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 const CATEGORIES = ["All", "Hostel Essentials", "Books", "Electronics", "Stationery", "Fashion & Accessories", "Others"];
 
 const Marketplace = () => {
+  const navigate = useNavigate();
+  
   // State for Data
   const [items, setItems] = useState([]); // Stores the real list from Firebase
   const [loading, setLoading] = useState(true); // Shows spinner while loading
@@ -145,7 +147,11 @@ const Marketplace = () => {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             {filteredItems.length > 0 ? (
               filteredItems.map((item) => (
-                <div key={item.id} className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-xl hover:shadow-gray-200/50 hover:-translate-y-1 transition-all duration-300 cursor-pointer">
+                <div 
+                  key={item.id} 
+                  onClick={() => navigate(`/item/${item.id}`)}
+                  className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-xl hover:shadow-gray-200/50 hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+                >
                   {/* Image Container */}
                   <div className="relative aspect-square bg-gray-100 overflow-hidden">
                     <img 
@@ -155,7 +161,13 @@ const Marketplace = () => {
                     />
                     
                     {/* Floating Actions */}
-                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 transform translate-y-2 group-hover:translate-y-0">
+                    <div 
+                      className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 transform translate-y-2 group-hover:translate-y-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Handle favorite action
+                      }}
+                    >
                       <button className="p-2 bg-white/90 backdrop-blur-sm rounded-full text-gray-400 hover:text-red-500 hover:bg-white shadow-sm transition-all">
                         <Heart size={18} fill="currentColor" className="opacity-0 hover:opacity-100 absolute inset-0 m-auto" />
                         <Heart size={18} />
@@ -184,9 +196,9 @@ const Marketplace = () => {
                     
                     <div className="flex items-end justify-between border-t border-gray-50 pt-3 mt-auto">
                       <p className="text-brand-purple font-black text-xl tracking-tight">RM {item.price}</p>
-                      <button className="text-xs font-bold text-gray-400 group-hover:text-brand-purple transition-colors bg-gray-50 group-hover:bg-purple-50 px-2 py-1 rounded-lg">
+                      <span className="text-xs font-bold text-gray-400 group-hover:text-brand-purple transition-colors bg-gray-50 group-hover:bg-purple-50 px-2 py-1 rounded-lg">
                         View
-                      </button>
+                      </span>
                     </div>
                   </div>
                 </div>
