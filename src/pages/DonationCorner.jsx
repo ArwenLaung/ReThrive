@@ -143,7 +143,6 @@ const DonationCorner = () => {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             {filteredItems.length > 0 ? (
               filteredItems.map((item) => (
-                  // NEW CODE (With the fix applied)
                   <div 
                     key={item.id} 
                     className="group bg-white rounded-2xl border border-[#7db038] overflow-hidden hover:shadow-xl hover:shadow-[#7db038]/50 hover:-translate-y-1 transition-all duration-300 cursor-pointer transform-gpu [mask-image:radial-gradient(white,black)]"
