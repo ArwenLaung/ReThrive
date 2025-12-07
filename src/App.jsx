@@ -1,17 +1,32 @@
 import { BrowserRouter, Routes, Route, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import Header from "./users/components/Header.jsx";
+import Footer from "./users/components/Footer.jsx";
 import Login from "./users/pages/Login.jsx";
+import MyAccount from "./pages/MyAccount";
+import AccountDetails from './pages/AccountDetails';
+import EditProfile from './pages/EditProfile';
 import MyRewards from "./users/pages/MyRewards.jsx";
+import SellItem from "./pages/SellItem";
 import Home from "./users/pages/Home.jsx";
 import EventDetail from "./users/pages/EventDetail.jsx";
 import EventRegistration from "./users/pages/EventRegistration.jsx";
 import Marketplace from "./users/pages/Marketplace.jsx";
 import Donation from "./users/pages/Donation.jsx";
-import Footer from "./users/components/Footer.jsx";
+import DonationCorner from "./pages/DonationCorner";
+import DonationDetail from "./pages/DonationDetail";
+import DonateItem from "./pages/DonateItem";
+import ItemDetail from "./pages/ItemDetail";
 import { ScrollContext } from "./users/context/ScrollContext.jsx";
 import { useRef, useState, useEffect, useLayoutEffect } from "react";
 
-// --- ScrollHandler component definition ---
+const LoginPlaceholder = () => {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <h1 className="text-2xl font-bold text-gray-400">Login Page (Coming Soon)</h1>
+    </div>
+  );
+};
+
 const ScrollHandler = ({ aboutRef, eventsRef, scrollTarget, setScrollTarget, setActiveLink }) => {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -120,10 +135,7 @@ const ScrollHandler = ({ aboutRef, eventsRef, scrollTarget, setScrollTarget, set
 
   return null;
 };
-// --- End ScrollHandler component definition ---
 
-
-// 🟢 NEW Component to handle Router hooks and conditional rendering 🟢
 const AppContent = ({ aboutRef, eventsRef, activeLink, setActiveLink, scrollTarget, setScrollTarget }) => {
 
   // 💥 CRITICAL FIX: useLocation() is now safely inside <Router> context 💥
@@ -166,8 +178,6 @@ const AppContent = ({ aboutRef, eventsRef, activeLink, setActiveLink, scrollTarg
     </>
   );
 }
-// --- End AppContent ---
-
 
 function App() {
   const aboutRef = useRef(null);
@@ -187,19 +197,33 @@ function App() {
   };
 
   return (
-    <ScrollContext.Provider value={{ scrollToAbout, scrollToEvents }}>
+    <div className="app">
       <BrowserRouter>
-        {/* 🟢 Render the component that holds the conditional logic and router hooks 🟢 */}
-        <AppContent
-          aboutRef={aboutRef}
-          eventsRef={eventsRef}
-          activeLink={activeLink}
-          setActiveLink={setActiveLink}
-          scrollTarget={scrollTarget}
-          setScrollTarget={setScrollTarget}
-        />
+        <Header />
+
+        <main className="content">
+          <Routes>
+            {/* Your routes go here */}
+            <Route path="/" element={<Home />} />
+            <Route path="/about" element={<div>About Page</div>} />
+            <Route path="/events/:id" element={<EventDetail />} />
+            <Route path="/register/:id" element={<EventRegistration />} />
+            <Route path="/marketplace" element={<Marketplace />} />
+            <Route path="/item/:id" element={<ItemDetail />} />
+            <Route path="/sellitem" element={<SellItem />} />
+            <Route path="/donationcorner" element={<DonationCorner />} />
+            <Route path="/donation/:id" element={<DonationDetail />} />
+            <Route path="/donateitem" element={<DonateItem />} />
+            <Route path="/myaccount" element={<MyAccount />} />
+            <Route path="/login" element={<LoginPlaceholder />} />
+            <Route path="/accountdetails" element={<AccountDetails />} />
+            <Route path="/editprofile" element={<EditProfile />} />
+          </Routes>
+        </main>
+
+        <Footer />
       </BrowserRouter>
-    </ScrollContext.Provider>
+    </div>
   );
 }
 

@@ -43,3 +43,39 @@ body {
   flex: 1;
   /* takes up remaining space */
 }
+
+/* Remove all default spacing */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: roboto, sans-serif;
+}
+
+/* Remove body margin */
+body {
+  margin: 0;
+  padding: 0;
+}
+
+::selection {
+  background-color: #dda15e;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  /* full viewport height */
+}
+
+.content {
+  flex: 1;
+  /* takes up remaining space */
+}
