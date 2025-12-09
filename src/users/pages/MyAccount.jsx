@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  User, Edit3, Package, ShoppingBag, Clock, 
-  Gift, Ticket, Settings, Lock, LogOut, Plus, ChevronRight, Loader2 
+import {
+  User, Edit3, Package, ShoppingBag, Clock,
+  Gift, Ticket, Settings, Lock, LogOut, Plus, ChevronRight, Loader2
 } from 'lucide-react';
 
 // --- FIREBASE IMPORTS ---
-import { auth, db } from '../firebase';
+import { auth, db } from '../../firebase';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, getCountFromServer, doc, getDoc } from 'firebase/firestore';
 
@@ -16,7 +16,7 @@ const MyAccount = () => {
   // --- STATE MANAGEMENT ---
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  
+
   // Stats State
   const [stats, setStats] = useState({
     activeListings: 0,
@@ -93,7 +93,7 @@ const MyAccount = () => {
     */
 
     // Mock data to display ui first
-  const loadFakeData = () => {
+    const loadFakeData = () => {
       // simulate network delay
       setTimeout(() => {
         setUser({
@@ -132,7 +132,7 @@ const MyAccount = () => {
 
   // --- COMPONENT: List Item Row ---
   const MenuRow = ({ icon: Icon, label, subLabel, onClick, isLast }) => (
-    <button 
+    <button
       onClick={onClick}
       className={`w-full flex items-center justify-between py-4 group ${!isLast ? 'border-b border-[#59287a]/10' : ''}`}
     >
@@ -141,7 +141,7 @@ const MyAccount = () => {
         <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-200">
           <Icon size={20} className="text-[#59287a]" />
         </div>
-        
+
         <div className="text-left">
           <p className="font-bold text-[#59287a] group-hover:text-purple-900 transition-colors">{label}</p>
           {subLabel && <p className="text-xs text-gray-500">{subLabel}</p>}
@@ -164,8 +164,8 @@ const MyAccount = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white pb-32 pt-10 px-6">
-      
+    <div className="min-h-screen bg-white pb-32 pt-20 px-6">
+
       {/* --- PAGE TITLE --- */}
       <div className="max-w-xl mx-auto mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-extrabold text-[#59287a]">My Account</h1>
@@ -180,16 +180,16 @@ const MyAccount = () => {
         <div className="bg-[#FEFAE0] rounded-[2rem] p-6 shadow-sm flex items-center gap-5 relative overflow-hidden group">
           {/* Decorative background circle */}
           <div className="absolute -right-6 -top-6 w-24 h-24 bg-[#59287a]/5 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
-          
-          <img 
-            src={user?.avatar} 
-            alt="Profile" 
+
+          <img
+            src={user?.avatar}
+            alt="Profile"
             className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-sm z-10 bg-gray-200"
           />
           <div className="flex-1 z-10">
             <h2 className="text-xl font-bold text-[#59287a]">{user?.name}</h2>
             <p className="text-gray-600 text-sm mb-3">{user?.email}</p>
-            <button 
+            <button
               onClick={() => navigate('/editprofile')} // Make sure this route exists
               className="flex items-center gap-2 text-xs font-bold bg-white text-[#59287a] px-4 py-2 rounded-full shadow-sm hover:shadow-md transition-all active:scale-95"
             >
@@ -202,22 +202,22 @@ const MyAccount = () => {
         <div>
           <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 px-2">Marketplace</h3>
           <div className="bg-[#FEFAE0] rounded-[2rem] p-6 shadow-sm hover:shadow-md transition-shadow duration-300">
-            <MenuRow 
-              icon={Package} 
-              label="My Listings" 
-              subLabel={`${stats.activeListings} Active Items`} 
+            <MenuRow
+              icon={Package}
+              label="My Listings"
+              subLabel={`${stats.activeListings} Active Items`}
               onClick={() => navigate('/mylistings')}
             />
-            <MenuRow 
-              icon={ShoppingBag} 
-              label="My Sold Items" 
+            <MenuRow
+              icon={ShoppingBag}
+              label="My Sold Items"
               subLabel={`${stats.soldItems} Items Sold`}
               onClick={() => navigate('/solditems')}
             />
-            <MenuRow 
-              icon={Clock} 
-              label="Purchase History" 
-              isLast={true} 
+            <MenuRow
+              icon={Clock}
+              label="Purchase History"
+              isLast={true}
               onClick={() => navigate('/purchasehistory')}
             />
           </div>
@@ -235,10 +235,10 @@ const MyAccount = () => {
               <p className="font-bold text-[#59287a] text-lg">{stats.points}</p>
               <p className="text-xs text-gray-500 font-medium">My Points</p>
             </button>
-            
+
             {/* Voucher Card */}
             <button className="bg-[#FEFAE0] p-5 rounded-[2rem] shadow-sm hover:shadow-md transition-all text-left group">
-               <div className="bg-white w-10 h-10 rounded-full flex items-center justify-center mb-3 shadow-sm group-hover:scale-110 transition-transform">
+              <div className="bg-white w-10 h-10 rounded-full flex items-center justify-center mb-3 shadow-sm group-hover:scale-110 transition-transform">
                 <Ticket size={20} className="text-[#59287a]" />
               </div>
               <p className="font-bold text-[#59287a] text-lg">{stats.vouchers} Active</p>
@@ -251,14 +251,14 @@ const MyAccount = () => {
         <div>
           <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 px-2">Settings</h3>
           <div className="bg-[#FEFAE0] rounded-[2rem] p-6 shadow-sm hover:shadow-md transition-shadow duration-300">
-            <MenuRow 
-              icon={User} 
-              label="Account Details" 
+            <MenuRow
+              icon={User}
+              label="Account Details"
               onClick={() => navigate('/accountdetails')}
             />
-            <MenuRow 
-              icon={Lock} 
-              label="Change Password" 
+            <MenuRow
+              icon={Lock}
+              label="Change Password"
               isLast={true}
               onClick={() => console.log("Password")}
             />
@@ -266,7 +266,7 @@ const MyAccount = () => {
         </div>
 
         {/* --- 5. LOG OUT --- */}
-        <button 
+        <button
           onClick={handleLogout}
           className="w-full bg-red-50 text-red-500 font-bold py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-red-100 transition-colors"
         >
@@ -276,7 +276,7 @@ const MyAccount = () => {
       </div>
 
       {/* --- 6. FLOATING ACTION BUTTON --- */}
-      <button 
+      <button
         onClick={() => navigate('/sellitem')}
         className="fixed bottom-6 right-6 bg-[#59287a] hover:bg-[#451d5e] text-white px-6 py-4 rounded-full shadow-2xl flex items-center gap-2 font-bold transition-transform hover:scale-105 active:scale-95 z-50 ring-4 ring-white"
       >

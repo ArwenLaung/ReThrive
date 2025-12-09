@@ -105,7 +105,7 @@ export const EVENTS_DATA = [
   {
     id: 4,
     title: "Hostel Cleanup",
-    image: "/images/restu.jpg",
+    image: "./src/users/assets/restu.JPG",
     date: "15 Feb 2025",
     time: "7:30 AM – 11:30 AM",
     location: "Desasiswa Restu",

@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, MapPin, Heart, Loader2, Gift, User, Mail } from 'lucide-react';
 
 // --- FIREBASE IMPORTS ---
-import { db } from '../firebase';
+import { db } from '../../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
 const DonationDetail = () => {
@@ -84,7 +84,7 @@ const DonationDetail = () => {
 
       <main className="max-w-7xl mx-auto px-4 mt-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          
+
           {/* Image Gallery */}
           <div className="space-y-4">
             <div className="relative aspect-square bg-white rounded-2xl overflow-hidden border border-[#7db038]/20 shadow-lg">
@@ -99,7 +99,7 @@ const DonationDetail = () => {
                   <Gift className="text-[#7db038]/40" size={64} />
                 </div>
               )}
-              
+
               {/* FREE Badge */}
               <div className="absolute top-4 left-4">
                 <span className="bg-[#7db038] text-white text-sm tracking-wider font-black px-4 py-2 rounded-full shadow-lg shadow-[#364f15]/20">
@@ -138,11 +138,10 @@ const DonationDetail = () => {
                   <button
                     key={idx}
                     onClick={() => setCurrentImageIndex(idx)}
-                    className={`flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${
-                      currentImageIndex === idx
+                    className={`flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${currentImageIndex === idx
                         ? 'border-[#7db038] shadow-md'
                         : 'border-[#7db038]/20 hover:border-[#7db038]/40'
-                    }`}
+                      }`}
                   >
                     <img src={img} alt={`${item.title} ${idx + 1}`} className="w-full h-full object-cover" />
                   </button>
@@ -160,7 +159,7 @@ const DonationDetail = () => {
                   {item.condition || 'Good'}
                 </span>
               </div>
-              
+
               <div className="flex items-center gap-2 text-[#7db038]/80 mb-4">
                 <MapPin size={16} />
                 <span className="text-sm font-medium">{item.location}</span>

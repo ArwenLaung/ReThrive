@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, MapPin, Heart, Loader2, ShoppingBag, User, Mail } from 'lucide-react';
 
 // --- FIREBASE IMPORTS ---
-import { db } from '../firebase';
+import { db } from '../../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
 const ItemDetail = () => {
@@ -84,7 +84,7 @@ const ItemDetail = () => {
 
       <main className="max-w-7xl mx-auto px-4 mt-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          
+
           {/* Image Gallery */}
           <div className="space-y-4">
             <div className="relative aspect-square bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-lg">
@@ -99,7 +99,7 @@ const ItemDetail = () => {
                   <ShoppingBag className="text-gray-400" size={64} />
                 </div>
               )}
-              
+
               {/* Image Navigation */}
               {images.length > 1 && (
                 <>
@@ -131,11 +131,10 @@ const ItemDetail = () => {
                   <button
                     key={idx}
                     onClick={() => setCurrentImageIndex(idx)}
-                    className={`flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${
-                      currentImageIndex === idx
+                    className={`flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${currentImageIndex === idx
                         ? 'border-brand-purple shadow-md'
                         : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                      }`}
                   >
                     <img src={img} alt={`${item.title} ${idx + 1}`} className="w-full h-full object-cover" />
                   </button>
@@ -153,7 +152,7 @@ const ItemDetail = () => {
                   {item.condition || 'Used'}
                 </span>
               </div>
-              
+
               <div className="flex items-center gap-2 text-gray-600 mb-4">
                 <MapPin size={16} />
                 <span className="text-sm font-medium">{item.location}</span>

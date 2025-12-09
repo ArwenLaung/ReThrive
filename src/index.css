@@ -1,81 +1,51 @@
+/* ----------------------------------------------------- */
+/* 1. CSS Reset (Must go before @tailwind base) */
+/* ----------------------------------------------------- */
+
+/* Apply box-sizing reset globally */
+* {
+  box-sizing: border-box;
+}
+
+/* Apply margin/padding reset to main elements */
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+}
+
+/* ----------------------------------------------------- */
+/* 2. TAILWIND DIRECTIVES */
+/* ----------------------------------------------------- */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Remove all default spacing */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+/* ----------------------------------------------------- */
+/* 3. Custom Global Styles (Safely defined after Tailwind) */
+/* ----------------------------------------------------- */
 
-/* Remove body margin */
 body {
+  /* Set the base font family here, managed by Tailwind config */
+  font-family: "Inter", sans-serif;
   height: 100%;
-  margin: 0;
-  padding: 0;
 }
 
+html {
+  scroll-behavior: smooth;
+  height: 100%;
+}
+
+/* App/Root Container Styles */
 #root {
-  min-height: 100%;
+  min-height: 100vh;
+  /* Changed from 100% to ensure full viewport height */
   display: flex;
   flex-direction: column;
 }
 
 ::selection {
   background-color: #dda15e;
-}
-
-html,
-body {
-  height: 100%;
-  margin: 0;
-}
-
-.app {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  /* full viewport height */
-}
-
-.content {
-  flex: 1;
-  /* takes up remaining space */
-}
-
-/* Remove all default spacing */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: roboto, sans-serif;
-}
-
-/* Remove body margin */
-body {
-  margin: 0;
-  padding: 0;
-}
-
-::selection {
-  background-color: #dda15e;
-}
-
-html,
-body {
-  height: 100%;
-  margin: 0;
-}
-
-.app {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  /* full viewport height */
-}
-
-.content {
-  flex: 1;
-  /* takes up remaining space */
+  /* Custom selection color */
 }

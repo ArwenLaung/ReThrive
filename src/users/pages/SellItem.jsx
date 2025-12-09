@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Upload, Loader2, X } from 'lucide-react'; // Removed Sparkles
-import { classifyImage } from '../utils/aiImage';
-import { generateDescription } from '../utils/textGen';
+import { classifyImage } from '../../utils/aiImage';
+import { generateDescription } from '../../utils/textGen';
 
 // --- FIREBASE IMPORTS ---
-import { db, storage, auth } from '../firebase';
+import { db, storage, auth } from '../../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -33,10 +33,10 @@ const SellItem = () => {
   const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
   const [isGeneratingText, setIsGeneratingText] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // User state (optional - for seller info)
   const [currentUser, setCurrentUser] = useState(null);
-  
+
   // Get current user if authenticated and autofill seller info
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -93,7 +93,7 @@ const SellItem = () => {
           setIsAnalyzingImage(false);
         }
       };
-      
+
       imgElement.onerror = () => {
         console.error("Failed to load image for analysis");
         setIsAnalyzingImage(false);
@@ -112,9 +112,9 @@ const SellItem = () => {
       alert("Please select a category and add some keywords.");
       return;
     }
-    
+
     setIsGeneratingText(true);
-    
+
     try {
       // Try to get image data URL for enhanced AI generation
       let imageDataUrl = null;
@@ -124,7 +124,7 @@ const SellItem = () => {
           const img = new Image();
           img.crossOrigin = "anonymous";
           img.src = images[0].preview;
-          
+
           await new Promise((resolve, reject) => {
             img.onload = () => {
               const canvas = document.createElement('canvas');
@@ -141,7 +141,7 @@ const SellItem = () => {
           console.log("Could not convert image for AI analysis, using text-only:", imgError);
         }
       }
-      
+
       console.log("Generating title and description with AI...");
       const result = await generateDescription(keywords, category, imageDataUrl);
       setTitle(result.title);
@@ -187,7 +187,7 @@ const SellItem = () => {
     try {
       console.log("Starting item post process...");
       console.log("Form data:", { title, price, category, location: finalLocation, imagesCount: images.length });
-      
+
       // Step 1: Upload images to Firebase Storage
       console.log("Uploading images to Firebase Storage...");
       const imageUrls = await Promise.all(
@@ -196,7 +196,7 @@ const SellItem = () => {
             const cleanName = imgObj.file.name.replace(/[^a-zA-Z0-9.]/g, "_");
             const timestamp = Date.now();
             const storageRef = ref(storage, `items/${timestamp}_${index}_${cleanName}`);
-            
+
             console.log(`Uploading image ${index + 1}/${images.length}...`);
             const snapshot = await uploadBytes(storageRef, imgObj.file);
             const downloadURL = await getDownloadURL(snapshot.ref);
@@ -238,7 +238,7 @@ const SellItem = () => {
       console.log("Item posted successfully with ID:", docRef.id);
 
       alert("Success! Your item has been posted to the Marketplace.");
-      
+
       // Clear form
       setImages([]);
       setCategory("");
@@ -249,27 +249,27 @@ const SellItem = () => {
       setCondition("Good (Used, but well maintained)");
       setLocationSelection("Desasiswa Restu");
       setCustomLocation("");
-      
+
       // Clear timeout on success
       clearTimeout(timeoutId);
-      
+
       // Navigate to marketplace
       navigate('/marketplace');
 
     } catch (error) {
       // Clear timeout on error
       clearTimeout(timeoutId);
-      
+
       console.error("Error posting item:", error);
       console.error("Error details:", {
         code: error.code,
         message: error.message,
         stack: error.stack
       });
-      
+
       // Provide user-friendly error messages
       let errorMessage = "Failed to post item. ";
-      
+
       if (error.code === 'permission-denied') {
         errorMessage += "You don't have permission to post items. Please check your Firebase security rules.";
       } else if (error.code === 'unavailable') {
@@ -285,7 +285,7 @@ const SellItem = () => {
       } else {
         errorMessage += "An unexpected error occurred. Please check the browser console (F12) for details.";
       }
-      
+
       alert(errorMessage);
       setIsSubmitting(false); // Stop loading on error
     } finally {
@@ -307,7 +307,7 @@ const SellItem = () => {
       <main className="max-w-7xl mx-auto px-4 mt-6">
         {/* Main grid container */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch">
-          
+
           {/* Upload Photos */}
           <div className="md:col-span-4 flex flex-col">
             <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 sticky top-24 h-full flex flex-col">
@@ -355,7 +355,7 @@ const SellItem = () => {
           {/* Item Details & Post */}
           <div className="md:col-span-8 flex flex-col">
             <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 space-y-6 h-full">
-              
+
               {/* Details Section */}
               <div>
                 <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -381,10 +381,10 @@ const SellItem = () => {
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Keywords for AI-Generated Title & Description</label>
                     <textarea value={keywords} onChange={(e) => setKeywords(e.target.value)} placeholder="e.g. Blue Nike running shoes, size 9, worn twice, bought for RM200" className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#59287a] outline-none h-24 resize-none" />
-                    
+
                     {/* Auto-Generate Button */}
                     <button onClick={handleGenerateText} disabled={isGeneratingText || !keywords} className="mt-3 w-full bg-[#f3eefc] text-[#59287a] font-bold py-3 rounded-xl hover:bg-[#dccae8] transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
-                      {isGeneratingText && <Loader2 className="animate-spin" size={18} />} 
+                      {isGeneratingText && <Loader2 className="animate-spin" size={18} />}
                       {isGeneratingText ? "Writing..." : "Auto-Generate Title & Description"}
                     </button>
                   </div>
@@ -404,22 +404,22 @@ const SellItem = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Your Name</label>
-                    <input 
-                      type="text" 
-                      value={sellerName} 
-                      onChange={e => setSellerName(e.target.value)} 
-                      placeholder="Display Name" 
-                      className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#59287a] outline-none" 
+                    <input
+                      type="text"
+                      value={sellerName}
+                      onChange={e => setSellerName(e.target.value)}
+                      placeholder="Display Name"
+                      className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#59287a] outline-none"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Email / Contact (Optional)</label>
-                    <input 
-                      type="text" 
-                      value={sellerEmail} 
-                      onChange={e => setSellerEmail(e.target.value)} 
-                      placeholder="How can buyers reach you?" 
-                      className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#59287a] outline-none" 
+                    <input
+                      type="text"
+                      value={sellerEmail}
+                      onChange={e => setSellerEmail(e.target.value)}
+                      placeholder="How can buyers reach you?"
+                      className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#59287a] outline-none"
                     />
                   </div>
                 </div>
