@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   User, Edit3, Package, ShoppingBag, Clock,
-  Gift, Settings, Lock, LogOut, Plus, ChevronRight, Loader2, Trophy
+  Settings, Lock, LogOut, Plus, ChevronRight, Trophy
 } from 'lucide-react';
 
 // --- FIREBASE IMPORTS ---
@@ -10,110 +10,92 @@ import { auth, db } from '../../firebase';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, getCountFromServer, doc, getDoc } from 'firebase/firestore';
 
+// Import default profile picture
+import DefaultProfilePic from '../assets/default_profile_pic.jpg';
+
 const MyAccount = () => {
   const navigate = useNavigate();
 
   // --- STATE MANAGEMENT ---
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   // Stats State
   const [stats, setStats] = useState({
     activeListings: 0,
     soldItems: 0,
+    points: 0,
   });
 
-  // --- 1. FETCH DATA ON LOAD ---
+  // Fetch User Data & Stats
   useEffect(() => {
-    /* const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (!currentUser) {
-        // Redirect if not logged in
-        navigate('/login'); 
+        // Not logged in? Go to login
+        setLoading(false);
+        navigate('/login');
         return;
       }
 
-      // A. Set Basic Auth Info
-      const userData = {
-        uid: currentUser.uid,
-        name: currentUser.displayName || "USM Student",
-        email: currentUser.email,
-        avatar: currentUser.photoURL || "https://i.pravatar.cc/150?img=32" // Fallback avatar
-      };
-      setUser(userData);
-
       try {
-        // B. Fetch Listing Counts (Active vs Sold)
-        // assuming your items have 'uid' for the seller and 'status' fields
+        // Set Basic Auth Info
+        // Use the photoURL if it exists, otherwise fall back to the local default
+        const userData = {
+          uid: currentUser.uid,
+          name: currentUser.displayName || currentUser.email.split('@')[0], // Extract name from email if display name is empty
+          email: currentUser.email,
+          avatar: currentUser.photoURL || DefaultProfilePic
+        };
+        setUser(userData);
+
+        // Fetch Listing Counts from Firestore
         const itemsRef = collection(db, "items");
         
-        // Count Active Listings
+        // Count Active Listings (sellerId matches UID + status is active)
         const activeQuery = query(
           itemsRef, 
-          where("uid", "==", currentUser.uid),
-          where("status", "!=", "sold") // Count everything not sold
+          where("sellerId", "==", currentUser.uid),
+          where("status", "==", "active") 
         );
         const activeSnapshot = await getCountFromServer(activeQuery);
 
         // Count Sold Items
         const soldQuery = query(
           itemsRef, 
-          where("uid", "==", currentUser.uid),
+          where("sellerId", "==", currentUser.uid),
           where("status", "==", "sold")
         );
         const soldSnapshot = await getCountFromServer(soldQuery);
 
-        // C. Fetch Extra User Details (Points/Vouchers)
-        // assuming you have a 'users' collection with this info
-        const userDocRef = doc(db, "users", currentUser.uid);
-        const userDocSnap = await getDoc(userDocRef);
-        let extraData = { points: 0, vouchers: 0 };
-
-        if (userDocSnap.exists()) {
-          extraData = userDocSnap.data();
+        // Fetch EcoPoints
+        let currentPoints = 0;
+        try {
+          // Try Firestore first
+          const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+          if (userDoc.exists()) {
+            currentPoints = userDoc.data().ecoPoints || 0;
+          } else {
+            currentPoints = Number(localStorage.getItem("ecoPoints")) || 0;
+          }
+        } catch (e) {
+          console.log("Could not fetch points from Firestore, using local default");
         }
 
-        // D. Update State
+        // Update State
         setStats({
           activeListings: activeSnapshot.data().count,
           soldItems: soldSnapshot.data().count,
-          points: extraData.points || 120,    // Default to 120 if field missing
-          vouchers: extraData.vouchers || 2   // Default to 2 if field missing
+          points: currentPoints
         });
 
       } catch (error) {
         console.error("Error fetching account data:", error);
-      } finally {
-        setLoading(false);
-      }
+      } 
     });
 
     return () => unsubscribe();
-    */
-
-    // Mock data to display ui first
-    const loadFakeData = () => {
-      // simulate network delay
-      setTimeout(() => {
-        setUser({
-          uid: "12345",
-          name: "Cindy Lim", // Matching your screenshot name
-          email: "cindy@student.usm.my",
-          avatar: "https://i.pravatar.cc/150?img=5" // Use a nice image
-        });
-
-        setStats({
-          activeListings: 3,
-          soldItems: 12
-        });
-
-        setLoading(false);
-      }, 800); // 0.8 second loading time
-    };
-
-    loadFakeData();
   }, [navigate]);
 
-  // --- 2. LOGOUT LOGIC ---
+  // Log out logic
   const handleLogout = async () => {
     const confirmLogout = window.confirm("Are you sure you want to log out?");
     if (confirmLogout) {
@@ -126,7 +108,7 @@ const MyAccount = () => {
     }
   };
 
-  // --- COMPONENT: List Item Row ---
+  // List Item Component
   const MenuRow = ({ icon: Icon, label, subLabel, onClick, isLast }) => (
     <button
       onClick={onClick}
@@ -146,18 +128,6 @@ const MyAccount = () => {
       <ChevronRight size={18} className="text-[#59287a]/40 group-hover:text-[#59287a] transition-colors" />
     </button>
   );
-
-  // --- LOADING STATE ---
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="animate-spin text-[#59287a]" size={40} />
-          <p className="text-[#59287a] font-medium">Loading your profile...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-white pb-32 pt-20 px-6">
@@ -212,7 +182,8 @@ const MyAccount = () => {
             />
             <MenuRow
               icon={Clock}
-              label="Purchase History"
+              label="My Purchases"
+              subLabel="View past orders"
               isLast={true}
               onClick={() => navigate('/purchasehistory')}
             />
@@ -226,7 +197,7 @@ const MyAccount = () => {
             <MenuRow
               icon={Trophy}
               label="Missions and Rewards"
-              subLabel="Check points, redeem vouchers & more"
+              subLabel={`${stats.points} EcoPoints available`} 
               isLast={true}
               onClick={() => navigate('/myrewards')}
             />
@@ -246,7 +217,7 @@ const MyAccount = () => {
               icon={Lock}
               label="Change Password"
               isLast={true}
-              onClick={() => console.log("Password")}
+              onClick={() => alert("Change password feature coming soon!")}
             />
           </div>
         </div>

@@ -18,6 +18,10 @@ import MyAccount from "./users/pages/MyAccount.jsx";
 import AccountDetails from "./users/pages/AccountDetails.jsx";
 import EditProfile from "./users/pages/EditProfile.jsx";
 import MyRewards from "./users/pages/MyRewards.jsx";
+import MyListings from "./users/pages/MyListings.jsx";
+import ListingDetail from "./users/pages/ListingDetail.jsx";
+import MyPurchases from "./users/pages/MyPurchases.jsx";
+import MySoldItems from "./users/pages/MySoldItems.jsx";
 import SellItem from "./users/pages/SellItem.jsx";
 import ItemDetail from "./users/pages/ItemDetail.jsx";
 
@@ -94,6 +98,10 @@ const AppContent = ({ aboutRef, eventsRef, activeLink, setActiveLink }) => {
         <Route path="/myrewards" element={<MyRewards />} />
         <Route path="/accountdetails" element={<AccountDetails />} />
         <Route path="/editprofile" element={<EditProfile />} />
+        <Route path="/mylistings" element={<MyListings />} />
+        <Route path="/listing/:id" element={<ListingDetail />} />
+        <Route path="/purchasehistory" element={<MyPurchases />} />
+        <Route path="/solditems" element={<MySoldItems />} />
       </Routes>
 
       <Footer />

@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, ChevronLeft, ChevronRight, } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import MyEcoPoints from "../assets/ecopoints-icon.svg?react";
 import CheckInIcon from "../assets/check-in-icon.svg?react";
 import StepOne from "../assets/step-one-icon.svg?react";
@@ -10,10 +10,20 @@ import StepFour from "../assets/step-four-icon.svg?react";
 import "./MyRewards.css";
 import { VOUCHERS_DATA } from "../../../constants";
 
+// --- FIREBASE IMPORTS ---
+import { auth, db } from '../../firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+
 const MyRewards = () => {
   const navigate = useNavigate();
   const scrollRef = useRef(null);
 
+  // User State
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Rewards State
   const [ecoPoints, setEcoPoints] = useState(0);
   const [checkedDays, setCheckedDays] = useState([]);
   const [lastCheckInDate, setLastCheckInDate] = useState(null);
@@ -23,8 +33,10 @@ const MyRewards = () => {
 
   const days = [1, 2, 3, 4, 5, 6, 7];
 
+  // Helper: Get today's date string (YYYY-MM-DD)
   const getToday = () => new Date().toISOString().split("T")[0];
 
+  // Helper: Get start of current week (Monday)
   const getWeekStart = () => {
     const d = new Date();
     const day = d.getDay();
@@ -33,60 +45,100 @@ const MyRewards = () => {
     return weekStart.toISOString().split("T")[0];
   };
 
-  // Load & reset weekly data
+  // --- 1. LOAD DATA FROM FIREBASE ---
   useEffect(() => {
-    const storedPoints = localStorage.getItem("ecoPoints") || 0;
-    setEcoPoints(Number(storedPoints));
-
-    const stored = localStorage.getItem("weeklyCheckIn");
-    const weekStart = getWeekStart();
-
-    if (stored) {
-      const parsed = JSON.parse(stored);
-
-      if (parsed.weekStart === weekStart) {
-        setCheckedDays(parsed.checkedDays || []);
-        setLastCheckInDate(parsed.lastCheckInDate || null);
-      } else {
-        // New week reset
-        setCheckedDays([]);
-        setLastCheckInDate(null);
-        localStorage.setItem(
-          "weeklyCheckIn",
-          JSON.stringify({ weekStart, checkedDays: [], lastCheckInDate: null })
-        );
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (!currentUser) {
+        navigate('/login');
+        return;
       }
-    } else {
-      localStorage.setItem(
-        "weeklyCheckIn",
-        JSON.stringify({ weekStart, checkedDays: [], lastCheckInDate: null })
-      );
-    }
-  }, []);
+      setUser(currentUser);
 
-  const handleCheckIn = (day) => {
+      try {
+        const userRef = doc(db, "users", currentUser.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+          const data = userSnap.data();
+          setEcoPoints(data.ecoPoints || 0);
+
+          // Check if week has reset
+          const currentWeekStart = getWeekStart();
+          if (data.weekStart === currentWeekStart) {
+            setCheckedDays(data.checkedDays || []);
+            setLastCheckInDate(data.lastCheckInDate || null);
+          } else {
+            // New week: Reset check-ins but KEEP points
+            await updateDoc(userRef, {
+              weekStart: currentWeekStart,
+              checkedDays: [],
+              lastCheckInDate: null
+            });
+            setCheckedDays([]);
+            setLastCheckInDate(null);
+          }
+        } else {
+          // Create document if it doesn't exist
+          await setDoc(userRef, {
+            email: currentUser.email,
+            ecoPoints: 0,
+            checkedDays: [],
+            weekStart: getWeekStart(),
+            lastCheckInDate: null
+          }, { merge: true });
+        }
+      } catch (error) {
+        console.error("Error fetching rewards data:", error);
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [navigate]);
+
+  // --- 2. HANDLE CHECK-IN ---
+  const handleCheckIn = async (day) => {
+    if (!user) return;
+
     const today = getToday();
     const nextDay = checkedDays.length + 1;
 
+    // Validation: Must click next sequential day & haven't checked in today
     if (day !== nextDay) return;
-    if (lastCheckInDate === today) return;
+    if (lastCheckInDate === today) {
+      alert("You have already checked in today! Come back tomorrow.");
+      return;
+    }
 
-    const updatedDays = [...checkedDays, day];
-    setCheckedDays(updatedDays);
+    // Optimistic UI Update (Update screen instantly)
+    const newPoints = ecoPoints + 1;
+    const newCheckedDays = [...checkedDays, day];
+    
+    setEcoPoints(newPoints);
+    setCheckedDays(newCheckedDays);
     setLastCheckInDate(today);
 
-    // Award EcoPoint permanently, no weekly reset
-    const newPoints = ecoPoints + 1;
-    setEcoPoints(newPoints);
-
-    const weekStart = getWeekStart();
-    localStorage.setItem(
-      "weeklyCheckIn",
-      JSON.stringify({ weekStart, checkedDays: updatedDays, lastCheckInDate: today })
-    );
-    localStorage.setItem("ecoPoints", newPoints);
+    try {
+      // Save to Firebase
+      const userRef = doc(db, "users", user.uid);
+      await updateDoc(userRef, {
+        ecoPoints: newPoints,
+        checkedDays: newCheckedDays,
+        lastCheckInDate: today,
+        weekStart: getWeekStart() // Ensure week is tracked
+      });
+    } catch (error) {
+      console.error("Error saving check-in:", error);
+      // Revert on error
+      setEcoPoints(ecoPoints);
+      setCheckedDays(checkedDays);
+      setLastCheckInDate(lastCheckInDate);
+      alert("Check-in failed. Please check your connection.");
+    }
   };
 
+  // Scroll Logic for Vouchers
   const checkScroll = () => {
     if (scrollRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
@@ -106,49 +158,24 @@ const MyRewards = () => {
     }
   };
 
-  // useEffect(() => {
-  //   // 1️⃣ Load EcoPoints from backend
-  //   fetch("/api/user/points")
-  //     .then(res => res.json())
-  //     .then(data => setEcoPoints(data.points))
-  //     .catch(err => console.error(err));
-
-  //   // 2️⃣ Load weekly check-in data from localStorage
-  //   const stored = localStorage.getItem("weeklyCheckIn");
-  //   const today = getToday();
-  //   const weekStart = getWeekStart();
-
-  //   if (stored) {
-  //     const parsed = JSON.parse(stored);
-
-  //     // Reset if week changed
-  //     if (parsed.weekStart === weekStart) {
-  //       setCheckedDays(parsed.checkedDays);
-  //     } else {
-  //       setCheckedDays([]); // new week
-  //       localStorage.setItem(
-  //         "weeklyCheckIn",
-  //         JSON.stringify({ weekStart, checkedDays: [] })
-  //       );
-  //     }
-  //   } else {
-  //     // No data yet
-  //     localStorage.setItem(
-  //       "weeklyCheckIn",
-  //       JSON.stringify({ weekStart, checkedDays: [] })
-  //     );
-  //   }
-  // }, []);
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="animate-spin text-[#59287a]" size={40} />
+      </div>
+    );
+  }
 
   return (
     <div className="myrewards-page-body">
       <div className="back-link-container">
-        <Link to="/MyAccount" className="back-link">
+        <Link to="/myaccount" className="back-link">
           <ArrowLeft size={18} />
           Back to My Account
         </Link>
       </div>
 
+      {/* Points Display */}
       <div className="ecopoints-icon-section">
         <MyEcoPoints className="ecopoints-icon" />
         <div className="points-overlay">
@@ -157,19 +184,26 @@ const MyRewards = () => {
         </div>
       </div>
 
+      {/* Check-In Grid */}
       <div className="daily-check-in-section">
         <p className="daily-check-in-title">Daily Check-in</p>
         <div className="daily-check-in-box">
           {days.map((day) => {
-            // Determine button state
             let className = "daily-check-in locked";
             const nextDay = checkedDays.length + 1;
-            if (checkedDays.includes(day)) className = "daily-check-in checked";
-            else if (day === nextDay && lastCheckInDate !== getToday())
-              className = "daily-check-in available";
+            
+            if (checkedDays.includes(day)) {
+              className = "daily-check-in checked"; // Already checked
+            } else if (day === nextDay && lastCheckInDate !== getToday()) {
+              className = "daily-check-in available"; // Ready to claim
+            }
 
             return (
-              <div key={day} className={className} onClick={() => handleCheckIn(day)}>
+              <div 
+                key={day} 
+                className={className} 
+                onClick={() => day === nextDay ? handleCheckIn(day) : null}
+              >
                 <CheckInIcon className="check-in-icon" />
                 <p className="day">Day {day}</p>
               </div>
@@ -178,6 +212,7 @@ const MyRewards = () => {
         </div>
       </div>
 
+      {/* Vouchers Section */}
       <div className="claim-vouchers-section">
         <p className="claim-vouchers-title">Claim Your Vouchers</p>
 
@@ -208,7 +243,12 @@ const MyRewards = () => {
                   <h3 className="voucher-sponsor">RM{voucher.value} rebate</h3>
                 </div>
 
-                <button className="claim-now-button">Claim Now</button>
+                <button 
+                  className={`claim-now-button ${ecoPoints < voucher.points ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  disabled={ecoPoints < voucher.points}
+                >
+                  {ecoPoints < voucher.points ? "Not Enough Points" : "Claim Now"}
+                </button>
               </div>
             ))}
           </div>

@@ -1,51 +1,34 @@
-/* ----------------------------------------------------- */
-/* 1. CSS Reset (Must go before @tailwind base) */
-/* ----------------------------------------------------- */
+/* src/index.css */
 
-/* Apply box-sizing reset globally */
 * {
   box-sizing: border-box;
 }
 
-/* Apply margin/padding reset to main elements */
-html,
-body,
-#root {
+html, body, #root {
   margin: 0;
   padding: 0;
 }
 
-/* ----------------------------------------------------- */
-/* 2. TAILWIND DIRECTIVES */
-/* ----------------------------------------------------- */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ----------------------------------------------------- */
-/* 3. Custom Global Styles (Safely defined after Tailwind) */
-/* ----------------------------------------------------- */
-
 body {
-  /* Set the base font family here, managed by Tailwind config */
   font-family: "Inter", sans-serif;
-  height: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 html {
-  scroll-behavior: smooth;
-  height: 100%;
+  scroll-padding-top: 100px;
 }
 
-/* App/Root Container Styles */
 #root {
   min-height: 100vh;
-  /* Changed from 100% to ensure full viewport height */
   display: flex;
   flex-direction: column;
 }
 
 ::selection {
   background-color: #dda15e;
-  /* Custom selection color */
 }

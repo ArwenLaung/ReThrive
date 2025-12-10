@@ -1,16 +1,33 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit3, Mail } from 'lucide-react';
+import { ArrowLeft, Edit3, Mail, Loader2, User as UserIcon } from 'lucide-react';
+
+// --- FIREBASE IMPORTS ---
+import { auth } from '../../firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import DefaultProfilePic from '../assets/default_profile_pic.jpg'; 
 
 const AccountDetails = () => {
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Mock User Data
-  const user = {
-    name: "Cindy Lim",
-    email: "cindy@student.usm.my",
-    avatar: "https://i.pravatar.cc/150?img=5"
-  };
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser({
+          name: currentUser.displayName || currentUser.email.split('@')[0],
+          email: currentUser.email,
+          avatar: currentUser.photoURL || DefaultProfilePic
+        });
+      } else {
+        navigate('/login');
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [navigate]);
 
   // Reusable Info Row Component
   const InfoRow = ({ icon: Icon, label, value }) => (
@@ -20,10 +37,18 @@ const AccountDetails = () => {
       </div>
       <div>
         <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">{label}</p>
-        <p className="text-[#59287a] font-semibold text-lg">{value}</p>
+        <p className="text-[#59287a] font-semibold text-lg truncate max-w-[250px]">{value}</p>
       </div>
     </div>
   );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="animate-spin text-[#59287a]" size={40} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white pb-20 pt-6 px-6">
@@ -43,17 +68,18 @@ const AccountDetails = () => {
           <div className="absolute -right-10 -top-10 w-32 h-32 bg-[#59287a]/5 rounded-full"></div>
           
           <img 
-            src={user.avatar} 
+            src={user?.avatar} 
             alt="Profile" 
-            className="w-28 h-28 rounded-full object-cover border-4 border-white shadow-md mx-auto mb-4"
+            className="w-28 h-28 rounded-full object-cover border-4 border-white shadow-md mx-auto mb-4 bg-gray-200"
           />
-          <h2 className="text-2xl font-bold text-[#59287a]">{user.name}</h2>
+          <h2 className="text-2xl font-bold text-[#59287a]">{user?.name}</h2>
         </div>
 
         {/* --- DETAILS SECTION --- */}
         <div className="bg-[#FEFAE0] rounded-[2rem] p-6 shadow-sm">
           <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Contact Info</h3>
-          <InfoRow icon={Mail} label="Email Address" value={user.email} />
+          <InfoRow icon={UserIcon} label="Display Name" value={user?.name} />
+          <InfoRow icon={Mail} label="Email Address" value={user?.email} />
         </div>
 
         {/* --- EDIT BUTTON --- */}

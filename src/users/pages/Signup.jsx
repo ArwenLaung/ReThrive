@@ -58,7 +58,7 @@ const Signup = () => {
 
       if (querySnapshot.empty) {
         // Email NOT found in whitelist
-        setError("This email is not authorized to register.");
+        setError("This email is not authorised to register.");
         setIsLoading(false);
         return;
       }
