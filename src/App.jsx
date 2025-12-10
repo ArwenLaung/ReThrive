@@ -1,15 +1,12 @@
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-  useLocation,
-  useSearchParams,
-} from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, useSearchParams } from "react-router-dom";
+import { useRef, useState, useEffect } from "react";
 
+// --- COMPONENTS & PAGES IMPORTS ---
 import Header from "./users/components/Header.jsx";
 import Footer from "./users/components/Footer.jsx";
 import Home from "./users/pages/Home.jsx";
 import Login from "./users/pages/Login.jsx";
+import Signup from "./users/pages/Signup.jsx";
 import EventDetail from "./users/pages/EventDetail.jsx";
 import EventRegistration from "./users/pages/EventRegistration.jsx";
 import Marketplace from "./users/pages/Marketplace.jsx";
@@ -24,78 +21,66 @@ import MyRewards from "./users/pages/MyRewards.jsx";
 import SellItem from "./users/pages/SellItem.jsx";
 import ItemDetail from "./users/pages/ItemDetail.jsx";
 
-import { useRef, useState, useEffect } from "react";
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    document.body.scrollTo(0, 0);
+    document.getElementById("root")?.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+};
 
 const ScrollHandler = ({ aboutRef, eventsRef, setActiveLink }) => {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // scroll spy
   useEffect(() => {
     if (location.pathname !== "/") return;
-
     const observer = new IntersectionObserver(
-      entries => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            setActiveLink({
-              group: "scroll",
-              link: entry.target.id === "about" ? "About" : "Events",
-            });
-          }
-        });
-      },
+      entries => entries.forEach(entry => {
+        if (entry.isIntersecting) setActiveLink({ group: "scroll", link: entry.target.id === "about" ? "About" : "Events" });
+      }),
       { rootMargin: "-25% 0px -25% 0px" }
     );
-
     if (eventsRef.current) observer.observe(eventsRef.current);
     if (aboutRef.current) observer.observe(aboutRef.current);
-
     return () => observer.disconnect();
-  }, [location.pathname]);
+  }, [location.pathname, setActiveLink, eventsRef, aboutRef]);
 
-  // listen to URL changes → scroll correctly
+  // listen to URL changes to scroll correctly
   useEffect(() => {
     if (location.pathname !== "/") return;
-
     const scrollTarget = searchParams.get("scroll_to");
-
     if (!scrollTarget) return;
-
     const map = { about: aboutRef, events: eventsRef };
-
-    map[scrollTarget]?.current?.scrollIntoView({ behavior: "smooth" });
-
-    setActiveLink({
-      group: "scroll",
-      link: scrollTarget[0].toUpperCase() + scrollTarget.slice(1),
-    });
-
+    
+    setTimeout(() => map[scrollTarget]?.current?.scrollIntoView({ behavior: "smooth" }), 100);
+    setActiveLink({ group: "scroll", link: scrollTarget[0].toUpperCase() + scrollTarget.slice(1) });
     setSearchParams({}, { replace: true });
-  }, [location.pathname, searchParams]);
+  }, [location.pathname, searchParams, aboutRef, eventsRef, setActiveLink, setSearchParams]);
 
   return null;
 };
 
 const AppContent = ({ aboutRef, eventsRef, activeLink, setActiveLink }) => {
   const location = useLocation();
-  const hideHeader = location.pathname === "/login";
+  const hideHeader = location.pathname === "/login" || location.pathname === "/signup";
 
   return (
     <>
-      {!hideHeader && (
-        <Header activeLink={activeLink} setActiveLink={setActiveLink} />
-      )}
+      <ScrollToTop /> 
 
-      <ScrollHandler
-        aboutRef={aboutRef}
-        eventsRef={eventsRef}
-        setActiveLink={setActiveLink}
-      />
+      {!hideHeader && <Header activeLink={activeLink} setActiveLink={setActiveLink} />}
+      
+      <ScrollHandler aboutRef={aboutRef} eventsRef={eventsRef} setActiveLink={setActiveLink} />
 
       <Routes>
         <Route path="/" element={<Home aboutRef={aboutRef} eventsRef={eventsRef} />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
         <Route path="/marketplace" element={<Marketplace />} />
         <Route path="/item/:id" element={<ItemDetail />} />
         <Route path="/sellitem" element={<SellItem />} />
@@ -106,7 +91,7 @@ const AppContent = ({ aboutRef, eventsRef, activeLink, setActiveLink }) => {
         <Route path="/donation" element={<Donation />} />
         <Route path="/donateitem" element={<DonateItem />} />
         <Route path="/myaccount" element={<MyAccount />} />
-        <Route path="/myaccount/myrewards" element={<MyRewards />} />
+        <Route path="/myrewards" element={<MyRewards />} />
         <Route path="/accountdetails" element={<AccountDetails />} />
         <Route path="/editprofile" element={<EditProfile />} />
       </Routes>
@@ -123,12 +108,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <AppContent
-        aboutRef={aboutRef}
-        eventsRef={eventsRef}
-        activeLink={activeLink}
-        setActiveLink={setActiveLink}
-      />
+      <AppContent aboutRef={aboutRef} eventsRef={eventsRef} activeLink={activeLink} setActiveLink={setActiveLink} />
     </BrowserRouter>
   );
 }

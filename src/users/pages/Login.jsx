@@ -1,150 +1,85 @@
 import "./Login.css";
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import ReThriveLogo from "../assets/logo.svg";
+
+// --- FIREBASE IMPORTS ---
+import { auth } from '../../firebase'; // Ensure path is correct
+import { signInWithEmailAndPassword } from "firebase/auth";
+
 import BadmintonHall from "../assets/badminton-hall.mp4";
 import ConvoSite from "../assets/convo-site.mp4";
 import DTSP from "../assets/dtsp.mp4";
 import Museum from "../assets/museum.mp4";
 
-const PasswordInput = ({ value, onChange, disabled, showPassword }) => {
-  const [displayValue, setDisplayValue] = useState("");
-  const lastCharTimeoutRef = useRef(null);
-
-  useEffect(() => {
-    // Whenever value changes, update displayValue if showPassword is true
-    if (showPassword) {
-      setDisplayValue(value); // show full password
-      if (lastCharTimeoutRef.current) clearTimeout(lastCharTimeoutRef.current);
-    }
-  }, [showPassword, value]);
-
-  const handleChange = (e) => {
-    const val = e.target.value;
-    onChange(val);
-
-    if (showPassword) {
-      setDisplayValue(val); // show full password if eye is open
-      return;
-    }
-
-    if (lastCharTimeoutRef.current) clearTimeout(lastCharTimeoutRef.current);
-
-    if (val.length === 0) {
-      setDisplayValue("");
-      return;
-    }
-
-    // Mask all except last character
-    setDisplayValue("•".repeat(val.length - 1) + val[val.length - 1]);
-
-    // After 800ms (slower so you can see it), mask everything
-    lastCharTimeoutRef.current = setTimeout(() => {
-      setDisplayValue("•".repeat(val.length));
-    }, 800);
-  };
-
-  return (
-    <input
-      type="text"
-      value={displayValue}
-      onChange={handleChange}
-      disabled={disabled}
-      className="login-input"
-      placeholder="••••••••"
-    />
-  );
-};
-
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const inputRef = useRef(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
-  const showMessage = (msg) => {
-    setError(msg);
-    setTimeout(() => setError(''), 4000);
-  };
-
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    // Mock login logic
+    // Basic email format check
     if (!email.endsWith('@student.usm.my')) {
-      showMessage('Invalid login. Please check your USM email address and password.');
+      setError('Please use your USM student email.');
       setIsLoading(false);
       return;
     }
 
-    console.log('Attempting login with:', email, password);
-    setTimeout(() => {
+    try {
+      // 1. Firebase Login
+      await signInWithEmailAndPassword(auth, email, password);
+      
+      // 2. Success Redirect
+      // alert('Login Successful!'); // Optional
+      navigate('/'); // Redirect to Home/Dashboard
+
+    } catch (err) {
+      console.error("Login Error:", err);
+      // Handle Login Errors
+      if (err.code === 'auth/invalid-credential') {
+        setError('Incorrect email or password.');
+      } else if (err.code === 'auth/user-not-found') {
+        setError('User not found. Please create an account.');
+      } else if (err.code === 'auth/wrong-password') {
+        setError('Incorrect password.');
+      } else {
+        setError('Login failed. Please try again later.');
+      }
+    } finally {
       setIsLoading(false);
-      showMessage('Login Successful!');
-    }, 1500);
-  }
-
-  const handleChange = (e) => {
-    const val = e.target.value;
-    setPassword(val);
-
-    if (inputRef.current) {
-      // Temporarily show last character
-      inputRef.current.type = "text";
-
-      // Mask again after 500ms
-      setTimeout(() => {
-        if (inputRef.current) {
-          inputRef.current.type = "password";
-        }
-      }, 500);
     }
-  };
-
-  const togglePasswordVisibility = () => {
-    setShowPassword(prev => !prev);
-  };
+  }
 
   return (
     <div className="login-body">
       <div className="background-layer">
-        <div className="video-wrapper">
-          <video src={BadmintonHall} autoPlay loop muted></video>
-        </div>
-        <div className="video-wrapper">
-          <video src={ConvoSite} autoPlay loop muted></video>
-        </div>
-        <div className="video-wrapper">
-          <video src={DTSP} autoPlay loop muted></video>
-        </div>
-        <div className="video-wrapper">
-          <video src={Museum} autoPlay loop muted></video>
-        </div>
+        <div className="video-wrapper"><video src={BadmintonHall} autoPlay loop muted></video></div>
+        <div className="video-wrapper"><video src={ConvoSite} autoPlay loop muted></video></div>
+        <div className="video-wrapper"><video src={DTSP} autoPlay loop muted></video></div>
+        <div className="video-wrapper"><video src={Museum} autoPlay loop muted></video></div>
       </div>
 
       <div className="login-form-column">
         <div className="login-form-container">
           <div className="login-form-header">
             <img src={ReThriveLogo} className="login-logo" alt={"ReThrive Logo"} />
-            <h1 className="title">
-              Sign In
-            </h1>
-            <p className="description">
-              Access your campus marketplace with USM ID
-            </p>
+            <h1 className="title">Sign In</h1>
+            <p className="description">Access your campus marketplace with USM ID</p>
           </div>
 
-          {error && <p style={{ color: 'red', textAlign: 'center', padding: '0 40px' }}>{error}</p>}
+          {error && <p style={{ color: 'red', textAlign: 'center', fontSize: '14px' }}>{error}</p>}
 
           <form className="form-container" onSubmit={handleLogin}>
             <div className="input-group">
-              <label htmlFor="email" className="input-label">
-                USM Email Address
-              </label>
+              <label htmlFor="email" className="input-label">USM Email Address</label>
               <div className="input-container">
                 <Mail className="input-icon" />
                 <input
@@ -161,9 +96,7 @@ const Login = () => {
             </div>
 
             <div className="input-group">
-              <label htmlFor="password" className="input-label">
-                Password
-              </label>
+              <label htmlFor="password" className="input-label">Password</label>
               <div className="input-container">
                 <Lock className="input-icon" />
                 <div className="password-container">
@@ -173,7 +106,6 @@ const Login = () => {
                     placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    autoComplete="current-password"
                   />
                   <button
                     type="button"
@@ -186,18 +118,21 @@ const Login = () => {
               </div>
             </div>
 
-            <div className="forgot-password">
-              <a href="https://self.usm.my/selfpasswordmanagement/">
+            {/* --- FOOTER SECTION --- */}
+            <div className="form-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+              <div>
+              <span style={{ fontSize: '13px', color: '#6e6e6e' }}>New to us? </span>
+              <Link to="/signup" className="create-account-link" style={{ marginLeft: '4px' }}>
+                Create Account
+              </Link>
+              </div>
+              <a href="https://self.usm.my/selfpasswordmanagement/" className="forgot-password-link">
                 Forgot Password?
               </a>
             </div>
 
             <div className="button-container">
-              <button
-                type="submit"
-                className="login-page-button"
-                disabled={isLoading}
-              >
+              <button type="submit" disabled={isLoading}>
                 {isLoading ? 'Logging In...' : 'Log In'}
               </button>
             </div>

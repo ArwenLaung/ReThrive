@@ -6,19 +6,13 @@ const EditProfile = () => {
   const navigate = useNavigate();
   const [isSaving, setIsSaving] = useState(false);
 
-  // Initial State (Mock Data)
+  // Initial State (Simplified)
   const [formData, setFormData] = useState({
     name: "Cindy Lim",
-    phone: "+60 12-345 6789",
-    school: "School of Computer Sciences",
-    studentId: "158992",
+    email: "cindy@student.usm.my",
     avatarPreview: "https://i.pravatar.cc/150?img=5"
   });
 
-  // Separate state for Hostel logic
-  const [hostelSelection, setHostelSelection] = useState("Desasiswa Restu");
-  const [customHostel, setCustomHostel] = useState("");
-  
   // Handle Input Changes
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -38,15 +32,12 @@ const EditProfile = () => {
   const handleSave = () => {
     setIsSaving(true);
 
-    // Determine final hostel value
-    const finalHostel = hostelSelection === "Other" ? customHostel : hostelSelection;
-
     // Simulate Backend API Call
     setTimeout(() => {
-        console.log("Saving Data:", { ...formData, hostel: finalHostel });
+        console.log("Saving Data:", formData);
         setIsSaving(false);
         alert("Profile updated successfully!");
-        navigate('/accountdetails'); // Go back to details view
+        navigate(-1);
     }, 1000);
   };
 
@@ -94,90 +85,13 @@ const EditProfile = () => {
               className="w-full p-4 rounded-xl border-none focus:ring-2 focus:ring-[#59287a] outline-none bg-white font-medium text-[#59287a]"
             />
           </div>
-
-          {/* Student ID (Read Only) */}
-          <div>
-            <label className="block text-sm font-bold text-gray-400 mb-2 ml-1">Student ID (Cannot be changed)</label>
-            <input 
-              type="text" 
-              value={formData.studentId}
-              disabled
-              className="w-full p-4 rounded-xl border-none bg-gray-100 text-gray-500 font-medium cursor-not-allowed"
-            />
-          </div>
-
-          {/* Phone Input */}
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Phone Number</label>
-            <input 
-              type="tel" 
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              className="w-full p-4 rounded-xl border-none focus:ring-2 focus:ring-[#59287a] outline-none bg-white font-medium text-[#59287a]"
-            />
-          </div>
-
-          {/* School Input (Dropdown) */}
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">School / Department</label>
-            <select 
-              name="school"
-              value={formData.school}
-              onChange={handleChange}
-              className="w-full p-4 rounded-xl border-none focus:ring-2 focus:ring-[#59287a] outline-none bg-white font-medium text-[#59287a]"
-            >
-              <option>School of Computer Sciences</option>
-              <option>School of Mathematical Sciences</option>
-              <option>School of Management</option>
-              <option>School of Arts</option>
-              <option>School of HBP</option>
-              <option>School of Biological Sciences</option>
-              <option>School of Chemical Sciences</option>
-              <option>School of Physics</option>
-              <option>School of Pharmacy</option>
-              <option>School of Social Sciences</option>
-            </select>
-          </div>
-
-          {/* Hostel Selection */}
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Hostel / Residence</label>
-            <select 
-              value={hostelSelection}
-              onChange={(e) => setHostelSelection(e.target.value)}
-              className="w-full p-4 rounded-xl border-none focus:ring-2 focus:ring-[#59287a] outline-none bg-white font-medium text-[#59287a]"
-            >
-              <option>Desasiswa Restu</option>
-              <option>Desasiswa Saujana</option>
-              <option>Desasiswa Tekun</option>
-              <option>Desasiswa Indah Kembara</option>
-              <option>Desasiswa Aman Damai</option>
-              <option>Desasiswa Fajar Harapan</option>
-              <option>Desasiswa Bakti Permai</option>
-              <option>Desasiswa Cahaya Gemilang</option>
-              <option value="Other">Other (Please enter)</option>
-            </select>
-
-            {/* Custom Hostel Input (Only shows if 'Other' is selected) */}
-            {hostelSelection === "Other" && (
-              <input 
-                type="text" 
-                placeholder="Enter your residence name..."
-                value={customHostel}
-                onChange={(e) => setCustomHostel(e.target.value)}
-                className="w-full mt-3 p-4 rounded-xl border-2 border-white focus:border-[#59287a] outline-none bg-white/50 font-medium text-[#59287a]"
-                autoFocus
-              />
-            )}
-          </div>
           
           {/* Email (Read Only) */}
           <div>
             <label className="block text-sm font-bold text-gray-400 mb-2 ml-1">Email (Cannot be changed)</label>
             <input 
               type="email" 
-              value="cindy@student.usm.my"
+              value={formData.email}
               disabled
               className="w-full p-4 rounded-xl border-none bg-gray-100 text-gray-400 font-medium cursor-not-allowed"
             />

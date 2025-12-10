@@ -189,19 +189,26 @@
   transform: scale(0.8);
 }
 
-.forgot-password {
+.form-footer {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between; /* Pushes items to left and right edges */
+  align-items: center;
+  width: 100%;
+  margin-top: 2px;
 }
 
-.forgot-password a {
+.create-account-link,
+.forgot-password-link {
   position: relative;
   display: inline-block;
   color: #3d0b37;
   font-size: 12px;
+  text-decoration: none;
+  cursor: pointer;
 }
 
-.forgot-password a::after {
+.create-account-link::after,
+.forgot-password-link::after {
   content: "";
   position: absolute;
   left: 0;
@@ -212,11 +219,13 @@
   transition: width 0.3s ease;
 }
 
-.forgot-password a:hover {
+.create-account-link:hover,
+.forgot-password-link:hover {
   color: #a266c7;
 }
 
-.forgot-password a:hover::after {
+.create-account-link:hover::after,
+.forgot-password-link:hover::after {
   width: 100%;
 }
 

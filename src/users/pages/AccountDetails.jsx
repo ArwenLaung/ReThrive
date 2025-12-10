@@ -1,19 +1,14 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit3, Mail, Phone, MapPin, Home } from 'lucide-react';
+import { ArrowLeft, Edit3, Mail } from 'lucide-react';
 
 const AccountDetails = () => {
   const navigate = useNavigate();
 
-  // Mock User Data (Replace with real Firebase data later)
+  // Mock User Data
   const user = {
     name: "Cindy Lim",
     email: "cindy@student.usm.my",
-    studentId: "158992",
-    phone: "+60 12-345 6789",
-    school: "School of Computer Sciences",
-    hostel: "Desasiswa Restu",
-    joinDate: "September 2023",
     avatar: "https://i.pravatar.cc/150?img=5"
   };
 
@@ -53,20 +48,12 @@ const AccountDetails = () => {
             className="w-28 h-28 rounded-full object-cover border-4 border-white shadow-md mx-auto mb-4"
           />
           <h2 className="text-2xl font-bold text-[#59287a]">{user.name}</h2>
-          <p className="text-gray-600 font-medium">{user.school}</p>
-          <div className="mt-2 inline-block bg-white/60 px-4 py-1 rounded-full text-xs font-bold text-[#59287a]">
-            Student ID: {user.studentId}
-          </div>
         </div>
 
         {/* --- DETAILS SECTION --- */}
         <div className="bg-[#FEFAE0] rounded-[2rem] p-6 shadow-sm">
           <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Contact Info</h3>
-          
           <InfoRow icon={Mail} label="Email Address" value={user.email} />
-          <InfoRow icon={Phone} label="Phone Number" value={user.phone} />
-          <InfoRow icon={MapPin} label="School" value={user.school} />
-          <InfoRow icon={Home} label="Hostel / Residence" value={user.hostel} />
         </div>
 
         {/* --- EDIT BUTTON --- */}

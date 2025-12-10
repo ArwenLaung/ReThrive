@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   User, Edit3, Package, ShoppingBag, Clock,
-  Gift, Ticket, Settings, Lock, LogOut, Plus, ChevronRight, Loader2
+  Gift, Settings, Lock, LogOut, Plus, ChevronRight, Loader2, Trophy
 } from 'lucide-react';
 
 // --- FIREBASE IMPORTS ---
@@ -21,8 +21,6 @@ const MyAccount = () => {
   const [stats, setStats] = useState({
     activeListings: 0,
     soldItems: 0,
-    points: 0,      // Default value
-    vouchers: 0     // Default value
   });
 
   // --- 1. FETCH DATA ON LOAD ---
@@ -105,9 +103,7 @@ const MyAccount = () => {
 
         setStats({
           activeListings: 3,
-          soldItems: 12,
-          points: 120,
-          vouchers: 2
+          soldItems: 12
         });
 
         setLoading(false);
@@ -190,7 +186,7 @@ const MyAccount = () => {
             <h2 className="text-xl font-bold text-[#59287a]">{user?.name}</h2>
             <p className="text-gray-600 text-sm mb-3">{user?.email}</p>
             <button
-              onClick={() => navigate('/editprofile')} // Make sure this route exists
+              onClick={() => navigate('/editprofile')} 
               className="flex items-center gap-2 text-xs font-bold bg-white text-[#59287a] px-4 py-2 rounded-full shadow-sm hover:shadow-md transition-all active:scale-95"
             >
               <Edit3 size={14} /> Edit Profile
@@ -223,27 +219,17 @@ const MyAccount = () => {
           </div>
         </div>
 
-        {/* --- 3. REWARDS SECTION (Grid Layout) --- */}
+        {/* --- 3. REWARDS SECTION --- */}
         <div>
           <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 px-2">Rewards</h3>
-          <div className="grid grid-cols-2 gap-4">
-            {/* Reward Card */}
-            <button className="bg-[#FEFAE0] p-5 rounded-[2rem] shadow-sm hover:shadow-md transition-all text-left group">
-              <div className="bg-white w-10 h-10 rounded-full flex items-center justify-center mb-3 shadow-sm group-hover:scale-110 transition-transform">
-                <Gift size={20} className="text-[#59287a]" />
-              </div>
-              <p className="font-bold text-[#59287a] text-lg">{stats.points}</p>
-              <p className="text-xs text-gray-500 font-medium">My Points</p>
-            </button>
-
-            {/* Voucher Card */}
-            <button className="bg-[#FEFAE0] p-5 rounded-[2rem] shadow-sm hover:shadow-md transition-all text-left group">
-              <div className="bg-white w-10 h-10 rounded-full flex items-center justify-center mb-3 shadow-sm group-hover:scale-110 transition-transform">
-                <Ticket size={20} className="text-[#59287a]" />
-              </div>
-              <p className="font-bold text-[#59287a] text-lg">{stats.vouchers} Active</p>
-              <p className="text-xs text-gray-500 font-medium">My Vouchers</p>
-            </button>
+          <div className="bg-[#FEFAE0] rounded-[2rem] p-6 shadow-sm hover:shadow-md transition-shadow duration-300">
+            <MenuRow
+              icon={Trophy}
+              label="Missions and Rewards"
+              subLabel="Check points, redeem vouchers & more"
+              isLast={true}
+              onClick={() => navigate('/myrewards')}
+            />
           </div>
         </div>
 
