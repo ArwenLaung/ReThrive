@@ -1,50 +1,49 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ReThrive @USM</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              brand: {
-                purple: "#5D2C75",
-                lightPurple: "#F3E5F5",
-                green: "#8CC63F",
-                cream: "#FFF9E5",
-                brown: "#D99A58",
-                darkText: "#2D1B36",
-              },
-            },
-            fontFamily: {
-              sans: ["Inter", "sans-serif"],
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ReThrive @USM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              purple: "#5D2C75",
+              lightPurple: "#F3E5F5",
+              green: "#8CC63F",
+              cream: "#FFF9E5",
+              brown: "#D99A58",
+              darkText: "#2D1B36",
             },
           },
+          fontFamily: {
+            sans: ["Inter", "sans-serif"],
+          },
         },
-      };
-    </script>
-    <style>
-      html {
-        scroll-behavior: smooth;
-      }
+      },
+    };
+  </script>
+  <style>
+    html {
+      scroll-behavior: smooth;
+    }
 
-      body {
-        font-family: "Inter", sans-serif;
-      }
-    </style>
+    body {
+      font-family: "Inter", sans-serif;
+    }
+  </style>
 
-    <link rel="stylesheet" href="/index.css" />
-  </head>
+  <link rel="stylesheet" href="/index.css" />
+</head>
 
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
 </html>

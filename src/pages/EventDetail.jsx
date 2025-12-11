@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, CalendarDays, Clock, MapPin, Leaf } from "lucide-react";
-import { EVENTS_DATA } from "../constants";
+import { EVENTS_DATA } from "../../../constants";
 
 const EventDetail = () => {
   const { id } = useParams();
@@ -11,7 +11,7 @@ const EventDetail = () => {
   if (!event) {
     return (
       <div className="min-h-screen bg-white">
-        <main className="max-w-3xl mx-auto px-4 py-16 text-center">
+        <main className="max-w-3xl mx-auto px-4 py-16 text-center" style={{ paddingTop: '70px' }}>
           <p className="text-2xl font-semibold text-brand-darkText mb-6">
             That event moved or no longer exists.
           </p>
@@ -29,9 +29,10 @@ const EventDetail = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <main className="max-w-5xl mt-7 mx-auto px-4 py-12">
+      {/* 🟢 CRITICAL FIX #1: Add paddingTop to clear the 70px fixed header 🟢 */}
+      <main className="max-w-5xl mx-auto px-4 py-12" style={{ paddingTop: '70px' }}>
         <Link
-          to="/"
+          to="/#events" // Target the anchor link to trigger the ScrollHandler
           className="inline-flex items-center gap-2 text-brand-purple font-semibold hover:text-brand-green transition-colors"
         >
           <ArrowLeft size={18} />
