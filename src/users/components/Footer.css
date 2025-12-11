@@ -43,7 +43,7 @@
   opacity: 0;
   visibility: hidden;
   background-color: #818181;
-  color: #fff;
+  color: #ffffff;
   font-size: 12px;
   padding: 5px 8px;
   border-radius: 6px;
@@ -52,7 +52,6 @@
   left: 50%;
   transform: translateX(-50%);
   white-space: nowrap;
-
   transition: opacity 0.15s ease;
 }
 

@@ -23,6 +23,9 @@ import EditProfile from "./users/pages/EditProfile.jsx";
 import MyRewards from "./users/pages/MyRewards.jsx";
 import SellItem from "./users/pages/SellItem.jsx";
 import ItemDetail from "./users/pages/ItemDetail.jsx";
+import ItemsApproval from "./admin/pages/ItemsApproval.jsx";
+import EventPosting from "./admin/pages/EventPosting.jsx";
+import LeftColumnBar from "./admin/components/LeftColumnBar.jsx";
 
 import { useRef, useState, useEffect } from "react";
 
@@ -54,7 +57,6 @@ const ScrollHandler = ({ aboutRef, eventsRef, setActiveLink }) => {
     return () => observer.disconnect();
   }, [location.pathname]);
 
-  // listen to URL changes → scroll correctly
   useEffect(() => {
     if (location.pathname !== "/") return;
 
@@ -78,14 +80,29 @@ const ScrollHandler = ({ aboutRef, eventsRef, setActiveLink }) => {
 };
 
 const AppContent = ({ aboutRef, eventsRef, activeLink, setActiveLink }) => {
+  const adminPaths = [
+    "/itemsApproval",
+    "/transactionModeration",
+    "/eventPosting",
+    "/voucherManagement",
+    "/reportModeration",
+    "/dataVisualisation"
+  ];
+
   const location = useLocation();
-  const hideHeader = location.pathname === "/login";
+
+  const hideHeader = adminPaths.some(p => location.pathname.startsWith(p))
+    || location.pathname === "/login";
+
+  const hideFooter = adminPaths.some(p => location.pathname.startsWith(p));
 
   return (
     <>
       {!hideHeader && (
         <Header activeLink={activeLink} setActiveLink={setActiveLink} />
       )}
+
+      {adminPaths.some(p => location.pathname.startsWith(p)) && <LeftColumnBar />}
 
       <ScrollHandler
         aboutRef={aboutRef}
@@ -109,9 +126,11 @@ const AppContent = ({ aboutRef, eventsRef, activeLink, setActiveLink }) => {
         <Route path="/myaccount/myrewards" element={<MyRewards />} />
         <Route path="/accountdetails" element={<AccountDetails />} />
         <Route path="/editprofile" element={<EditProfile />} />
+        <Route path="/itemsApproval" element={<ItemsApproval />} />
+        <Route path="/eventPosting" element={<EventPosting />} />
       </Routes>
 
-      <Footer />
+      {!hideFooter && <Footer />}
     </>
   );
 };
