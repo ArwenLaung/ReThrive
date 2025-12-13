@@ -12,9 +12,9 @@ const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 export const generateDescription = async (keywords, category, imageDataUrl = null) => {
   if (!API_KEY) {
     console.error("Error: VITE_GEMINI_API_KEY is missing from .env file");
-    return { 
-      title: "Config Error", 
-      description: "API Key is missing. Please check your .env file and restart the server." 
+    return {
+      title: "Config Error",
+      description: "API Key is missing. Please check your .env file and restart the server."
     };
   }
 
@@ -51,7 +51,7 @@ Return ONLY a valid JSON object with this exact format (no markdown, no code blo
       try {
         // Convert data URL to base64
         const base64Data = imageDataUrl.split(',')[1];
-        
+
         const result = await model.generateContent([
           prompt,
           {
@@ -61,10 +61,10 @@ Return ONLY a valid JSON object with this exact format (no markdown, no code blo
             }
           }
         ]);
-        
+
         const response = await result.response;
         const text = response.text();
-        
+
         return parseAIResponse(text);
       } catch (visionError) {
         console.warn("Vision model failed, falling back to text-only:", visionError);
@@ -81,9 +81,9 @@ Return ONLY a valid JSON object with this exact format (no markdown, no code blo
 
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return { 
-      title: keywords ? keywords.substring(0, 60) : "Item For Sale", 
-      description: `A great ${category || "item"} available for purchase. ${keywords ? `Details: ${keywords}` : ""}` 
+    return {
+      title: keywords ? keywords.substring(0, 60) : "Item For Sale",
+      description: `A great ${category || "item"} available for purchase. ${keywords ? `Details: ${keywords}` : ""}`
     };
   }
 };
@@ -94,25 +94,25 @@ Return ONLY a valid JSON object with this exact format (no markdown, no code blo
 const parseAIResponse = (text) => {
   // Remove markdown code blocks if present
   let cleanText = text.replace(/```json|```/g, '').trim();
-  
+
   // Try to extract JSON object
   const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
   if (jsonMatch) {
     cleanText = jsonMatch[0];
   }
-  
+
   try {
     const parsed = JSON.parse(cleanText);
-    return { 
-      title: parsed.title || "Item For Sale", 
-      description: parsed.description || cleanText 
+    return {
+      title: parsed.title || "Item For Sale",
+      description: parsed.description || cleanText
     };
   } catch (e) {
     // If JSON parsing fails, try to extract title and description manually
     const lines = cleanText.split('\n').filter(line => line.trim());
     const title = lines[0]?.replace(/["']/g, '').substring(0, 60) || "Item For Sale";
     const description = lines.slice(1).join(' ').substring(0, 300) || cleanText.substring(0, 300);
-    
+
     return { title, description };
   }
 };

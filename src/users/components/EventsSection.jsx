@@ -1,15 +1,12 @@
 import React, { useRef, useState, useEffect, forwardRef } from "react";
-import {
-  ChevronLeft,
-  ChevronRight,
-  ArrowRight,
-  CalendarDays,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowRight, CalendarDays } from "lucide-react";
 import { Link } from "react-router-dom";
-import { EVENTS_DATA } from "../../../constants";
+import { collection, getDocs, query, orderBy } from "firebase/firestore";
+import { db } from "../../firebase";
 
 const EventsSection = forwardRef((props, ref) => {
   const scrollRef = useRef(null);
+  const [events, setEvents] = useState([]);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
@@ -21,12 +18,6 @@ const EventsSection = forwardRef((props, ref) => {
     }
   };
 
-  useEffect(() => {
-    checkScroll();
-    window.addEventListener("resize", checkScroll);
-    return () => window.removeEventListener("resize", checkScroll);
-  }, []);
-
   const scroll = (direction) => {
     if (scrollRef.current) {
       const scrollAmount = 340; // card width + gap
@@ -34,10 +25,34 @@ const EventsSection = forwardRef((props, ref) => {
         left: direction === "left" ? -scrollAmount : scrollAmount,
         behavior: "smooth",
       });
-      // Allow time for scroll to complete before checking again
       setTimeout(checkScroll, 300);
     }
   };
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const eventsCol = collection(db, "events");
+        const q = query(eventsCol, orderBy("date", "asc"));
+        const snapshot = await getDocs(q);
+        const eventsList = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setEvents(eventsList);
+      } catch (error) {
+        console.error("Error fetching events:", error);
+      }
+    };
+
+    fetchEvents();
+  }, []);
+
+  useEffect(() => {
+    checkScroll();
+    window.addEventListener("resize", checkScroll);
+    return () => window.removeEventListener("resize", checkScroll);
+  }, []);
 
   return (
     <section ref={ref} id="events" className="py-16 bg-white relative">
@@ -48,27 +63,22 @@ const EventsSection = forwardRef((props, ref) => {
         </h2>
 
         <div className="relative flex items-center">
-          {/* Left Arrow */}
           <button
             onClick={() => scroll("left")}
-            className={`absolute -left-2 md:-left-8 z-10 p-2 text-brand-brown hover:text-[#c2884a] transition-all transform hover:scale-125 ${!canScrollLeft
-              ? "opacity-30 cursor-not-allowed"
-              : "cursor-pointer"
-              }`}
+            className={`absolute -left-2 md:-left-8 z-10 p-2 text-brand-brown hover:text-[#c2884a] transition-all transform hover:scale-125 ${!canScrollLeft ? "opacity-30 cursor-not-allowed" : "cursor-pointer"}`}
             disabled={!canScrollLeft}
             aria-label="Previous events"
           >
             <ChevronLeft size={48} strokeWidth={2.5} />
           </button>
 
-          {/* Carousel Container */}
           <div
             ref={scrollRef}
             onScroll={checkScroll}
             className="flex overflow-x-auto gap-6 py-8 px-2 scroll-smooth snap-x snap-mandatory hide-scrollbar"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
-            {EVENTS_DATA.map((event) => (
+            {events.map((event) => (
               <div
                 key={event.id}
                 className="flex-shrink-0 w-72 md:w-80 bg-white rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] transition-shadow duration-300 p-4 snap-center border border-gray-50"
@@ -82,9 +92,7 @@ const EventsSection = forwardRef((props, ref) => {
                 </div>
 
                 <div className="px-2 pb-2 space-y-3">
-                  <h3 className="font-bold text-xl text-brand-darkText">
-                    {event.title}
-                  </h3>
+                  <h3 className="font-bold text-xl text-brand-darkText">{event.title}</h3>
                   <p className="text-sm text-brand-darkText/70 flex items-center gap-2">
                     <CalendarDays size={16} className="text-brand-purple" />
                     {event.date}
@@ -105,13 +113,9 @@ const EventsSection = forwardRef((props, ref) => {
             ))}
           </div>
 
-          {/* Right Arrow */}
           <button
             onClick={() => scroll("right")}
-            className={`absolute -right-2 md:-right-8 z-10 p-2 text-brand-brown hover:text-[#c2884a] transition-all transform hover:scale-125 ${!canScrollRight
-              ? "opacity-30 cursor-not-allowed"
-              : "cursor-pointer"
-              }`}
+            className={`absolute -right-2 md:-right-8 z-10 p-2 text-brand-brown hover:text-[#c2884a] transition-all transform hover:scale-125 ${!canScrollRight ? "opacity-30 cursor-not-allowed" : "cursor-pointer"}`}
             disabled={!canScrollRight}
             aria-label="Next events"
           >

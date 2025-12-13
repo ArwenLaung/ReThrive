@@ -1,0 +1,209 @@
+.admin-page-content {
+  padding-left: 220px;
+  overflow-x: auto;
+}
+
+.admin-page-wrapper.collapsed .admin-page-content {
+  padding-left: 50px;
+}
+
+.admin-page-header {
+  display: flex;
+  justify-content: space-between;
+}
+
+.admin-page-title {
+  color: #3d0b37;
+  font-weight: bold;
+  font-size: 18px;
+  padding: 10px 2px;
+}
+
+.add-event-button {
+  text-transform: none !important;
+  background-color: #5d2c75 !important;
+  color: #ffffff !important;
+  font-weight: bold !important;
+}
+
+.add-event-button:hover {
+  color: #fff;
+  background-color: #8cc63f !important;
+}
+
+.edit-button {
+  color: #5d2c75 !important;
+  border: 1px solid #5d2c75 !important;
+}
+
+.delete-button {
+  background-color: #bc6c25 !important;
+}
+
+.delete-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.delete-modal-content {
+  background-color: #ffffff;
+  padding: 30px 25px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.delete-prompt {
+  font-size: 18px;
+  margin-bottom: 25px;
+  color: #3d0b37;
+  font-weight: 500;
+}
+
+.delete-confirmation-buttons-container {
+  display: flex;
+  justify-content: space-around;
+  gap: 10px;
+}
+
+.delete-yes-button,
+.delete-cancel-button {
+  padding: 10px 50px;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.delete-yes-button {
+  background-color: #dda15e;
+  color: #fff;
+}
+
+.delete-yes-button:hover {
+  background-color: #bc6c25;
+}
+
+.delete-cancel-button {
+  background-color: #f0f0f0;
+  /* light grey */
+  color: #333;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.delete-cancel-button:hover {
+  background-color: #e0e0e0;
+}
+
+.image-upload-box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.event-image-preview {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.dialog-buttons-container {
+  display: flex;
+  gap: 20px;
+}
+
+.cancel-button {
+  color: #5d2c75 !important;
+  border: 1px solid #5d2c75 !important;
+  border-radius: 5px !important;
+}
+
+.save-button {
+  color: #ffffff;
+  background-color: #5d2c75 !important;
+  opacity: 0.9 !important;
+  transition: opacity 0.1s ease;
+}
+
+.save-button:hover {
+  opacity: 1 !important;
+}
+
+.add-event-dialog .MuiDialog-paper {
+  background-color: #f7f2e8;
+  border-radius: 40px;
+}
+
+.add-event-dialog .MuiTextField-root {
+  background-color: white;
+  border-radius: 14px;
+}
+
+.add-event-dialog .MuiButton-outlined {
+  color: #3d0b37;
+  border-color: #3d0b37;
+  border-radius: 40px;
+  font-weight: 500;
+}
+
+.add-event-dialog .MuiButton-outlined:hover {
+  background-color: rgba(61, 11, 55, 0.08);
+  border-color: #3d0b37;
+}
+
+.add-event-dialog .MuiOutlinedInput-root {
+  background-color: white;
+  border-radius: 14px;
+}
+
+.add-event-dialog .MuiOutlinedInput-input {
+  padding: 14px;
+}
+
+.add-event-dialog .MuiInputLabel-root {
+  color: #3d0b37 !important;
+}
+
+.add-event-dialog .MuiOutlinedInput-notchedOutline {
+  border-color: #d6c7a1;
+}
+
+.add-event-dialog .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: #c4b07d;
+}
+
+.add-event-dialog .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: #b59b5c;
+  border-width: 2px;
+}

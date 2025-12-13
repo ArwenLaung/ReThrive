@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, ChevronLeft, ChevronRight, } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { addEcoPoints as addPoints } from "../../utils/ecoPoints";
 import MyEcoPoints from "../assets/ecopoints-icon.svg?react";
 import CheckInIcon from "../assets/check-in-icon.svg?react";
 import StepOne from "../assets/step-one-icon.svg?react";
@@ -8,12 +9,22 @@ import StepTwo from "../assets/step-two-icon.svg?react";
 import StepThree from "../assets/step-three-icon.svg?react";
 import StepFour from "../assets/step-four-icon.svg?react";
 import "./MyRewards.css";
-import { VOUCHERS_DATA } from "../../../constants";
+import { VOUCHERS_DATA } from "../../constants.ts";
+
+// --- FIREBASE IMPORTS ---
+import { auth, db } from '../../firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc, setDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 
 const MyRewards = () => {
   const navigate = useNavigate();
   const scrollRef = useRef(null);
 
+  // User State
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Rewards State
   const [ecoPoints, setEcoPoints] = useState(0);
   const [checkedDays, setCheckedDays] = useState([]);
   const [lastCheckInDate, setLastCheckInDate] = useState(null);
@@ -23,8 +34,10 @@ const MyRewards = () => {
 
   const days = [1, 2, 3, 4, 5, 6, 7];
 
+  // Helper: Get today's date string (YYYY-MM-DD)
   const getToday = () => new Date().toISOString().split("T")[0];
 
+  // Helper: Get start of current week (Monday)
   const getWeekStart = () => {
     const d = new Date();
     const day = d.getDay();
@@ -33,60 +46,96 @@ const MyRewards = () => {
     return weekStart.toISOString().split("T")[0];
   };
 
-  // Load & reset weekly data
+  // --- 1. LOAD USER DATA AND REAL-TIME ECOPOINTS ---
   useEffect(() => {
-    const storedPoints = localStorage.getItem("ecoPoints") || 0;
-    setEcoPoints(Number(storedPoints));
-
-    const stored = localStorage.getItem("weeklyCheckIn");
-    const weekStart = getWeekStart();
-
-    if (stored) {
-      const parsed = JSON.parse(stored);
-
-      if (parsed.weekStart === weekStart) {
-        setCheckedDays(parsed.checkedDays || []);
-        setLastCheckInDate(parsed.lastCheckInDate || null);
-      } else {
-        // New week reset
-        setCheckedDays([]);
-        setLastCheckInDate(null);
-        localStorage.setItem(
-          "weeklyCheckIn",
-          JSON.stringify({ weekStart, checkedDays: [], lastCheckInDate: null })
-        );
+    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
+      if (!currentUser) {
+        navigate('/login');
+        return;
       }
-    } else {
-      localStorage.setItem(
-        "weeklyCheckIn",
-        JSON.stringify({ weekStart, checkedDays: [], lastCheckInDate: null })
-      );
-    }
-  }, []);
+      setUser(currentUser);
 
-  const handleCheckIn = (day) => {
+      const userRef = doc(db, "users", currentUser.uid);
+
+      // Real-time listener for EcoPoints
+      const unsubscribeSnap = onSnapshot(userRef, async (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setEcoPoints(data.ecoPoints || 0);
+
+          const currentWeekStart = getWeekStart();
+          if (data.weekStart === currentWeekStart) {
+            setCheckedDays(data.checkedDays || []);
+            setLastCheckInDate(data.lastCheckInDate || null);
+          } else {
+            // New week: reset check-ins but keep points
+            await updateDoc(userRef, {
+              weekStart: currentWeekStart,
+              checkedDays: [],
+              lastCheckInDate: null
+            });
+            setCheckedDays([]);
+            setLastCheckInDate(null);
+          }
+        } else {
+          // Create user document if doesn't exist
+          await setDoc(userRef, {
+            email: currentUser.email,
+            ecoPoints: 0,
+            checkedDays: [],
+            weekStart: getWeekStart(),
+            lastCheckInDate: null
+          }, { merge: true });
+          setEcoPoints(0);
+          setCheckedDays([]);
+          setLastCheckInDate(null);
+        }
+
+        setLoading(false);
+      });
+
+      return () => unsubscribeSnap();
+    });
+
+    return () => unsubscribeAuth();
+  }, [navigate]);
+
+  // --- 2. HANDLE DAILY CHECK-IN ---
+  const handleCheckIn = async (day) => {
+    if (!user) return;
+
     const today = getToday();
     const nextDay = checkedDays.length + 1;
 
     if (day !== nextDay) return;
-    if (lastCheckInDate === today) return;
+    if (lastCheckInDate === today) {
+      alert("You have already checked in today! Come back tomorrow.");
+      return;
+    }
 
-    const updatedDays = [...checkedDays, day];
-    setCheckedDays(updatedDays);
-    setLastCheckInDate(today);
+    try {
+      // Add 1 EcoPoint
+      const newPoints = await addPoints(user.uid, 1);
 
-    // Award EcoPoint permanently, no weekly reset
-    const newPoints = ecoPoints + 1;
-    setEcoPoints(newPoints);
+      // Update checkedDays and lastCheckInDate in Firestore
+      const userRef = doc(db, "users", user.uid);
+      const newCheckedDays = [...checkedDays, day];
+      await updateDoc(userRef, {
+        checkedDays: newCheckedDays,
+        lastCheckInDate: today
+      });
 
-    const weekStart = getWeekStart();
-    localStorage.setItem(
-      "weeklyCheckIn",
-      JSON.stringify({ weekStart, checkedDays: updatedDays, lastCheckInDate: today })
-    );
-    localStorage.setItem("ecoPoints", newPoints);
+      // Update local state
+      setEcoPoints(newPoints);
+      setCheckedDays(newCheckedDays);
+      setLastCheckInDate(today);
+    } catch (error) {
+      console.error("Error on check-in:", error);
+      alert("Check-in failed. Please try again.");
+    }
   };
 
+  // --- 3. Vouchers Scroll Logic ---
   const checkScroll = () => {
     if (scrollRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
@@ -106,49 +155,24 @@ const MyRewards = () => {
     }
   };
 
-  // useEffect(() => {
-  //   // 1️⃣ Load EcoPoints from backend
-  //   fetch("/api/user/points")
-  //     .then(res => res.json())
-  //     .then(data => setEcoPoints(data.points))
-  //     .catch(err => console.error(err));
-
-  //   // 2️⃣ Load weekly check-in data from localStorage
-  //   const stored = localStorage.getItem("weeklyCheckIn");
-  //   const today = getToday();
-  //   const weekStart = getWeekStart();
-
-  //   if (stored) {
-  //     const parsed = JSON.parse(stored);
-
-  //     // Reset if week changed
-  //     if (parsed.weekStart === weekStart) {
-  //       setCheckedDays(parsed.checkedDays);
-  //     } else {
-  //       setCheckedDays([]); // new week
-  //       localStorage.setItem(
-  //         "weeklyCheckIn",
-  //         JSON.stringify({ weekStart, checkedDays: [] })
-  //       );
-  //     }
-  //   } else {
-  //     // No data yet
-  //     localStorage.setItem(
-  //       "weeklyCheckIn",
-  //       JSON.stringify({ weekStart, checkedDays: [] })
-  //     );
-  //   }
-  // }, []);
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="animate-spin text-[#59287a]" size={40} />
+      </div>
+    );
+  }
 
   return (
     <div className="myrewards-page-body">
       <div className="back-link-container">
-        <Link to="/MyAccount" className="back-link">
+        <Link to="/myaccount" className="back-link">
           <ArrowLeft size={18} />
           Back to My Account
         </Link>
       </div>
 
+      {/* Points Display */}
       <div className="ecopoints-icon-section">
         <MyEcoPoints className="ecopoints-icon" />
         <div className="points-overlay">
@@ -157,19 +181,26 @@ const MyRewards = () => {
         </div>
       </div>
 
+      {/* Check-In Grid */}
       <div className="daily-check-in-section">
         <p className="daily-check-in-title">Daily Check-in</p>
         <div className="daily-check-in-box">
           {days.map((day) => {
-            // Determine button state
             let className = "daily-check-in locked";
             const nextDay = checkedDays.length + 1;
-            if (checkedDays.includes(day)) className = "daily-check-in checked";
-            else if (day === nextDay && lastCheckInDate !== getToday())
+
+            if (checkedDays.includes(day)) {
+              className = "daily-check-in checked";
+            } else if (day === nextDay && lastCheckInDate !== getToday()) {
               className = "daily-check-in available";
+            }
 
             return (
-              <div key={day} className={className} onClick={() => handleCheckIn(day)}>
+              <div
+                key={day}
+                className={className}
+                onClick={() => day === nextDay ? handleCheckIn(day) : null}
+              >
                 <CheckInIcon className="check-in-icon" />
                 <p className="day">Day {day}</p>
               </div>
@@ -178,6 +209,7 @@ const MyRewards = () => {
         </div>
       </div>
 
+      {/* Vouchers Section */}
       <div className="claim-vouchers-section">
         <p className="claim-vouchers-title">Claim Your Vouchers</p>
 
@@ -201,14 +233,17 @@ const MyRewards = () => {
                 <div className="voucher-image-container">
                   <img src={voucher.image} alt={voucher.title} className="voucher-image" />
                 </div>
-
                 <div className="voucher-description">
                   <h2 className="redemption-points">{voucher.points} EcoPoints</h2>
                   <h3 className="voucher-sponsor">{voucher.sponsor}</h3>
                   <h3 className="voucher-sponsor">RM{voucher.value} rebate</h3>
                 </div>
-
-                <button className="claim-now-button">Claim Now</button>
+                <button
+                  className={`claim-now-button ${ecoPoints < voucher.points ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  disabled={ecoPoints < voucher.points}
+                >
+                  {ecoPoints < voucher.points ? "Not Enough Points" : "Claim Now"}
+                </button>
               </div>
             ))}
           </div>
@@ -224,38 +259,28 @@ const MyRewards = () => {
       </div>
 
       <div className="how-this-works-section">
-        <p className="how-this-works-title">
-          How This Works
-        </p>
+        <p className="how-this-works-title">How This Works</p>
         <div className="how-this-works-container">
           <div className="step-container">
             <StepOne className="step-icon" />
-            <p className="step-description">
-              Log in at least once a day to claim 1 EcoPoint daily
-            </p>
+            <p className="step-description">Log in at least once a day to claim 1 EcoPoint daily</p>
           </div>
           <div className="step-container">
             <StepTwo className="step-icon" />
-            <p className="step-description">
-              Buy on ReThrive and earn 10 EcoPoints on each purchase
-            </p>
+            <p className="step-description">Buy on ReThrive and earn 10 EcoPoints on each purchase</p>
           </div>
           <div className="step-container">
             <StepThree className="step-icon" />
-            <p className="step-description">
-              Register and join events to earn 5 EcoPoints per event
-            </p>
+            <p className="step-description">Register and join events to earn 5 EcoPoints per event</p>
           </div>
           <div className="step-container">
             <StepFour className="step-icon" />
-            <p className="step-description">
-              Use EcoPoints to redeem exclusive and limited vouchers
-            </p>
+            <p className="step-description">Use EcoPoints to redeem exclusive and limited vouchers</p>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 };
 
 export default MyRewards;

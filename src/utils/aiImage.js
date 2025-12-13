@@ -44,12 +44,12 @@ export const loadModel = async () => {
 // Map the predicted class name to the actual category used in the app
 const mapToCategory = (className) => {
     if (!className) return null;
-    
+
     // Try exact match first
     if (CATEGORY_MAPPING[className]) {
         return CATEGORY_MAPPING[className];
     }
-    
+
     // Try case-insensitive match
     const lowerClassName = className.toLowerCase().trim();
     for (const [key, value] of Object.entries(CATEGORY_MAPPING)) {
@@ -57,7 +57,7 @@ const mapToCategory = (className) => {
             return value;
         }
     }
-    
+
     // If no match found, return the original class name (user can manually select)
     console.warn(`Category mapping not found for: ${className}. Using original.`);
     return className;
@@ -73,24 +73,24 @@ export const classifyImage = async (imageElement) => {
                 return null;
             }
         }
-        
+
         // Get predictions
         const predictions = await model.predict(imageElement);
-        
+
         // Sort them so the highest confidence is first
         predictions.sort((a, b) => b.probability - a.probability);
-        
+
         const topPrediction = predictions[0];
-        
+
         // Only return prediction if confidence is above threshold (e.g., 50%)
         if (topPrediction.probability < 0.5) {
             console.log("Low confidence prediction:", topPrediction);
             return null;
         }
-        
+
         // Map to actual category
         const mappedCategory = mapToCategory(topPrediction.className);
-        
+
         return {
             className: mappedCategory || topPrediction.className,
             probability: topPrediction.probability,

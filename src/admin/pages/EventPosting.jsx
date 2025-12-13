@@ -9,11 +9,7 @@ import {
   doc,
   updateDoc,
 } from "firebase/firestore";
-import {
-  ref,
-  uploadBytes,
-  getDownloadURL,
-} from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import {
   Button,
   TextField,
@@ -22,12 +18,12 @@ import {
   DialogContent,
   DialogTitle,
 } from "@mui/material";
+import "./EventPosting.css";
 
 const EventPosting = () => {
   const [events, setEvents] = useState([]);
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState(null);
-
   const [imageFile, setImageFile] = useState(null);
 
   const [form, setForm] = useState({
@@ -38,8 +34,12 @@ const EventPosting = () => {
     location: "",
     description: "",
     ecoPoints: "",
-    ecoHighlights: "",
+    ecoHighlights: [],
   });
+
+  // For delete confirmation
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
 
   // LIVE updates from Firestore
   useEffect(() => {
@@ -48,6 +48,13 @@ const EventPosting = () => {
     });
     return unsub;
   }, []);
+
+  // Prevent memory leak from object URL
+  useEffect(() => {
+    return () => {
+      if (imageFile) URL.revokeObjectURL(imageFile);
+    };
+  }, [imageFile]);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => {
@@ -60,7 +67,7 @@ const EventPosting = () => {
       location: "",
       description: "",
       ecoPoints: "",
-      ecoHighlights: "",
+      ecoHighlights: [],
     });
     setImageFile(null);
     setEditId(null);
@@ -76,23 +83,33 @@ const EventPosting = () => {
       imageURL = await getDownloadURL(imgRef);
     }
 
+    const payload = {
+      ...form,
+      image: imageURL,
+      ecoPoints: Number(form.ecoPoints),
+      ecoHighlights: form.ecoHighlights.filter((line) => line.trim() !== ""),
+    };
+
     if (editId) {
-      await updateDoc(doc(db, "events", editId), {
-        ...form,
-        image: imageURL,
-      });
+      await updateDoc(doc(db, "events", editId), payload);
     } else {
-      await addDoc(collection(db, "events"), {
-        ...form,
-        image: imageURL,
-      });
+      await addDoc(collection(db, "events"), payload);
     }
 
     handleClose();
   };
 
-  const handleDelete = async (id) => {
-    await deleteDoc(doc(db, "events", id));
+  const handleDeleteClick = (id) => {
+    setDeleteId(id);
+    setShowConfirmationModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (deleteId) {
+      await deleteDoc(doc(db, "events", deleteId));
+      setDeleteId(null);
+      setShowConfirmationModal(false);
+    }
   };
 
   const columns = [
@@ -117,8 +134,9 @@ const EventPosting = () => {
       field: "actions",
       headerName: "Actions",
       renderCell: (params) => (
-        <div style={{ display: "flex", gap: "10px" }}>
+        <div style={{ display: "flex", gap: "10px", padding: "3px 5px" }}>
           <Button
+            className="edit-button"
             variant="outlined"
             onClick={() => {
               setEditId(params.row.id);
@@ -129,9 +147,10 @@ const EventPosting = () => {
             Edit
           </Button>
           <Button
+            className="delete-button"
             variant="contained"
             color="error"
-            onClick={() => handleDelete(params.row.id)}
+            onClick={() => handleDeleteClick(params.row.id)}
           >
             Delete
           </Button>
@@ -142,48 +161,84 @@ const EventPosting = () => {
   ];
 
   return (
-    <div style={{ padding: 30 }}>
-      <h2>Event Posting</h2>
+    <div
+      className="admin-page-content"
+      style={{ padding: 30, width: "100%", boxSizing: "border-box" }}
+    >
+      <div className="admin-page-header">
+        <h2 className="admin-page-title">Event Posting</h2>
 
-      <Button variant="contained" onClick={handleOpen} style={{ marginBottom: 20 }}>
-        Add Event
-      </Button>
+        <Button
+          variant="contained"
+          onClick={handleOpen}
+          style={{ marginBottom: 20 }}
+          className="add-event-button"
+        >
+          Add Event
+        </Button>
+      </div>
 
-      <DataGrid autoHeight rows={events} columns={columns} pageSize={5} />
+      <div style={{ width: "100%", overflowX: "auto" }}>
+        <DataGrid autoHeight rows={events} columns={columns} pageSize={5} />
+      </div>
 
       {/* Add / Edit Dialog */}
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+      <Dialog
+        className="add-event-dialog"
+        open={open}
+        onClose={handleClose}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>{editId ? "Edit Event" : "Add Event"}</DialogTitle>
 
-        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <TextField label="Event Title" value={form.title}
-            onChange={(e) => setForm({ ...form, title: e.target.value })} />
-
-          <Button variant="outlined" component="label">
-            Upload Image
-            <input hidden type="file" onChange={(e) => setImageFile(e.target.files[0])} />
-          </Button>
-
-          {imageFile && <p>{imageFile.name}</p>}
-
+        <DialogContent
+          sx={{ display: "flex", flexDirection: "column", gap: 2.5, paddingTop: 2 }}
+        >
           <TextField
-            type="date"
-            label="Date"
-            InputLabelProps={{ shrink: true }}
-            value={form.date}
-            onChange={(e) => setForm({ ...form, date: e.target.value })}
+            label="Event Title"
+            fullWidth
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
           />
 
-          <TextField
-            type="time"
-            label="Time"
-            InputLabelProps={{ shrink: true }}
-            value={form.time}
-            onChange={(e) => setForm({ ...form, time: e.target.value })}
-          />
+          <div className="image-upload-box">
+            <Button variant="outlined" component="label" fullWidth>
+              Upload Event Image
+              <input hidden type="file" onChange={(e) => setImageFile(e.target.files[0])} />
+            </Button>
+
+            {(imageFile || form.image) && (
+              <img
+                src={imageFile ? URL.createObjectURL(imageFile) : form.image}
+                alt="Preview"
+                className="event-image-preview"
+              />
+            )}
+          </div>
+
+          <div className="two-col">
+            <TextField
+              type="date"
+              label="Date"
+              InputLabelProps={{ shrink: true }}
+              value={form.date}
+              onChange={(e) => setForm({ ...form, date: e.target.value })}
+              fullWidth
+            />
+            <TextField
+              type="time"
+              label="Time"
+              InputLabelProps={{ shrink: true }}
+              value={form.time}
+              onChange={(e) => setForm({ ...form, time: e.target.value })}
+              fullWidth
+            />
+          </div>
 
           <TextField
             label="Location"
+            fullWidth
             value={form.location}
             onChange={(e) => setForm({ ...form, location: e.target.value })}
           />
@@ -192,6 +247,7 @@ const EventPosting = () => {
             label="Description"
             multiline
             rows={3}
+            fullWidth
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
           />
@@ -199,26 +255,54 @@ const EventPosting = () => {
           <TextField
             label="Eco Points"
             type="number"
+            fullWidth
             value={form.ecoPoints}
             onChange={(e) => setForm({ ...form, ecoPoints: e.target.value })}
           />
 
           <TextField
-            label="Eco Highlights"
+            label="Eco Highlights (one per line)"
             multiline
-            rows={2}
-            value={form.ecoHighlights}
-            onChange={(e) => setForm({ ...form, ecoHighlights: e.target.value })}
+            minRows={3}
+            fullWidth
+            value={form.ecoHighlights.join("\n")}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                ecoHighlights: e.target.value.split("\n"),
+              })
+            }
           />
         </DialogContent>
 
-        <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
-          <Button variant="contained" onClick={uploadImageAndSave}>
-            {editId ? "Update" : "Save"}
-          </Button>
+        <DialogActions style={{ padding: "20px 25px" }}>
+          <div className="dialog-buttons-container">
+            <Button className="cancel-button" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button className="save-button" variant="contained" onClick={uploadImageAndSave}>
+              {editId ? "Update" : "Save"}
+            </Button>
+          </div>
         </DialogActions>
       </Dialog>
+
+      {/* Delete Confirmation Modal */}
+      {showConfirmationModal && (
+        <div className="delete-modal">
+          <div className="delete-modal-content">
+            <p className="delete-prompt">Are you sure you want to delete this event?</p>
+            <div className="delete-confirmation-buttons-container">
+              <button onClick={handleConfirmDelete} className="delete-yes-button">
+                Delete
+              </button>
+              <button onClick={() => setShowConfirmationModal(false)} className="delete-cancel-button">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { STATS_DATA } from "../../../constants";
+import { STATS_DATA } from "../../constants";
 
 // Hook for counting up animation
 const useCounter = (end, options = {}) => {

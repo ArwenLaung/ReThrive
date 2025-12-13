@@ -1,21 +1,33 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit3, Mail, Phone, MapPin, Home } from 'lucide-react';
+import { ArrowLeft, Edit3, Mail, Loader2, User as UserIcon } from 'lucide-react';
+
+// --- FIREBASE IMPORTS ---
+import { auth } from '../../firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import DefaultProfilePic from '../assets/default_profile_pic.jpg'; 
 
 const AccountDetails = () => {
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Mock User Data (Replace with real Firebase data later)
-  const user = {
-    name: "Cindy Lim",
-    email: "cindy@student.usm.my",
-    studentId: "158992",
-    phone: "+60 12-345 6789",
-    school: "School of Computer Sciences",
-    hostel: "Desasiswa Restu",
-    joinDate: "September 2023",
-    avatar: "https://i.pravatar.cc/150?img=5"
-  };
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser({
+          name: currentUser.displayName || currentUser.email.split('@')[0],
+          email: currentUser.email,
+          avatar: currentUser.photoURL || DefaultProfilePic
+        });
+      } else {
+        navigate('/login');
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [navigate]);
 
   // Reusable Info Row Component
   const InfoRow = ({ icon: Icon, label, value }) => (
@@ -25,10 +37,18 @@ const AccountDetails = () => {
       </div>
       <div>
         <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">{label}</p>
-        <p className="text-[#59287a] font-semibold text-lg">{value}</p>
+        <p className="text-[#59287a] font-semibold text-lg truncate max-w-[250px]">{value}</p>
       </div>
     </div>
   );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="animate-spin text-[#59287a]" size={40} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white pb-20 pt-6 px-6">
@@ -48,25 +68,18 @@ const AccountDetails = () => {
           <div className="absolute -right-10 -top-10 w-32 h-32 bg-[#59287a]/5 rounded-full"></div>
           
           <img 
-            src={user.avatar} 
+            src={user?.avatar} 
             alt="Profile" 
-            className="w-28 h-28 rounded-full object-cover border-4 border-white shadow-md mx-auto mb-4"
+            className="w-28 h-28 rounded-full object-cover border-4 border-white shadow-md mx-auto mb-4 bg-gray-200"
           />
-          <h2 className="text-2xl font-bold text-[#59287a]">{user.name}</h2>
-          <p className="text-gray-600 font-medium">{user.school}</p>
-          <div className="mt-2 inline-block bg-white/60 px-4 py-1 rounded-full text-xs font-bold text-[#59287a]">
-            Student ID: {user.studentId}
-          </div>
+          <h2 className="text-2xl font-bold text-[#59287a]">{user?.name}</h2>
         </div>
 
         {/* --- DETAILS SECTION --- */}
         <div className="bg-[#FEFAE0] rounded-[2rem] p-6 shadow-sm">
           <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Contact Info</h3>
-          
-          <InfoRow icon={Mail} label="Email Address" value={user.email} />
-          <InfoRow icon={Phone} label="Phone Number" value={user.phone} />
-          <InfoRow icon={MapPin} label="School" value={user.school} />
-          <InfoRow icon={Home} label="Hostel / Residence" value={user.hostel} />
+          <InfoRow icon={UserIcon} label="Display Name" value={user?.name} />
+          <InfoRow icon={Mail} label="Email Address" value={user?.email} />
         </div>
 
         {/* --- EDIT BUTTON --- */}

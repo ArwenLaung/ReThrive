@@ -1,11 +1,11 @@
 import "./LeftColumnBar.css";
-import { CircleUserRound, PanelLeftClose, PanelRightOpen } from "lucide-react";
+import { CircleUserRound, PanelLeftClose, PanelRightOpen, LogOut } from "lucide-react";
 import { NavLink, useNavigate } from 'react-router-dom';
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signOut } from "firebase/auth";
 import { auth } from "../../firebase";
 
-const LeftColumnBar = () => {
+const LeftColumnBar = ({ onCollapseChange }) => {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -17,6 +17,11 @@ const LeftColumnBar = () => {
       })
       .catch((error) => console.log(error));
   };
+
+  // notify parent whenever collapsed changes
+  useEffect(() => {
+    onCollapseChange?.(collapsed);
+  }, [collapsed, onCollapseChange]);
 
   return (
     <div className={`left-column-bar-container ${collapsed ? "collapsed" : ""}`}>
@@ -34,39 +39,36 @@ const LeftColumnBar = () => {
         </div>
       </div>
 
-
       <div className="identity-container">
         <CircleUserRound size={70} className="admin-icon" />
         <p className="admin-name">Admin</p>
       </div>
 
       <div className="admin-selections-container">
-        <NavLink to="/itemsApproval" className={({ isActive }) => `admin-selection ${isActive ? "active" : ""}`} onClick={() => handlePageClick("Items Approval")}>
+        <NavLink to="/itemsApproval" className={({ isActive }) => `admin-selection ${isActive ? "active" : ""}`}>
           Items Approval
         </NavLink>
-
         <NavLink to="/transactionModeration" className={({ isActive }) => `admin-selection ${isActive ? "active" : ""}`}>
           Transaction Moderation
         </NavLink>
-
         <NavLink to="/eventPosting" className={({ isActive }) => `admin-selection ${isActive ? "active" : ""}`}>
           Event Posting
         </NavLink>
-
         <NavLink to="/voucherManagement" className={({ isActive }) => `admin-selection ${isActive ? "active" : ""}`}>
           Voucher Management
         </NavLink>
-
         <NavLink to="/reportModeration" className={({ isActive }) => `admin-selection ${isActive ? "active" : ""}`}>
           Report Moderation
         </NavLink>
-
         <NavLink to="/dataVisualisation" className={({ isActive }) => `admin-selection ${isActive ? "active" : ""}`}>
           Data Visualisation
         </NavLink>
 
         <button className="logout-button" onClick={() => setShowLogoutModal(true)}>
-          Log Out
+          <LogOut className="logout-button-icon" />
+          <p className="logout-button-text">
+            Log Out
+          </p>
         </button>
 
         {showLogoutModal && (

@@ -2,7 +2,9 @@ import "./ItemsApproval.css";
 import LeftColumnBar from "../components/LeftColumnBar.jsx";
 
 const ItemsApproval = () => {
-  <LeftColumnBar />
+  return (
+    <div>hello</div>
+  )
 };
 
 export default ItemsApproval;
