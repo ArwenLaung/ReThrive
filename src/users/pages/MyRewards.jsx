@@ -8,8 +8,8 @@ import StepOne from "../assets/step-one-icon.svg?react";
 import StepTwo from "../assets/step-two-icon.svg?react";
 import StepThree from "../assets/step-three-icon.svg?react";
 import StepFour from "../assets/step-four-icon.svg?react";
+import VouchersSection from "../components/VouchersSection.jsx";
 import "./MyRewards.css";
-import { VOUCHERS_DATA } from "../../constants.ts";
 
 // --- FIREBASE IMPORTS ---
 import { auth, db } from '../../firebase';
@@ -18,7 +18,6 @@ import { doc, getDoc, setDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 
 const MyRewards = () => {
   const navigate = useNavigate();
-  const scrollRef = useRef(null);
 
   // User State
   const [user, setUser] = useState(null);
@@ -29,8 +28,8 @@ const MyRewards = () => {
   const [checkedDays, setCheckedDays] = useState([]);
   const [lastCheckInDate, setLastCheckInDate] = useState(null);
 
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
+  // Track claimed vouchers
+  const [claimedVouchers, setClaimedVouchers] = useState([]);
 
   const days = [1, 2, 3, 4, 5, 6, 7];
 
@@ -62,6 +61,8 @@ const MyRewards = () => {
         if (docSnap.exists()) {
           const data = docSnap.data();
           setEcoPoints(data.ecoPoints || 0);
+          setClaimedVouchers(data.claimedVouchers || []);
+
 
           const currentWeekStart = getWeekStart();
           if (data.weekStart === currentWeekStart) {
@@ -135,26 +136,6 @@ const MyRewards = () => {
     }
   };
 
-  // --- 3. Vouchers Scroll Logic ---
-  const checkScroll = () => {
-    if (scrollRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-      setCanScrollLeft(scrollLeft > 0);
-      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 5);
-    }
-  };
-
-  const scroll = (direction) => {
-    if (scrollRef.current) {
-      const scrollAmount = 340;
-      scrollRef.current.scrollBy({
-        left: direction === "left" ? -scrollAmount : scrollAmount,
-        behavior: "smooth",
-      });
-      setTimeout(checkScroll, 300);
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
@@ -209,54 +190,11 @@ const MyRewards = () => {
         </div>
       </div>
 
-      {/* Vouchers Section */}
-      <div className="claim-vouchers-section">
-        <p className="claim-vouchers-title">Claim Your Vouchers</p>
-
-        <div className="available-vouchers-container">
-          <button
-            onClick={() => scroll("left")}
-            className="scroll-left-button-container"
-            disabled={!canScrollLeft}
-          >
-            <ChevronLeft size={48} strokeWidth={2.5} className="scroll-left-button" />
-          </button>
-
-          <div
-            ref={scrollRef}
-            onScroll={checkScroll}
-            className="available-vouchers-section"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-          >
-            {VOUCHERS_DATA.map((voucher) => (
-              <div key={voucher.id} className="voucher">
-                <div className="voucher-image-container">
-                  <img src={voucher.image} alt={voucher.title} className="voucher-image" />
-                </div>
-                <div className="voucher-description">
-                  <h2 className="redemption-points">{voucher.points} EcoPoints</h2>
-                  <h3 className="voucher-sponsor">{voucher.sponsor}</h3>
-                  <h3 className="voucher-sponsor">RM{voucher.value} rebate</h3>
-                </div>
-                <button
-                  className={`claim-now-button ${ecoPoints < voucher.points ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  disabled={ecoPoints < voucher.points}
-                >
-                  {ecoPoints < voucher.points ? "Not Enough Points" : "Claim Now"}
-                </button>
-              </div>
-            ))}
-          </div>
-
-          <button
-            onClick={() => scroll("right")}
-            className="scroll-right-button-container"
-            disabled={!canScrollRight}
-          >
-            <ChevronRight size={48} strokeWidth={2.5} className="scroll-right-button" />
-          </button>
-        </div>
-      </div>
+      <VouchersSection
+        ecoPoints={ecoPoints}
+        claimedVouchers={claimedVouchers}
+        userId={user.uid}
+      />
 
       <div className="how-this-works-section">
         <p className="how-this-works-title">How This Works</p>

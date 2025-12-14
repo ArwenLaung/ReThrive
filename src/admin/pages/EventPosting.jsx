@@ -41,7 +41,7 @@ const EventPosting = () => {
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
 
-  // LIVE updates from Firestore
+  // Real-time latest update from Firebase Firestore
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "events"), (snapshot) => {
       setEvents(snapshot.docs.map((d) => ({ ...d.data(), id: d.id })));
@@ -129,7 +129,7 @@ const EventPosting = () => {
     { field: "date", headerName: "Date", flex: 1 },
     { field: "time", headerName: "Time", flex: 1 },
     { field: "location", headerName: "Location", flex: 1 },
-    { field: "ecoPoints", headerName: "Eco Points", flex: 1 },
+    { field: "ecoPoints", headerName: "EcoPoints", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
@@ -253,7 +253,7 @@ const EventPosting = () => {
           />
 
           <TextField
-            label="Eco Points"
+            label="EcoPoints"
             type="number"
             fullWidth
             value={form.ecoPoints}
