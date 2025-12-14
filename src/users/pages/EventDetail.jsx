@@ -1,6 +1,6 @@
 import React from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, CalendarDays, Clock, MapPin, Leaf } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom"; 
+import { CalendarDays, Clock, MapPin, Leaf } from "lucide-react"; 
 import { EVENTS_DATA } from "../../../constants";
 
 const EventDetail = () => {
@@ -15,13 +15,6 @@ const EventDetail = () => {
           <p className="text-2xl font-semibold text-brand-darkText mb-6">
             That event moved or no longer exists.
           </p>
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 text-brand-purple font-semibold hover:text-brand-green transition-colors"
-          >
-            <ArrowLeft size={18} />
-            Back to home
-          </Link>
         </main>
       </div>
     );
@@ -29,15 +22,7 @@ const EventDetail = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* 🟢 CRITICAL FIX #1: Add paddingTop to clear the 70px fixed header 🟢 */}
       <main className="max-w-5xl mx-auto px-4 py-12" style={{ paddingTop: '70px' }}>
-        <Link
-          to="/#events" // Target the anchor link to trigger the ScrollHandler
-          className="inline-flex items-center gap-2 text-brand-purple font-semibold hover:text-brand-green transition-colors"
-        >
-          <ArrowLeft size={18} />
-          Back to events
-        </Link>
 
         <section className="mt-8 bg-brand-cream rounded-3xl shadow-[0_12px_40px_rgba(124,58,237,0.08)] overflow-hidden">
           <div className="grid grid-cols-1 lg:grid-cols-2">

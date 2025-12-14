@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react"; // Removed ArrowLeft
 import MyEcoPoints from "../assets/ecopoints-icon.svg?react";
 import CheckInIcon from "../assets/check-in-icon.svg?react";
 import StepOne from "../assets/step-one-icon.svg?react";
@@ -168,12 +168,7 @@ const MyRewards = () => {
 
   return (
     <div className="myrewards-page-body">
-      <div className="back-link-container">
-        <Link to="/myaccount" className="back-link">
-          <ArrowLeft size={18} />
-          Back to My Account
-        </Link>
-      </div>
+      {/* Back button container removed */}
 
       {/* Points Display */}
       <div className="ecopoints-icon-section">
