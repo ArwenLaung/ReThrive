@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Camera, Save, Loader2 } from 'lucide-react';
-
-// --- FIREBASE IMPORTS ---
 import { auth, storage, db } from '../../firebase';
 import { updateProfile } from 'firebase/auth';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -14,8 +12,6 @@ const EditProfile = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(auth.currentUser);
-
-  // Form State
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [avatarPreview, setAvatarPreview] = useState(DefaultProfilePic);

@@ -11,7 +11,6 @@ import EventDetail from "./users/pages/EventDetail.jsx";
 import EventRegistration from "./users/pages/EventRegistration.jsx";
 import Marketplace from "./users/pages/Marketplace.jsx";
 import Donation from "./users/pages/Donation.jsx";
-import DonationCorner from "./users/pages/Donation.jsx";
 import DonationDetail from "./users/pages/DonationDetail.jsx";
 import DonateItem from "./users/pages/DonateItem.jsx";
 import MyAccount from "./users/pages/MyAccount.jsx";
@@ -24,6 +23,12 @@ import MyPurchases from "./users/pages/MyPurchases.jsx";
 import MySoldItems from "./users/pages/MySoldItems.jsx";
 import SellItem from "./users/pages/SellItem.jsx";
 import ItemDetail from "./users/pages/ItemDetail.jsx";
+import MyDonations from "./users/pages/MyDonations.jsx";
+import MyDonationDetail from "./users/pages/MyDonationDetail.jsx";
+import MyDonatedItems from "./users/pages/MyDonatedItems.jsx";
+import MyClaimedItems from "./users/pages/MyClaimedItems.jsx";
+import MyCart from "./users/pages/MyCart.jsx";
+import ClaimDonation from "./users/pages/ClaimDonation.jsx";
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -54,7 +59,6 @@ const ScrollHandler = ({ aboutRef, eventsRef, setActiveLink }) => {
     return () => observer.disconnect();
   }, [location.pathname, setActiveLink, eventsRef, aboutRef]);
 
-  // listen to URL changes to scroll correctly
   useEffect(() => {
     if (location.pathname !== "/") return;
     const scrollTarget = searchParams.get("scroll_to");
@@ -90,10 +94,10 @@ const AppContent = ({ aboutRef, eventsRef, activeLink, setActiveLink }) => {
         <Route path="/sellitem" element={<SellItem />} />
         <Route path="/events/:id" element={<EventDetail />} />
         <Route path="/register/:id" element={<EventRegistration />} />
-        <Route path="/donationcorner" element={<DonationCorner />} />
-        <Route path="/donation/:id" element={<DonationDetail />} />
         <Route path="/donation" element={<Donation />} />
+        <Route path="/donation/:id" element={<DonationDetail />} />
         <Route path="/donateitem" element={<DonateItem />} />
+        <Route path="/claimdonation/:id" element={<ClaimDonation />} />
         <Route path="/myaccount" element={<MyAccount />} />
         <Route path="/myrewards" element={<MyRewards />} />
         <Route path="/accountdetails" element={<AccountDetails />} />
@@ -102,6 +106,11 @@ const AppContent = ({ aboutRef, eventsRef, activeLink, setActiveLink }) => {
         <Route path="/listing/:id" element={<ListingDetail />} />
         <Route path="/purchasehistory" element={<MyPurchases />} />
         <Route path="/solditems" element={<MySoldItems />} />
+        <Route path="/mydonations" element={<MyDonations />} />
+        <Route path="/mydonationdetail/:id" element={<MyDonationDetail />} />
+        <Route path="/mydonateditems" element={<MyDonatedItems />} />
+        <Route path="/myclaimeditems" element={<MyClaimedItems />} />
+        <Route path="/mycart" element={<MyCart />} />
       </Routes>
 
       <Footer />

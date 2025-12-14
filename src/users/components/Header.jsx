@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { LogIn, ChevronDown, LogOut, User, Gift, Package, ShoppingBag } from 'lucide-react';
+import { LogIn, ChevronDown, LogOut, User, Gift, Package, ShoppingBag, ShoppingCart } from 'lucide-react';
 import { auth } from '../../firebase';
-// 🟢 CHANGED: Import onIdTokenChanged instead of onAuthStateChanged
 import { onIdTokenChanged, signOut } from 'firebase/auth';
 import ReThriveLogo from '../assets/logo.svg';
 import DefaultProfilePic from '../assets/default_profile_pic.jpg'; 
@@ -18,11 +17,9 @@ const Header = ({ activeLink }) => {
   const dropdownRef = useRef(null);
   const mobileProfileRef = useRef(null);
 
-  // 🟢 FIX 1: Use onIdTokenChanged to detect profile updates (name/photo changes)
   useEffect(() => {
     const unsubscribe = onIdTokenChanged(auth, (currentUser) => {
       if (currentUser) {
-        // 🟢 Force a new object reference so React detects the change
         setUser({ ...currentUser }); 
       } else {
         setUser(null);
@@ -31,7 +28,6 @@ const Header = ({ activeLink }) => {
     return () => unsubscribe();
   }, []);
 
-  // Click Outside Logic
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (event.target.closest('.profile-btn')) return;
@@ -53,14 +49,12 @@ const Header = ({ activeLink }) => {
     navigate('/');
   };
 
-  // 🟢 FIX 2: Check for displayName FIRST. Previous code ignored it.
   const getUsername = () => {
     if (user?.displayName) return user.displayName;
     if (user?.email) return user.email.split('@')[0];
     return "Student";
   };
 
-  // Helper: Smooth Scroll for Anchors
   const scrollToSection = (id) => {
     const element = document.getElementById(id);
     if (element) {
@@ -68,7 +62,6 @@ const Header = ({ activeLink }) => {
     }
   };
 
-  // NAVIGATION HANDLER
   const handleNavClick = (path, hash) => {
     setIsMobileMenuOpen(false);
 
@@ -99,7 +92,7 @@ const Header = ({ activeLink }) => {
     { label: 'About', path: '/', hash: 'about' },
     { label: 'Events', path: '/', hash: 'events' },
     { label: 'Marketplace', path: '/marketplace', hash: null },
-    { label: 'Donation', path: '/donationcorner', hash: null },
+    { label: 'Donation', path: '/donation', hash: null },
   ];
 
   const toggleDropdown = (e) => {
@@ -127,7 +120,6 @@ const Header = ({ activeLink }) => {
         ref={isMobile ? mobileProfileRef : dropdownRef}
       >
         <button className="profile-btn" onClick={toggleDropdown}>
-          {/* 🟢 FIX 3: Ensure photoURL updates immediately */}
           <img src={user.photoURL || DefaultProfilePic} alt="Profile" className="profile-avatar" />
           <span className="profile-name">{getUsername()}</span>
           <ChevronDown size={16} className={`profile-arrow ${isDropdownOpen ? 'open' : ''}`} />
@@ -147,6 +139,11 @@ const Header = ({ activeLink }) => {
               <button className="dropdown-item" onClick={() => handleLinkClick('/myrewards')}>
                 <Gift size={16} /> Missions & Rewards
               </button>
+
+              <button className="dropdown-item" onClick={() => handleLinkClick('/mycart')}>
+                <ShoppingCart size={16} /> My Cart
+              </button>
+
               <button className="dropdown-item" onClick={() => handleLinkClick('/mylistings')}>
                 <Package size={16} /> My Listings
               </button>

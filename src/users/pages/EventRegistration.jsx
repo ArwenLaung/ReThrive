@@ -1,23 +1,135 @@
-import React, { useState } from "react";
+
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, CheckCircle } from "lucide-react";
-<<<<<<<< HEAD:src/pages/EventRegistration.jsx
-import { EVENTS_DATA } from "../constants";
-========
-import { EVENTS_DATA } from "../../../constants";
->>>>>>>> bf19cce5807cbb058d9a3e8848635c6fb3ef9aba:src/users/pages/EventRegistration.jsx
+import { doc, getDoc, collection, addDoc, serverTimestamp, query, where, getDocs } from "firebase/firestore";
+import { addEcoPoints } from "../../utils/ecoPoints";
+import { db, auth } from "../../firebase";
+import { getAuth } from "firebase/auth";
+import emailjs from '@emailjs/browser';
 
 const EventRegistration = () => {
-  const { id } = useParams();
+  const { id } = useParams(); // Event ID from URL
   const navigate = useNavigate();
-  const event = EVENTS_DATA.find((item) => item.id === Number(id));
+  const [event, setEvent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [submitted, setSubmitted] = useState(false);
+  const [hasRegistered, setHasRegistered] = useState(false);
+  const [registrationData, setRegistrationData] = useState(null);
+
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
     studentId: "",
     faculty: "",
   });
-  const [submitted, setSubmitted] = useState(false);
+
+  const authInstance = getAuth();
+  const user = authInstance.currentUser;
+
+  // Fetch event
+  useEffect(() => {
+    const fetchEvent = async () => {
+      try {
+        const docRef = doc(db, "events", id);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) setEvent(docSnap.data());
+        else setEvent(null);
+      } catch (error) {
+        console.error("Error fetching event:", error);
+        setEvent(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEvent();
+  }, [id]);
+
+  // Check if user has already registered
+  useEffect(() => {
+    if (!user) return;
+
+    const checkRegistration = async () => {
+      try {
+        const q = query(
+          collection(db, "eventRegistrations"),
+          where("userId", "==", user.uid),
+          where("eventId", "==", id)
+        );
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+          setHasRegistered(true);
+          setRegistrationData(querySnapshot.docs[0].data()); // store the existing registration
+        }
+      } catch (error) {
+        console.error("Error checking registration:", error);
+      }
+    };
+
+    checkRegistration();
+  }, [id, user]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (eventSubmit) => {
+    eventSubmit.preventDefault();
+
+    if (!user) {
+      alert("Please log in first");
+      navigate("/login");
+      return;
+    }
+
+    try {
+      // 1️⃣ Save registration in Firestore
+      await addDoc(collection(db, "eventRegistrations"), {
+        userId: user.uid,
+        eventId: id,
+        fullName: formData.fullName,
+        email: formData.email,
+        studentId: formData.studentId,
+        faculty: formData.faculty,
+        createdAt: serverTimestamp(),
+      });
+
+      // 2️⃣ Add EcoPoints for this event
+      if (event && event.ecoPoints) {
+        await addEcoPoints(user.uid, event.ecoPoints); // Call your helper
+      }
+
+      // 3️⃣ Send confirmation email
+      const templateParams = {
+        email: formData.email,
+        event: {
+          title: event.title,
+          date: event.date,
+          time: event.time,
+          location: event.location
+        },
+        name: formData.fullName
+      };
+
+      await emailjs.send(
+        'CAT302_ReThrive@USM',     // Service ID
+        'template_gkjo3dy',        // Template ID
+        templateParams,
+        'CpxvKuwCITdZkZdck'       // Public Key
+      );
+
+      setSubmitted(true);
+
+      setTimeout(() => {
+        navigate("/");
+      }, 1800);
+
+    } catch (error) {
+      console.error("Error saving registration or sending email:", error);
+      alert("Something went wrong. Please try again.");
+    }
+  };
 
   if (!event) {
     return (
@@ -38,19 +150,6 @@ const EventRegistration = () => {
     );
   }
 
-  const handleChange = (event) => {
-    const { name, value } = event.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = (eventSubmit) => {
-    eventSubmit.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => {
-      navigate("/");
-    }, 1800);
-  };
-
   return (
     <div className="min-h-screen bg-white">
       <main className="max-w-3xl mt-7 mx-auto px-4 py-12">
@@ -67,29 +166,24 @@ const EventRegistration = () => {
             <p className="text-sm uppercase tracking-wide text-brand-darkText/60 font-semibold">
               Registration
             </p>
-            <h1 className="text-3xl font-black text-brand-darkText mt-2">
-              {event.title}
-            </h1>
+            <h1 className="text-3xl font-black text-brand-darkText mt-2">{event.title}</h1>
             <p className="text-brand-darkText/70 mt-1">
               {event.date} · {event.time} · {event.location}
             </p>
           </div>
 
-          {submitted ? (
+          {submitted || hasRegistered ? (
             <div className="flex flex-col items-center text-center text-brand-darkText">
               <CheckCircle size={64} className="text-brand-green mb-4" />
               <p className="text-xl font-semibold">You are in!</p>
               <p className="text-brand-darkText/70 mt-2">
-                We emailed a confirmation to {formData.email}. See you soon.
+                We emailed a confirmation to {submitted ? formData.email : registrationData?.email}. See you soon.
               </p>
             </div>
           ) : (
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div>
-                <label
-                  className="text-sm font-semibold text-brand-darkText block mb-2"
-                  htmlFor="fullName"
-                >
+                <label className="text-sm font-semibold text-brand-darkText block mb-2" htmlFor="fullName">
                   Full Name
                 </label>
                 <input
@@ -105,10 +199,7 @@ const EventRegistration = () => {
               </div>
 
               <div>
-                <label
-                  className="text-sm font-semibold text-brand-darkText block mb-2"
-                  htmlFor="email"
-                >
+                <label className="text-sm font-semibold text-brand-darkText block mb-2" htmlFor="email">
                   Email
                 </label>
                 <input
@@ -125,10 +216,7 @@ const EventRegistration = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label
-                    className="text-sm font-semibold text-brand-darkText block mb-2"
-                    htmlFor="studentId"
-                  >
+                  <label className="text-sm font-semibold text-brand-darkText block mb-2" htmlFor="studentId">
                     Student / Staff ID
                   </label>
                   <input
@@ -143,10 +231,7 @@ const EventRegistration = () => {
                   />
                 </div>
                 <div>
-                  <label
-                    className="text-sm font-semibold text-brand-darkText block mb-2"
-                    htmlFor="faculty"
-                  >
+                  <label className="text-sm font-semibold text-brand-darkText block mb-2" htmlFor="faculty">
                     Faculty / Society
                   </label>
                   <input
