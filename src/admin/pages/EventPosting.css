@@ -1,43 +1,194 @@
+/* PAGE */
 .admin-page-content {
-  padding-left: 220px;
-  overflow-x: auto;
+  padding: 32px;
+  padding-left: 130px;
+  background: #f6f3ea;
+  min-height: 100vh;
 }
 
 .admin-page-wrapper.collapsed .admin-page-content {
   padding-left: 50px;
 }
 
-.admin-page-header {
+/* HEADER */
+.event-admin-header {
   display: flex;
   justify-content: space-between;
+  margin-bottom: 16px;
 }
 
-.admin-page-title {
-  color: #3d0b37;
-  font-weight: bold;
-  font-size: 18px;
-  padding: 10px 2px;
+.event-admin-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #2d1b3f;
+  margin-bottom: 16px;
 }
 
-.add-event-button {
-  text-transform: none !important;
-  background-color: #5d2c75 !important;
-  color: #ffffff !important;
-  font-weight: bold !important;
+/* ACTION BAR */
+.event-add-btn {
+  background: #5b2d6f;
+  color: white;
+  border: none;
+  padding: 12px 22px;
+  border-radius: 999px;
+  font-size: 15px;
+  cursor: pointer;
 }
 
-.add-event-button:hover {
-  color: #fff;
-  background-color: #8cc63f !important;
+.event-add-btn:hover {
+  background: #4a235e;
 }
 
-.edit-button {
-  color: #5d2c75 !important;
-  border: 1px solid #5d2c75 !important;
+/* TABLE */
+.event-table-card {
+  background: #fffaf0;
+  padding: 20px;
+  border-radius: 22px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
 }
 
-.delete-button {
-  background-color: #bc6c25 !important;
+.event-table-image {
+  width: 70px;
+  height: 50px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+/* ACTIONS */
+.event-actions-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 100%;
+}
+
+.event-edit-btn {
+  background: transparent;
+  border: 2px solid #5b2d6f;
+  border-radius: 999px;
+  color: #5b2d6f;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 3px 8px;
+}
+
+.event-edit-btn:hover {
+  background: rgba(91, 45, 111, 0.1);
+}
+
+.event-delete-btn {
+  background: #5b2d6f;
+  border: 2px solid #5d2d6f;
+  border-radius: 999px;
+  color: white;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.event-delete-btn:hover {
+  background: #4a235e;
+}
+
+.event-edit-btn,
+.event-delete-btn {
+  padding: 6px 14px;
+  line-height: 1;
+}
+
+/* DIALOG */
+.event-dialog-title {
+  font-weight: 700;
+  color: #2d1b3f;
+}
+
+.event-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 10px;
+}
+
+.event-dialog-content .MuiOutlinedInput-root {
+  border-radius: 14px;
+  background-color: #fffaf0;
+}
+
+.event-dialog-content .MuiOutlinedInput-notchedOutline {
+  border-color: #d6cce6;
+}
+
+.event-dialog-content .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: #5b2d6f;
+}
+
+.event-dialog-content .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: #5b2d6f;
+  border-width: 2px;
+}
+
+.event-dialog-content .MuiInputLabel-root.Mui-focused {
+  color: #5b2d6f;
+}
+
+/* IMAGE */
+.event-image-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.event-upload-btn {
+  padding: 14px;
+  border-radius: 12px;
+  border: 2px dashed #c3b6d8;
+  text-align: center;
+  cursor: pointer;
+  color: #5b2d6f;
+  font-weight: 600;
+}
+
+.event-preview-image {
+  width: 100%;
+  border-radius: 14px;
+  object-fit: cover;
+}
+
+/* GRID */
+.event-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* DIALOG ACTIONS */
+.event-dialog-actions {
+  padding: 14px 30px !important;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.event-cancel-btn {
+  background: transparent;
+  border: 2px solid #c3b6d8;
+  color: #5b2d6f;
+  padding: 10px 20px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.event-save-btn {
+  background: #5b2d6f;
+  color: white;
+  border: none;
+  padding: 10px 22px;
+  border: 2px solid #5b2d6f;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.event-save-btn:hover {
+  background: #4a235e;
 }
 
 .delete-modal {
@@ -116,94 +267,4 @@
 
 .delete-cancel-button:hover {
   background-color: #e0e0e0;
-}
-
-.image-upload-box {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.event-image-preview {
-  width: 100%;
-  height: 180px;
-  object-fit: cover;
-  border-radius: 12px;
-  border: 1px solid #e0e0e0;
-}
-
-.two-col {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.dialog-buttons-container {
-  display: flex;
-  gap: 20px;
-}
-
-.cancel-button {
-  color: #5d2c75 !important;
-  border: 1px solid #5d2c75 !important;
-  border-radius: 5px !important;
-}
-
-.save-button {
-  color: #ffffff;
-  background-color: #5d2c75 !important;
-  opacity: 0.9 !important;
-  transition: opacity 0.1s ease;
-}
-
-.save-button:hover {
-  opacity: 1 !important;
-}
-
-.add-event-dialog .MuiDialog-paper {
-  background-color: #f7f2e8;
-  border-radius: 40px;
-}
-
-.add-event-dialog .MuiTextField-root {
-  background-color: white;
-  border-radius: 14px;
-}
-
-.add-event-dialog .MuiButton-outlined {
-  color: #3d0b37;
-  border-color: #3d0b37;
-  border-radius: 40px;
-  font-weight: 500;
-}
-
-.add-event-dialog .MuiButton-outlined:hover {
-  background-color: rgba(61, 11, 55, 0.08);
-  border-color: #3d0b37;
-}
-
-.add-event-dialog .MuiOutlinedInput-root {
-  background-color: white;
-  border-radius: 14px;
-}
-
-.add-event-dialog .MuiOutlinedInput-input {
-  padding: 14px;
-}
-
-.add-event-dialog .MuiInputLabel-root {
-  color: #3d0b37 !important;
-}
-
-.add-event-dialog .MuiOutlinedInput-notchedOutline {
-  border-color: #d6c7a1;
-}
-
-.add-event-dialog .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
-  border-color: #c4b07d;
-}
-
-.add-event-dialog .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
-  border-color: #b59b5c;
-  border-width: 2px;
 }

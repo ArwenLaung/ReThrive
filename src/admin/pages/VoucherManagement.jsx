@@ -7,21 +7,25 @@ import {
   onSnapshot,
   deleteDoc,
   doc,
-  updateDoc
+  updateDoc,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import {
-  Button,
   TextField,
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle
+  DialogTitle,
+  Tabs,
+  Tab,
 } from "@mui/material";
 import "./VoucherManagement.css";
 
 const VoucherManagement = () => {
   const [vouchers, setVouchers] = useState([]);
+  const [expiredVouchers, setExpiredVouchers] = useState([]);
+  const [tab, setTab] = useState(0);
+
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState(null);
   const [imageFile, setImageFile] = useState(null);
@@ -30,40 +34,61 @@ const VoucherManagement = () => {
     sponsor: "",
     value: "",
     ecoPoints: "",
-    image: ""
+    image: "",
+    expiryDate: "",
   });
 
-  // For delete confirmation
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, "vouchers"), (snapshot) => {
-      setVouchers(snapshot.docs.map((d) => ({ ...d.data(), id: d.id })));
+    const unsub = onSnapshot(collection(db, "vouchers"), (snap) => {
+      setVouchers(snap.docs.map((d) => ({ ...d.data(), id: d.id })));
     });
     return unsub;
   }, []);
 
   useEffect(() => {
-    return () => {
-      if (imageFile) URL.revokeObjectURL(imageFile);
-    };
-  }, [imageFile]);
+    const unsub = onSnapshot(collection(db, "expiredVouchers"), (snap) => {
+      setExpiredVouchers(snap.docs.map((d) => ({ ...d.data(), id: d.id })));
+    });
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    const today = new Date().toISOString().split("T")[0];
+
+    vouchers.forEach(async (v) => {
+      if (v.expiryDate && v.expiryDate <= today) {
+        const { id, ...data } = v;
+
+        await addDoc(collection(db, "expiredVouchers"), data);
+        await deleteDoc(doc(db, "vouchers", id));
+      }
+    });
+  }, [vouchers]);
 
   const handleOpen = () => setOpen(true);
+
   const handleClose = () => {
     setOpen(false);
+    setEditId(null);
+    setImageFile(null);
     setForm({
       sponsor: "",
       value: "",
       ecoPoints: "",
-      image: ""
+      image: "",
+      expiryDate: "",
     });
-    setImageFile(null);
-    setEditId(null);
   };
 
-  // Upload image then save event
+  const handleEdit = (row) => {
+    setEditId(row.id);
+    setForm(row);
+    setOpen(true);
+  };
+
   const uploadImageAndSave = async () => {
     let imageURL = form.image;
 
@@ -76,8 +101,8 @@ const VoucherManagement = () => {
     const payload = {
       ...form,
       image: imageURL,
-      ecoPoints: Number(form.ecoPoints)
-    }
+      ecoPoints: Number(form.ecoPoints),
+    };
 
     if (editId) {
       await updateDoc(doc(db, "vouchers", editId), payload);
@@ -94,95 +119,87 @@ const VoucherManagement = () => {
   };
 
   const handleConfirmDelete = async () => {
-    if (deleteId) {
-      await deleteDoc(doc(db, "vouchers", deleteId));
-      setDeleteId(null);
-      setShowConfirmationModal(false);
-    }
+    if (!deleteId) return;
+
+    const collectionName = tab === 0 ? "vouchers" : "expiredVouchers";
+    await deleteDoc(doc(db, collectionName, deleteId));
+
+    setDeleteId(null);
+    setShowConfirmationModal(false);
   };
 
   const columns = [
     { field: "sponsor", headerName: "Sponsor", flex: 1 },
     { field: "value", headerName: "Value", flex: 1 },
     { field: "ecoPoints", headerName: "EcoPoints", flex: 1 },
-    {
-      field: "image",
-      headerName: "Image",
-      renderCell: (params) => (
-        <img
-          src={params.row.image}
-          alt="Voucher"
-          style={{ width: 70, height: 50, borderRadius: 6, objectFit: "cover" }}
-        />
-      ),
-      flex: 1
-    },
+    { field: "expiryDate", headerName: "Expiry Date", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
+      flex: 1,
+      sortable: false,
+      filterable: false,
       renderCell: (params) => (
-        <div style={{ display: "flex", gap: "10px", padding: "3px 5px" }}>
-          <Button
-            className="edit-button"
-            variant="outlined"
-            onClick={() => {
-              setEditId(params.row.id);
-              setForm(params.row);
-              handleOpen();
-            }}
-          >
-            Edit
-          </Button>
-          <Button
-            className="delete-button"
-            variant="contained"
+        <div className="voucher-actions-cell">
+          {tab === 0 && (
+            <button
+              className="voucher-edit-btn"
+              onClick={() => handleEdit(params.row)}
+            >
+              Edit
+            </button>
+          )}
+          <button
+            className="voucher-delete-btn"
             onClick={() => handleDeleteClick(params.row.id)}
           >
             Delete
-          </Button>
+          </button>
         </div>
       ),
-      flex: 1
-    }
+    },
   ];
 
   return (
-    <div
-      className="admin-page-content"
-      style={{ padding: 30, width: "100%", boxSizing: "border-box" }}
-    >
-      <div className="admin-page-header">
-        <h2 className="admin-page-title">Voucher Management</h2>
-
-        <Button
-          variant="contained"
-          onClick={handleOpen}
-          style={{ marginBottom: 20 }}
-          className="add-voucher-button"
-        >
-          Add Voucher
-        </Button>
+    <div className="admin-page-content">
+      <div className="voucher-admin-header">
+        <h2>Voucher Management</h2>
       </div>
 
-      <div style={{ width: "100%", overflowX: "auto" }}>
-        <DataGrid autoHeight rows={vouchers} columns={columns} pageSize={5} />
+      <div className="voucher-tabs-wrapper">
+        <Tabs value={tab} onChange={(e, v) => setTab(v)}>
+          <Tab label="Available" />
+          <Tab label="Expired" />
+        </Tabs>
       </div>
 
-      <Dialog
-        className="add-voucher-dialog"
-        open={open}
-        onClose={handleClose}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>{editId ? "Edit Voucher" : "Add Voucher"}</DialogTitle>
+      {tab === 0 && (
+        <div className="voucher-action-bar">
+          <button className="voucher-add-btn" onClick={handleOpen}>
+            + Add Voucher
+          </button>
+        </div>
+      )}
 
-        <DialogContent
-          sx={{ display: "flex", flexDirection: "column", gap: 2.5, paddingTop: 2 }}
-        >
+      <div className="voucher-table-card">
+        <DataGrid
+          autoHeight
+          rows={tab === 0 ? vouchers : expiredVouchers}
+          columns={columns}
+          pageSize={5}
+          rowHeight={44}
+        />
+      </div>
+
+      {/* ADD / EDIT DIALOG */}
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+        <DialogTitle className="voucher-dialog-title">
+          {editId ? "Edit Voucher" : "Add Voucher"}
+        </DialogTitle>
+
+        <DialogContent className="voucher-dialog-content">
           <TextField
-            label="Voucher Sponsor"
-            fullWidth
+            label="Sponsor"
             value={form.sponsor}
             onChange={(e) => setForm({ ...form, sponsor: e.target.value })}
           />
@@ -190,7 +207,6 @@ const VoucherManagement = () => {
           <TextField
             label="Value"
             type="number"
-            fullWidth
             value={form.value}
             onChange={(e) => setForm({ ...form, value: e.target.value })}
           />
@@ -198,49 +214,68 @@ const VoucherManagement = () => {
           <TextField
             label="EcoPoints"
             type="number"
-            fullWidth
             value={form.ecoPoints}
             onChange={(e) => setForm({ ...form, ecoPoints: e.target.value })}
           />
 
-          <div className="image-upload-box">
-            <Button variant="outlined" component="label" fullWidth>
-              Upload Voucher Image
-              <input hidden type="file" onChange={(e) => setImageFile(e.target.files[0])} />
-            </Button>
+          <TextField
+            label="Expiry Date"
+            type="date"
+            InputLabelProps={{ shrink: true }}
+            value={form.expiryDate}
+            onChange={(e) =>
+              setForm({ ...form, expiryDate: e.target.value })
+            }
+          />
+
+          <div className="voucher-image-upload">
+            <label className="voucher-upload-btn">
+              Upload Image
+              <input
+                hidden
+                type="file"
+                onChange={(e) => setImageFile(e.target.files[0])}
+              />
+            </label>
 
             {(imageFile || form.image) && (
               <img
+                className="voucher-preview-image"
                 src={imageFile ? URL.createObjectURL(imageFile) : form.image}
                 alt="Preview"
-                className="voucher-image-preview"
               />
             )}
           </div>
         </DialogContent>
 
-        <DialogActions style={{ padding: "20px 25px" }}>
-          <div className="dialog-buttons-container">
-            <Button className="cancel-button" onClick={handleClose}>
-              Cancel
-            </Button>
-            <Button className="save-button" variant="contained" onClick={uploadImageAndSave}>
-              {editId ? "Update" : "Save"}
-            </Button>
-          </div>
+        <DialogActions className="voucher-dialog-actions">
+          <button className="voucher-cancel-btn" onClick={handleClose}>
+            Cancel
+          </button>
+          <button className="voucher-save-btn" onClick={uploadImageAndSave}>
+            {editId ? "Update" : "Save"}
+          </button>
         </DialogActions>
       </Dialog>
 
-      {/* Delete Confirmation Modal */}
+      {/* DELETE CONFIRMATION MODAL (MATCHES EVENT POSTING) */}
       {showConfirmationModal && (
         <div className="delete-modal">
           <div className="delete-modal-content">
-            <p className="delete-prompt">Are you sure you want to delete this voucher?</p>
+            <p className="delete-prompt">
+              Are you sure you want to delete this voucher? This action cannot be undone.
+            </p>
             <div className="delete-confirmation-buttons-container">
-              <button onClick={handleConfirmDelete} className="delete-yes-button">
+              <button
+                onClick={handleConfirmDelete}
+                className="delete-yes-button"
+              >
                 Delete
               </button>
-              <button onClick={() => setShowConfirmationModal(false)} className="delete-cancel-button">
+              <button
+                onClick={() => setShowConfirmationModal(false)}
+                className="delete-cancel-button"
+              >
                 Cancel
               </button>
             </div>
@@ -248,7 +283,7 @@ const VoucherManagement = () => {
         </div>
       )}
     </div>
-  )
+  );
 };
 
 export default VoucherManagement;

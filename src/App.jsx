@@ -10,8 +10,7 @@ import Signup from "./users/pages/Signup.jsx";
 import EventDetail from "./users/pages/EventDetail.jsx";
 import EventRegistration from "./users/pages/EventRegistration.jsx";
 import Marketplace from "./users/pages/Marketplace.jsx";
-import Donation from "./users/pages/Donation.jsx";
-import DonationCorner from "./users/pages/Donation.jsx";
+import DonationCorner from "./users/pages/DonationCorner.jsx";
 import DonationDetail from "./users/pages/DonationDetail.jsx";
 import DonateItem from "./users/pages/DonateItem.jsx";
 import MyAccount from "./users/pages/MyAccount.jsx";
@@ -151,7 +150,7 @@ const AppContent = ({ aboutRef, eventsRef, activeLink, setActiveLink, currentUse
         <Route path="/register/:id" element={isAdmin ? <Navigate to="/itemsApproval" /> : <EventRegistration />} />
         <Route path="/donationcorner" element={isAdmin ? <Navigate to="/itemsApproval" /> : <DonationCorner />} />
         <Route path="/donation/:id" element={isAdmin ? <Navigate to="/itemsApproval" /> : <DonationDetail />} />
-        <Route path="/donation" element={isAdmin ? <Navigate to="/itemsApproval" /> : <Donation />} />
+        <Route path="/donation" element={isAdmin ? <Navigate to="/itemsApproval" /> : <DonationCorner />} />
         <Route path="/donateitem" element={isAdmin ? <Navigate to="/itemsApproval" /> : <DonateItem />} />
         <Route path="/myaccount" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyAccount />} />
         <Route path="/myrewards" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyRewards />} />

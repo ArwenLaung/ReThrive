@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit3, Mail, Loader2, User as UserIcon } from 'lucide-react';
-
-// --- FIREBASE IMPORTS ---
 import { auth } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import DefaultProfilePic from '../assets/default_profile_pic.jpg'; 
@@ -53,7 +51,6 @@ const AccountDetails = () => {
   return (
     <div className="min-h-screen bg-white pb-20 pt-6 px-6">
       
-      {/* --- HEADER --- */}
       <div className="max-w-xl mx-auto mb-8 flex items-center gap-4">
         <Link to="/myaccount" className="p-2 bg-gray-50 rounded-full hover:bg-gray-100 text-[#59287a] transition-colors">
           <ArrowLeft size={24} />
@@ -62,8 +59,7 @@ const AccountDetails = () => {
       </div>
 
       <div className="max-w-xl mx-auto space-y-6">
-        
-        {/* --- PROFILE SUMMARY CARD --- */}
+
         <div className="bg-[#FEFAE0] rounded-[2rem] p-8 text-center shadow-sm relative overflow-hidden">
           <div className="absolute -right-10 -top-10 w-32 h-32 bg-[#59287a]/5 rounded-full"></div>
           
@@ -75,14 +71,12 @@ const AccountDetails = () => {
           <h2 className="text-2xl font-bold text-[#59287a]">{user?.name}</h2>
         </div>
 
-        {/* --- DETAILS SECTION --- */}
         <div className="bg-[#FEFAE0] rounded-[2rem] p-6 shadow-sm">
           <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Contact Info</h3>
           <InfoRow icon={UserIcon} label="Display Name" value={user?.name} />
           <InfoRow icon={Mail} label="Email Address" value={user?.email} />
         </div>
 
-        {/* --- EDIT BUTTON --- */}
         <button 
           onClick={() => navigate('/editprofile')}
           className="w-full bg-[#59287a] text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-[#451d5e] transition-transform active:scale-95 flex items-center justify-center gap-2"

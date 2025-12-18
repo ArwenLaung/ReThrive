@@ -3,9 +3,7 @@ import React, { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import ReThriveLogo from "../assets/logo.svg";
-
-// --- FIREBASE IMPORTS ---
-import { auth } from '../../firebase'; // Ensure path is correct
+import { auth } from '../../firebase'; 
 import { signInWithEmailAndPassword } from "firebase/auth";
 
 import BadmintonHall from "../assets/badminton-hall.mp4";

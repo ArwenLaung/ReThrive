@@ -9,6 +9,7 @@ import StepTwo from "../assets/step-two-icon.svg?react";
 import StepThree from "../assets/step-three-icon.svg?react";
 import StepFour from "../assets/step-four-icon.svg?react";
 import VouchersSection from "../components/VouchersSection.jsx";
+import MyVouchers from "../components/MyVouchersSection.jsx";
 import "./MyRewards.css";
 
 // --- FIREBASE IMPORTS ---
@@ -146,12 +147,7 @@ const MyRewards = () => {
 
   return (
     <div className="myrewards-page-body">
-      <div className="back-link-container">
-        <Link to="/myaccount" className="back-link">
-          <ArrowLeft size={18} />
-          Back to My Account
-        </Link>
-      </div>
+      {/* Back button container removed */}
 
       {/* Points Display */}
       <div className="ecopoints-icon-section">
@@ -192,6 +188,11 @@ const MyRewards = () => {
 
       <VouchersSection
         ecoPoints={ecoPoints}
+        claimedVouchers={claimedVouchers}
+        userId={user.uid}
+      />
+
+      <MyVouchers
         claimedVouchers={claimedVouchers}
         userId={user.uid}
       />
