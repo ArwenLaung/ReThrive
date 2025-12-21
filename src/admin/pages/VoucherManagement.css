@@ -217,7 +217,7 @@
 
 /* DIALOG ACTIONS */
 .voucher-dialog-actions {
-  padding: 18px 24px;
+  padding: 18px 30px !important;
   display: flex;
   justify-content: flex-end;
   gap: 12px;
@@ -228,7 +228,7 @@
   border: 2px solid #c3b6d8;
   color: #5b2d6f;
   padding: 10px 20px;
-  border-radius: 999px;
+  border-radius: 999px !important;
   cursor: pointer;
 }
 
@@ -237,7 +237,8 @@
   color: white;
   border: none;
   padding: 10px 22px;
-  border-radius: 999px;
+  border: 2px solid #5b2d6f !important;
+  border-radius: 999px !important;
   cursor: pointer;
 }
 

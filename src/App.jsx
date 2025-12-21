@@ -16,6 +16,7 @@ import DonateItem from "./users/pages/DonateItem.jsx";
 import MyAccount from "./users/pages/MyAccount.jsx";
 import AccountDetails from "./users/pages/AccountDetails.jsx";
 import EditProfile from "./users/pages/EditProfile.jsx";
+import MyCart from "./users/pages/MyCart.jsx";
 import MyRewards from "./users/pages/MyRewards.jsx";
 import MyListings from "./users/pages/MyListings.jsx";
 import ListingDetail from "./users/pages/ListingDetail.jsx";
@@ -154,6 +155,7 @@ const AppContent = ({ aboutRef, eventsRef, activeLink, setActiveLink, currentUse
         <Route path="/donateitem" element={isAdmin ? <Navigate to="/itemsApproval" /> : <DonateItem />} />
         <Route path="/myaccount" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyAccount />} />
         <Route path="/myrewards" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyRewards />} />
+        <Route path="/mycart" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyCart />} />
         <Route path="/accountdetails" element={isAdmin ? <Navigate to="/itemsApproval" /> : <AccountDetails />} />
         <Route path="/editprofile" element={isAdmin ? <Navigate to="/itemsApproval" /> : <EditProfile />} />
         <Route path="/mylistings" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyListings />} />
