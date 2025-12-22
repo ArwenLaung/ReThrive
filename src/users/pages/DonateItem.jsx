@@ -4,9 +4,19 @@ import { ArrowLeft, Upload, Loader2, X, Gift } from 'lucide-react';
 import { classifyImage } from '../../utils/aiImage';
 import { generateDescription } from '../../utils/textGen';
 import { db, storage, auth } from '../../firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { onAuthStateChanged } from 'firebase/auth';
+
+// Helper to convert file to Base64 (Required for Gemini Vision)
+const fileToDataURL = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = (error) => reject(error);
+  });
+};
 
 const DonateItem = () => {
   const navigate = useNavigate();
@@ -27,6 +37,15 @@ const DonateItem = () => {
   const [isGeneratingText, setIsGeneratingText] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [unsafeKeywords, setUnsafeKeywords] = useState([]);
+
+  // Fallback list (Only used if Firebase fails)
+  const DEFAULT_BANNED_WORDS = [
+    "gun", "knife", "drug", "alcohol", "beer", "broken", "poker", "gambling",
+    "medicine", "pill", "tablet", "capsule", "vitamin", "panadol", "antibiotic",
+    "cigarette", "vape", "tobacco", "smoke", "wine", "vodka", "liquor"
+  ];
+  const FORBIDDEN_CLASSES = ["Weapon / Dangerous Item", "Restricted Item"];
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -37,6 +56,36 @@ const DonateItem = () => {
         setDonorEmail(user.email || "");
       }
     });
+
+    // Fetch banned keywords from Firebase
+    const fetchKeywords = async () => {
+      try {
+        const docRef = doc(db, "settings", "moderation");
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists() && docSnap.data().bannedKeywords) {
+          const rawList = docSnap.data().bannedKeywords;
+          
+          const cleanList = rawList
+            .map(word => word.toString().replace(/['"]+/g, '').toLowerCase().trim()) 
+            .filter(word => word.length > 0);
+
+          if (cleanList.length > 0) {
+            setUnsafeKeywords(cleanList);
+            console.log("Loaded Banned Words:", cleanList);
+          } else {
+            setUnsafeKeywords(DEFAULT_BANNED_WORDS);
+          }
+        } else {
+          setUnsafeKeywords(DEFAULT_BANNED_WORDS);
+        }
+      } catch (error) {
+        console.error("Error fetching keywords (Check Firestore Rules!):", error);
+        setUnsafeKeywords(DEFAULT_BANNED_WORDS);
+      }
+    };
+
+    fetchKeywords();
     return () => unsubscribe();
   }, []);
 
@@ -52,26 +101,33 @@ const DonateItem = () => {
       file,
       preview: URL.createObjectURL(file)
     }));
-    setImages(prev => [...prev, ...newImages]);
 
-    if (images.length === 0 && newImages.length > 0) {
-      const firstImgUrl = newImages[0].preview;
-      const imgElement = document.createElement("img");
-      imgElement.crossOrigin = "anonymous";
-      imgElement.src = firstImgUrl;
-      imgElement.onload = async () => {
-        try {
-          const prediction = await classifyImage(imgElement);
-          if (prediction?.className) setCategory(prediction.className);
-        } catch (error) {
-          console.error("AI Error:", error);
-        } finally {
+    const firstImgUrl = newImages[0].preview;
+    const imgElement = document.createElement("img");
+    imgElement.crossOrigin = "anonymous";
+    imgElement.src = firstImgUrl;
+
+    imgElement.onload = async () => {
+      try {
+        const prediction = await classifyImage(imgElement);
+        
+        // Block if forbidden class detected with high confidence
+        if (FORBIDDEN_CLASSES.includes(prediction?.className) && prediction?.probability > 0.8) {
+          alert(`Donation Blocked: The system identified this as a '${prediction.className}'. To maintain a safe campus environment, this item cannot be listed.`);
           setIsAnalyzingImage(false);
+          return; // Stop execution
         }
-      };
-    } else {
-      setIsAnalyzingImage(false);
-    }
+
+        setImages(prev => [...prev, ...newImages]);
+        if (prediction?.className && !FORBIDDEN_CLASSES.includes(prediction.className)) {
+          setCategory(prediction.className);
+        }
+      } catch (error) {
+        console.error("AI Error:", error);
+      } finally {
+        setIsAnalyzingImage(false);
+      }
+    };
   };
 
   const removeImage = (indexToRemove) => {
@@ -83,20 +139,39 @@ const DonateItem = () => {
       alert("Please select a category and add some keywords.");
       return;
     }
+    // Check for unsafe keywords before generating
+    const foundKeyword = unsafeKeywords.find(word => keywords.toLowerCase().includes(word));
+    
+    if (foundKeyword) {
+      alert(`Generation Blocked: Your input contains the restricted word "${foundKeyword}". Please remove prohibited keywords.`);
+      return; // Stop execution
+    }
     setIsGeneratingText(true);
     try {
-      const result = await generateDescription(keywords, category, null);
+      let imageDataUrl = null;
+      // Convert raw file to Base64 so AI can detect inappropriate items visually
+      if (images.length > 0) {
+        imageDataUrl = await fileToDataURL(images[0].file);
+      }
+      const result = await generateDescription(keywords, category, imageDataUrl);
+      if (result.title === "Restricted Item" || result.title.includes("Violation")) {
+        alert(`Safety Restriction: ${result.description}`);
+        setTitle(""); 
+        setDescription(""); 
+        return; 
+      }
       setTitle(result.title);
       setDescription(result.description);
     } catch (error) {
       console.error("Error generating text:", error);
+      alert("AI Generation failed. Please try again.");
     } finally {
       setIsGeneratingText(false);
     }
   };
 
   const handleDonate = async () => {
-    if (images.length === 0 || !title || !donorName || !category) {
+    if (images.length === 0 || !title || !category) {
       alert("Please fill in all required fields and upload at least one image.");
       return;
     }
@@ -105,6 +180,21 @@ const DonateItem = () => {
       alert("Please specify the location.");
       return;
     }
+
+    // Keyword block using list from firebase
+    const combinedText = (title + " " + description).toLowerCase();
+    console.log("--- DONATION CHECK START ---");
+    console.log("Checking Text:", combinedText);
+    console.log("Using Banned List:", unsafeKeywords);
+    // Check if any keyword in the array is present in the text
+    const foundKeyword = unsafeKeywords.find(word => combinedText.includes(word.toLowerCase()));
+    
+    if (foundKeyword) {
+      // Direct block logic
+      alert(`Donation Blocked: Your description contains the restricted word "${foundKeyword}". Please remove prohibited keywords to proceed.`);
+      return; // Stop execution immediately. Do not upload.
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -126,7 +216,7 @@ const DonateItem = () => {
         images: imageUrls,
         image: imageUrls[0],
         donorId: donorId || (currentUser ? currentUser.uid : null),
-        donorName: donorName || (currentUser ? (currentUser.displayName || "Anonymous") : ""),
+        donorName: donorName || (currentUser ? (currentUser.displayName || "USN Student") : ""),
         donorEmail: donorEmail || (currentUser ? currentUser.email : null),
         createdAt: serverTimestamp(),
         status: "active",

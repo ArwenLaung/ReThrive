@@ -20,6 +20,12 @@ const CATEGORY_MAPPING = {
     "fashion & accessories": "Fashion & Accessories",
     "Fashion & Accessories": "Fashion & Accessories",
     "accessories": "Fashion & Accessories",
+    "weapon / dangerous items": "Weapon / Dangerous Items",
+    "weapon_dangerous_items": "Weapon / Dangerous Items",
+    "Weapon / Dangerous Items": "Weapon / Dangerous Items",
+    "Restricted Items": "Restricted Items",
+    "restricted items": "Restricted Items",
+    "restricted_items": "Restricted Items",
     "others": "Others",
     "Others": "Others",
     "other": "Others"

@@ -24,6 +24,10 @@ import MyPurchases from "./users/pages/MyPurchases.jsx";
 import MySoldItems from "./users/pages/MySoldItems.jsx";
 import SellItem from "./users/pages/SellItem.jsx";
 import ItemDetail from "./users/pages/ItemDetail.jsx";
+import MyDonations from "./users/pages/MyDonations.jsx";
+import MyDonationDetail from "./users/pages/MyDonationDetail.jsx";
+import MyDonatedItems from "./users/pages/MyDonatedItems.jsx";
+import MyClaimedItems from "./users/pages/MyClaimedItems.jsx";
 
 // ADMIN
 import ItemsApproval from "./admin/pages/ItemsApproval.jsx";
@@ -162,6 +166,10 @@ const AppContent = ({ aboutRef, eventsRef, activeLink, setActiveLink, currentUse
         <Route path="/listing/:id" element={isAdmin ? <Navigate to="/itemsApproval" /> : <ListingDetail />} />
         <Route path="/purchasehistory" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyPurchases />} />
         <Route path="/solditems" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MySoldItems />} />
+        <Route path="/mydonations" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyDonations />} />
+        <Route path="/mydonation/:id" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyDonationDetail />} />
+        <Route path="/mydonateditems" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyDonatedItems />} />
+        <Route path="/myclaimeditems" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyClaimedItems />} />
 
         {/* ADMIN ROUTES BLOCKED FOR USERS */}
         <Route path="/itemsApproval" element={isAdmin ? adminWrapper(<ItemsApproval />) : <Navigate to="/" />} />
