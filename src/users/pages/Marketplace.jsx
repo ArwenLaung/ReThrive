@@ -15,6 +15,7 @@ const Marketplace = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
 
   useEffect(() => {
+    // Fetch all items, we'll hide sold ones on the client
     const itemsQuery = query(collection(db, "items"), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(itemsQuery, (snapshot) => {
       const itemsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -30,12 +31,15 @@ const Marketplace = () => {
   const handleSearch = () => setSearchQuery(inputValue);
   const handleKeyDown = (e) => { if (e.key === 'Enter') handleSearch(); };
 
-  const filteredItems = items.filter((item) => {
-    const matchesCategory = selectedCategory === "All" || item.category === selectedCategory;
-    const title = item.title ? item.title.toLowerCase() : "";
-    const matchesSearch = title.includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const filteredItems = items
+    // Hide items that have been sold
+    .filter((item) => item.status !== 'sold')
+    .filter((item) => {
+      const matchesCategory = selectedCategory === "All" || item.category === selectedCategory;
+      const title = item.title ? item.title.toLowerCase() : "";
+      const matchesSearch = title.includes(searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
 
   return (
     <div className="min-h-screen bg-[#5D2C75]/5 bg-[linear-gradient(to_right,#7db03815_1px,transparent_1px),linear-gradient(to_bottom,#7db03815_1px,transparent_1px)] [background-size:24px_24px] pb-20">
@@ -92,7 +96,18 @@ const Marketplace = () => {
                   <div className="p-4">
                     <div className="flex flex-col gap-1 mb-3">
                       <h3 className="font-bold text-gray-900 text-[15px] line-clamp-2 leading-snug group-hover:text-brand-purple transition-colors">{item.title}</h3>
-                      <div className="flex items-center gap-1.5 text-gray-400 text-xs font-medium"><MapPin size={12} /><span className="truncate">{item.location}</span></div>
+                      <div className="flex items-start gap-1.5 text-gray-400 text-xs font-medium">
+                        <MapPin size={12} className="mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          {(item.locations && item.locations.length > 0) ? (
+                            <span className="line-clamp-2">
+                              {item.locations.join(' ΓÇó ')}
+                            </span>
+                          ) : (
+                            <span className="truncate">{item.location || 'Location not specified'}</span>
+                          )}
+                        </div>
+                      </div>
                     </div>
                     <div className="flex items-end justify-between border-t border-gray-50 pt-3 mt-auto">
                       <p className="text-brand-purple font-black text-xl tracking-tight">RM {item.price}</p>
