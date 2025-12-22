@@ -8,20 +8,22 @@ import { auth, db } from '../../firebase';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, getCountFromServer, doc, getDoc, getDocs } from 'firebase/firestore';
 import DefaultProfilePic from '../assets/default_profile_pic.jpg';
+import ConfirmModal from '../../components/ConfirmModal';
 
 const MyAccount = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState({ name: "Student", email: "Loading...", avatar: DefaultProfilePic });
-  
+
   // Stats state including the split for donations
-  const [stats, setStats] = useState({ 
-    activeListings: 0, 
-    soldItems: 0, 
-    points: 0, 
-    activeDonations: 0, 
-    completedDonations: 0, 
-    cartItems: 0 
+  const [stats, setStats] = useState({
+    activeListings: 0,
+    soldItems: 0,
+    points: 0,
+    activeDonations: 0,
+    completedDonations: 0,
+    cartItems: 0
   });
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -38,12 +40,12 @@ const MyAccount = () => {
         const itemsRef = collection(db, "items");
         const activeSnap = await getCountFromServer(query(itemsRef, where("sellerId", "==", currentUser.uid), where("status", "==", "active")));
         const soldSnap = await getCountFromServer(query(itemsRef, where("sellerId", "==", currentUser.uid), where("status", "==", "sold")));
-        
+
         // 2. Donation Stats (Active vs Completed)
         // We fetch ALL donations for the user first to ensure reliability, then filter in JS
         const donationQuery = query(collection(db, "donations"), where("donorId", "==", currentUser.uid));
         const donationSnapshot = await getDocs(donationQuery);
-        
+
         const allDonations = donationSnapshot.docs.map(doc => doc.data());
         const completedCount = allDonations.filter(d => d.receiverId).length; // Items with a receiver
         const activeCount = allDonations.length - completedCount; // Total - Completed
@@ -56,7 +58,7 @@ const MyAccount = () => {
         try {
           const userDoc = await getDoc(doc(db, "users", currentUser.uid));
           if (userDoc.exists()) currentPoints = userDoc.data().ecoPoints || 0;
-        } catch (e) {}
+        } catch (e) { }
 
         setStats({
           activeListings: activeSnap.data().count,
@@ -66,14 +68,23 @@ const MyAccount = () => {
           completedDonations: completedCount,
           cartItems: cartSnap.data().count
         });
-      } catch (error) { console.error("Error fetching account data:", error); } 
+      } catch (error) { console.error("Error fetching account data:", error); }
     });
     return () => unsubscribe();
   }, [navigate]);
 
-  const handleLogout = async () => {
-    if (window.confirm("Are you sure you want to log out?")) {
-      try { await signOut(auth); navigate('/login'); } catch (error) { alert("Error logging out: " + error.message); }
+  const handleLogout = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const handleConfirmLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate('/login');
+    } catch (error) {
+      alert("Error logging out: " + error.message);
+    } finally {
+      setShowLogoutConfirm(false);
     }
   };
 
@@ -126,7 +137,7 @@ const MyAccount = () => {
           <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 px-2">Marketplace</h3>
           <div className="bg-[#FEFAE0] rounded-[2rem] p-6 shadow-sm hover:shadow-md transition-shadow duration-300">
             <MenuRow icon={ShoppingCart} label="My Cart" subLabel={`${stats.cartItems} Items in cart`} onClick={() => navigate('/mycart')} />
-            
+
             <MenuRow icon={Package} label="My Listings" subLabel={`${stats.activeListings} Active Items`} onClick={() => navigate('/mylistings')} />
             <MenuRow icon={ShoppingBag} label="My Sold Items" subLabel={`${stats.soldItems} Items Sold`} onClick={() => navigate('/solditems')} />
             <MenuRow icon={Clock} label="Purchase History" subLabel="View past orders" isLast={true} onClick={() => navigate('/purchasehistory')} />
@@ -137,13 +148,13 @@ const MyAccount = () => {
         <div>
           <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 px-2">Donations</h3>
           <div className="bg-[#FEFAE0] rounded-[2rem] p-6 shadow-sm hover:shadow-md transition-shadow duration-300">
-            
+
             {/* Active Donations */}
             <MenuRow icon={Gift} label="My Donations" subLabel={`${stats.activeDonations} Active Donations`} onClick={() => navigate('/mydonations')} />
-            
+
             {/* My Donated Items */}
             <MenuRow icon={PackageCheck} label="My Donated Items" subLabel={`${stats.completedDonations} Items given away`} onClick={() => navigate('/mydonateditems')} />
-            
+
             {/* Claimed Items */}
             <MenuRow icon={Heart} label="My Claimed Items" subLabel="Items received from community" isLast={true} onClick={() => navigate('/myclaimeditems')} />
           </div>
@@ -163,6 +174,16 @@ const MyAccount = () => {
           <LogOut size={20} /> Log Out
         </button>
       </div>
+
+      <ConfirmModal
+        open={showLogoutConfirm}
+        title="Log out?"
+        message="Are you sure you want to log out of your account?"
+        confirmText="Log out"
+        cancelText="Cancel"
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={handleConfirmLogout}
+      />
 
       {/* FLOATING ACTION BUTTONS */}
       <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-50">

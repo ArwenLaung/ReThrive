@@ -4,11 +4,13 @@ import { Gift, Trash2, MapPin, Loader2 } from 'lucide-react';
 import { auth, db } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
+import ConfirmModal from '../../components/ConfirmModal';
 
 const MyDonations = () => {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
@@ -26,11 +28,20 @@ const MyDonations = () => {
     return () => unsubscribeAuth();
   }, [navigate]);
 
-  const handleDelete = async (e, itemId) => {
+  const handleDelete = (e, itemId) => {
     e.preventDefault(); // Prevent navigation when clicking delete
     e.stopPropagation();
-    if (window.confirm("Delete this donation listing?")) {
-      try { await deleteDoc(doc(db, "donations", itemId)); } catch (error) { console.error("Error deleting:", error); }
+    setDeleteTarget(itemId);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteDoc(doc(db, "donations", deleteTarget));
+    } catch (error) {
+      console.error("Error deleting:", error);
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -61,8 +72,8 @@ const MyDonations = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {items.map((item) => (
-              <Link 
-                key={item.id} 
+              <Link
+                key={item.id}
                 to={`/mydonationdetail/${item.id}`}
                 className="bg-white rounded-2xl overflow-hidden border border-[#7db038]/20 shadow-sm hover:shadow-md transition-all relative block group"
               >
@@ -71,9 +82,9 @@ const MyDonations = () => {
 
                   <div className="absolute top-3 left-3">
                     {item.receiverId ? (
-                       <span className="px-3 py-1 rounded-full text-xs font-bold text-white bg-gray-500 shadow-sm">CLAIMED</span>
+                      <span className="px-3 py-1 rounded-full text-xs font-bold text-white bg-gray-500 shadow-sm">CLAIMED</span>
                     ) : (
-                       <span className="px-3 py-1 rounded-full text-xs font-bold text-white bg-[#7db038] shadow-sm">ACTIVE</span>
+                      <span className="px-3 py-1 rounded-full text-xs font-bold text-white bg-[#7db038] shadow-sm">ACTIVE</span>
                     )}
                   </div>
                 </div>
@@ -81,8 +92,8 @@ const MyDonations = () => {
                   <h3 className="font-bold text-gray-900 truncate mb-1 group-hover:text-[#7db038] transition-colors">{item.title}</h3>
                   <div className="flex items-center justify-between mt-2">
                     <div className="flex items-center gap-1 text-xs text-gray-500"><MapPin size={12} /> {item.location}</div>
-                    <button 
-                      onClick={(e) => handleDelete(e, item.id)} 
+                    <button
+                      onClick={(e) => handleDelete(e, item.id)}
                       className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                     >
                       <Trash2 size={18} />
@@ -94,6 +105,15 @@ const MyDonations = () => {
           </div>
         )}
       </div>
+      <ConfirmModal
+        open={!!deleteTarget}
+        title="Delete donation?"
+        message="Are you sure you want to delete this donation listing?"
+        confirmText="Delete"
+        cancelText="Cancel"
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 };

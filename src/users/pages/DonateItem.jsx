@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Upload, Loader2, X, Gift } from 'lucide-react';
+import { ArrowLeft, Upload, Loader2, X, Gift, CheckCircle2, MapPin } from 'lucide-react';
 import { classifyImage } from '../../utils/aiImage';
 import { generateDescription } from '../../utils/textGen';
 import { db, storage, auth } from '../../firebase';
@@ -16,7 +16,7 @@ const DonateItem = () => {
   const [keywords, setKeywords] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [condition, setCondition] = useState("Lightly Used"); 
+  const [condition, setCondition] = useState("Lightly Used");
   const [locationSelection, setLocationSelection] = useState("Desasiswa Restu");
   const [customLocation, setCustomLocation] = useState("");
   const [donorName, setDonorName] = useState("");
@@ -27,6 +27,10 @@ const DonateItem = () => {
   const [isGeneratingText, setIsGeneratingText] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+
+  // --- SUCCESS STATE ---
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [postedDonation, setPostedDonation] = useState(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -117,12 +121,12 @@ const DonateItem = () => {
         })
       );
 
-      await addDoc(collection(db, "donations"), {
+      const payload = {
         title: title.trim(),
         description: description.trim(),
         category,
         location: finalLocation.trim(),
-        condition, 
+        condition,
         images: imageUrls,
         image: imageUrls[0],
         donorId: donorId || (currentUser ? currentUser.uid : null),
@@ -130,10 +134,13 @@ const DonateItem = () => {
         donorEmail: donorEmail || (currentUser ? currentUser.email : null),
         createdAt: serverTimestamp(),
         status: "active",
-      });
+      };
 
-      alert("Thank you! Your donation has been posted.");
-      navigate('/donation');
+      const docRef = await addDoc(collection(db, "donations"), payload);
+
+      // Show success screen with only the newly posted donation
+      setPostedDonation({ id: docRef.id, ...payload });
+      setShowSuccess(true);
     } catch (error) {
       console.error("Error posting:", error);
       alert("Failed to post donation.");
@@ -142,8 +149,15 @@ const DonateItem = () => {
     }
   };
 
+  const handleSuccessOk = () => {
+    // Hide success prompt and redirect to marketplace (or donation list if you prefer)
+    setShowSuccess(false);
+    setPostedDonation(null);
+    navigate("/marketplace");
+  };
+
   return (
-    <div className="min-h-screen bg-[#9af71e]/5 pb-20">
+    <div className="min-h-screen bg-[#9af71e]/5 pb-20 relative">
       <div className="bg-white/90 backdrop-blur-md px-4 py-4 shadow-sm sticky top-0 z-10 border-b border-[#7db038]/20">
         <div className="max-w-7xl mx-auto flex items-center gap-4">
           <Link to="/donation" className="text-gray-600 hover:text-[#7db038] transition-colors"><ArrowLeft size={24} /></Link>
@@ -176,7 +190,7 @@ const DonateItem = () => {
 
           <div className="md:col-span-8 flex flex-col">
             <section className="bg-white p-6 rounded-3xl shadow-sm border border-[#7db038]/20 space-y-6 h-full">
-              
+
               <div>
                 <h2 className="text-lg font-bold text-[#364f15] mb-4">Donation Details</h2>
                 <div className="space-y-5">
@@ -241,6 +255,57 @@ const DonateItem = () => {
           </div>
         </div>
       </main>
+
+      {/* SUCCESS OVERLAY */}
+      {showSuccess && postedDonation && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 space-y-5">
+            <div className="flex justify-center">
+              <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center">
+                <CheckCircle2 className="text-emerald-600 w-8 h-8" />
+              </div>
+            </div>
+            <div className="text-center space-y-1">
+              <h2 className="text-xl font-bold text-gray-900">Donation Posted Successfully</h2>
+              <p className="text-sm text-gray-600">
+                Thank you for giving! Here’s a quick preview of your donated item.
+              </p>
+            </div>
+
+            <div className="border border-[#7db038]/30 rounded-2xl overflow-hidden bg-[#7db038]/5">
+              {postedDonation.image && (
+                <div className="aspect-video w-full overflow-hidden bg-gray-100">
+                  <img
+                    src={postedDonation.image}
+                    alt={postedDonation.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+              <div className="p-4 space-y-2">
+                <p className="text-sm font-semibold text-[#364f15] line-clamp-2">
+                  {postedDonation.title}
+                </p>
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-white bg-[#7db038] px-3 py-1 rounded-full">
+                  <Gift size={14} />
+                  FREE ITEM
+                </span>
+                <div className="flex items-center gap-2 text-xs text-[#364f15] mt-1">
+                  <MapPin size={14} className="text-[#7db038]" />
+                  <span className="truncate">{postedDonation.location}</span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={handleSuccessOk}
+              className="w-full bg-[#7db038] text-white font-bold py-3 rounded-2xl shadow-md hover:bg-[#4a6b1d] active:scale-95 transition-transform"
+            >
+              Okay
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

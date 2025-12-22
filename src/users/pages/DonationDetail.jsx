@@ -16,7 +16,7 @@ const DonationDetail = () => {
       try {
         const itemDoc = await getDoc(doc(db, 'donations', id));
         if (itemDoc.exists()) setItem({ id: itemDoc.id, ...itemDoc.data() });
-      } catch (error) { console.error(error); } 
+      } catch (error) { console.error(error); }
       finally { setLoading(false); }
     };
     if (id) fetchItem();
@@ -45,7 +45,7 @@ const DonationDetail = () => {
             <div className="relative aspect-square bg-white rounded-2xl overflow-hidden border border-[#7db038]/20 shadow-lg">
               <img src={images[currentImageIndex]} className="w-full h-full object-cover" />
               <div className="absolute top-4 left-4">
-                 <span className="bg-[#7db038] text-white text-sm font-black px-4 py-2 rounded-full shadow-lg">{item.condition || "Used"}</span>
+                <span className="bg-[#7db038] text-white text-sm font-black px-4 py-2 rounded-full shadow-lg">{item.condition || "Used"}</span>
               </div>
               {images.length > 1 && (
                 <>
@@ -80,7 +80,16 @@ const DonationDetail = () => {
             )}
 
             <div className="space-y-3 sticky bottom-4">
-              <button className="w-full bg-[#7db038] text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-[#4a6b1d] transition-all text-lg">Contact Donor</button>
+              <button
+                onClick={() => {
+                  if (item?.donorEmail) {
+                    window.location.href = `mailto:${item.donorEmail}`;
+                  }
+                }}
+                className="w-full bg-[#7db038] text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-[#4a6b1d] transition-all text-lg"
+              >
+                Contact Donor
+              </button>
               <button onClick={handleClaim} className="w-full bg-white border-2 border-[#7db038] text-[#364f15] font-bold py-3 rounded-2xl hover:bg-[#7db038]/10 flex items-center justify-center gap-2 transition-colors">
                 <CheckCircle size={20} /> Claim this Item
               </button>

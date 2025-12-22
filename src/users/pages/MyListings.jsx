@@ -4,12 +4,14 @@ import { ArrowLeft, Package, Trash2, MapPin, Loader2 } from 'lucide-react';
 import { auth, db } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
+import ConfirmModal from '../../components/ConfirmModal';
 
 const MyListings = () => {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   // Check Auth & Fetch Data
   useEffect(() => {
@@ -33,7 +35,7 @@ const MyListings = () => {
         }));
         // Client-side sort by date (newest first)
         userItems.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-        
+
         setItems(userItems);
         setLoading(false);
       }, (error) => {
@@ -49,13 +51,18 @@ const MyListings = () => {
 
   // Delete Item Handler
   const handleDelete = async (itemId) => {
-    if (window.confirm("Are you sure you want to delete this listing? This cannot be undone.")) {
-      try {
-        await deleteDoc(doc(db, "items", itemId));
-      } catch (error) {
-        console.error("Error deleting item:", error);
-        alert("Failed to delete item.");
-      }
+    setDeleteTarget(itemId);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteDoc(doc(db, "items", deleteTarget));
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      alert("Failed to delete item.");
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -91,12 +98,12 @@ const MyListings = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {items.map((item) => (
               <div key={item.id} className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all group relative">
-                
+
                 {/* Image */}
                 <div className="relative aspect-square bg-gray-100">
-                  <img 
-                    src={item.image} 
-                    alt={item.title} 
+                  <img
+                    src={item.image}
+                    alt={item.title}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute top-3 left-3">
@@ -112,11 +119,11 @@ const MyListings = () => {
                   <div className="flex items-center gap-1 text-xs text-gray-500 mb-3">
                     <MapPin size={12} /> {item.location}
                   </div>
-                  
+
                   <div className="flex items-center justify-between mt-2">
                     <p className="text-[#59287a] font-black text-lg">RM {item.price}</p>
-                    
-                    <button 
+
+                    <button
                       onClick={(e) => {
                         e.preventDefault();
                         handleDelete(item.id);
@@ -135,6 +142,15 @@ const MyListings = () => {
           </div>
         )}
       </div>
+      <ConfirmModal
+        open={!!deleteTarget}
+        title="Delete listing?"
+        message="Are you sure you want to delete this listing? This cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 };

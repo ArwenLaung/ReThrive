@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Upload, Loader2, X } from 'lucide-react';
+import { ArrowLeft, Upload, Loader2, X, CheckCircle2, MapPin, Tag } from 'lucide-react';
 import { classifyImage } from '../../utils/aiImage';
 import { generateDescription } from '../../utils/textGen';
 
@@ -20,9 +20,10 @@ const SellItem = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
-  const [condition, setCondition] = useState("Lightly Used"); 
-  const [locationSelection, setLocationSelection] = useState("Desasiswa Restu");
-  const [customLocation, setCustomLocation] = useState("");
+  const [condition, setCondition] = useState("Lightly Used");
+  const [locations, setLocations] = useState([]);
+  const [otherChecked, setOtherChecked] = useState(false);
+  const [otherLocation, setOtherLocation] = useState("");
 
   const [sellerName, setSellerName] = useState("");
   const [sellerEmail, setSellerEmail] = useState("");
@@ -32,6 +33,10 @@ const SellItem = () => {
   const [isGeneratingText, setIsGeneratingText] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+
+  // --- SUCCESS STATE ---
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [postedItem, setPostedItem] = useState(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -105,11 +110,13 @@ const SellItem = () => {
       alert("Please fill in all required fields and upload at least one image.");
       return;
     }
-    const finalLocation = locationSelection === "Other" ? customLocation : locationSelection;
-    if (!finalLocation.trim()) {
-      alert("Please specify the location.");
+    const finalLocations = [...locations];
+    if (otherChecked && otherLocation && otherLocation.trim()) finalLocations.push(otherLocation.trim());
+    if (finalLocations.length === 0) {
+      alert("Please select at least one pickup location.");
       return;
     }
+    const finalLocation = finalLocations[0];
     setIsSubmitting(true);
 
     try {
@@ -122,12 +129,13 @@ const SellItem = () => {
         })
       );
 
-      await addDoc(collection(db, "items"), {
+      const payload = {
         title: title.trim(),
         description: description.trim(),
         price: Number(price),
         category,
-        location: finalLocation.trim(),
+        location: finalLocation,
+        locations: finalLocations,
         condition,
         images: imageUrls,
         image: imageUrls[0],
@@ -136,10 +144,13 @@ const SellItem = () => {
         sellerId: sellerId || (currentUser ? currentUser.uid : null),
         sellerName: sellerName || (currentUser ? (currentUser.displayName || "Anonymous") : ""),
         sellerEmail: sellerEmail || (currentUser ? currentUser.email : null),
-      });
+      };
 
-      alert("Success! Your item has been posted.");
-      navigate('/marketplace');
+      const docRef = await addDoc(collection(db, "items"), payload);
+
+      // Show success screen with only the newly posted item
+      setPostedItem({ id: docRef.id, ...payload });
+      setShowSuccess(true);
     } catch (error) {
       console.error("Error posting:", error);
       alert("Failed to post item.");
@@ -148,8 +159,15 @@ const SellItem = () => {
     }
   };
 
+  const handleSuccessOk = () => {
+    // Hide success prompt and redirect to My Listings page
+    setShowSuccess(false);
+    setPostedItem(null);
+    navigate("/mylistings");
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50 pb-20 relative">
       <div className="bg-white px-4 py-4 shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto flex items-center gap-4">
           <Link to="/" className="text-gray-600 hover:text-[#59287a] transition-colors"><ArrowLeft size={24} /></Link>
@@ -226,11 +244,34 @@ const SellItem = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div><label className="block text-sm font-semibold text-gray-700 mb-2">Price (RM)</label><input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#59287a] outline-none" /></div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Pickup Location</label>
-                    <select value={locationSelection} onChange={(e) => setLocationSelection(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#59287a] outline-none bg-white mb-2">
-                      <option>Desasiswa Restu</option><option>Desasiswa Saujana</option><option>Desasiswa Tekun</option><option>Desasiswa Aman Damai</option><option>Desasiswa Indah Kembara</option><option>Desasiswa Fajar Harapan</option><option>Desasiswa Bakti Permai</option><option>Desasiswa Cahaya Gemilang</option><option>Main Library</option><option value="Other">Other</option>
-                    </select>
-                    {locationSelection === "Other" && <input type="text" placeholder="Enter location..." value={customLocation} onChange={(e) => setCustomLocation(e.target.value)} className="w-full p-3 rounded-xl border border-[#dccae8] bg-[#f3eefc] focus:ring-2 focus:ring-[#59287a] outline-none" />}
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Pickup Location(s)</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        'Desasiswa Restu',
+                        'Desasiswa Saujana',
+                        'Desasiswa Tekun',
+                        'Desasiswa Aman Damai',
+                        'Desasiswa Indah Kembara',
+                        'Desasiswa Fajar Harapan',
+                        'Desasiswa Bakti Permai',
+                        'Desasiswa Cahaya Gemilang',
+                        'Main Library',
+                      ].map((opt) => (
+                        <label key={opt} className="inline-flex items-center gap-2">
+                          <input type="checkbox" checked={locations.includes(opt)} onChange={() => {
+                            setLocations((prev) => prev.includes(opt) ? prev.filter((p) => p !== opt) : [...prev, opt]);
+                          }} />
+                          <span className="text-sm">{opt}</span>
+                        </label>
+                      ))}
+                      <label className="inline-flex items-center gap-2">
+                        <input type="checkbox" checked={otherChecked} onChange={() => setOtherChecked((v) => !v)} />
+                        <span className="text-sm">Other</span>
+                      </label>
+                    </div>
+                    {otherChecked && (
+                      <input type="text" placeholder="Enter other location..." value={otherLocation} onChange={(e) => setOtherLocation(e.target.value)} className="w-full mt-2 p-3 rounded-xl border border-[#dccae8] bg-[#f3eefc] focus:ring-2 focus:ring-[#59287a] outline-none" />
+                    )}
                   </div>
                 </div>
               </div>
@@ -244,6 +285,64 @@ const SellItem = () => {
           </div>
         </div>
       </main>
+
+      {/* SUCCESS OVERLAY */}
+      {showSuccess && postedItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 space-y-5">
+            <div className="flex justify-center">
+              <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center">
+                <CheckCircle2 className="text-emerald-600 w-8 h-8" />
+              </div>
+            </div>
+            <div className="text-center space-y-1">
+              <h2 className="text-xl font-bold text-gray-900">Item Posted Successfully</h2>
+              <p className="text-sm text-gray-600">
+                Your listing is now live. Here’s a quick preview of what buyers will see.
+              </p>
+            </div>
+
+            <div className="border border-gray-100 rounded-2xl overflow-hidden bg-gray-50">
+              {postedItem.image && (
+                <div className="aspect-video w-full overflow-hidden bg-gray-100">
+                  <img
+                    src={postedItem.image}
+                    alt={postedItem.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+              <div className="p-4 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-gray-900 line-clamp-2">
+                      {postedItem.title}
+                    </p>
+                    <div className="flex items-center gap-1 text-xs text-gray-500">
+                      <Tag size={14} />
+                      <span>{postedItem.category}</span>
+                    </div>
+                  </div>
+                  <p className="text-lg font-bold text-[#59287a] whitespace-nowrap">
+                    RM {postedItem.price?.toFixed ? postedItem.price.toFixed(2) : postedItem.price}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-gray-600 mt-1">
+                  <MapPin size={14} className="text-[#59287a]" />
+                  <span className="truncate">{postedItem.location}</span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={handleSuccessOk}
+              className="w-full bg-[#59287a] text-white font-bold py-3 rounded-2xl shadow-md hover:bg-[#451d5e] active:scale-95 transition-transform"
+            >
+              Okay
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
