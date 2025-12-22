@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, MapPin, Loader2, ShoppingBag, User, Mail, ShoppingCart } from 'lucide-react';
 import { db, auth } from '../../firebase';
-import { doc, getDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, addDoc, collection, serverTimestamp, getDocs, query, where } from 'firebase/firestore';
+import Notification from '../../components/Notification';
+import ConfirmModal from '../../components/ConfirmModal';
 import { onAuthStateChanged } from 'firebase/auth';
 
 const ItemDetail = () => {
@@ -13,6 +15,11 @@ const ItemDetail = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [currentUser, setCurrentUser] = useState(null);
   const [addingToCart, setAddingToCart] = useState(false);
+  const [notifMessage, setNotifMessage] = useState('');
+  const [notifType, setNotifType] = useState('info');
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [confirmMessage, setConfirmMessage] = useState('');
+  const [showOwnItemModal, setShowOwnItemModal] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -20,6 +27,15 @@ const ItemDetail = () => {
     });
     return () => unsubscribe();
   }, []);
+  const handleContactSeller = () => {
+    if (!currentUser) {
+      alert("Please login to contact the seller.");
+      navigate('/login');
+      return;
+    }
+    if (!item) return;
+    navigate(`/chat-item/${item.id}`);
+  };
 
   useEffect(() => {
     const fetchItem = async () => {
@@ -47,12 +63,26 @@ const ItemDetail = () => {
     }
 
     if (item.sellerId === currentUser.uid) {
-      alert("You cannot add your own item to the cart.");
+      setShowOwnItemModal(true);
       return;
     }
 
     setAddingToCart(true);
     try {
+      // Prevent adding the same item twice for the same user
+      const existingQuery = query(
+        collection(db, "carts"),
+        where("userId", "==", currentUser.uid),
+        where("itemId", "==", item.id)
+      );
+      const existingSnap = await getDocs(existingQuery);
+      if (!existingSnap.empty) {
+        setConfirmMessage('This item is already in your cart.');
+        setShowConfirm(true);
+        setAddingToCart(false);
+        return;
+      }
+
       await addDoc(collection(db, "carts"), {
         userId: currentUser.uid,
         itemId: item.id,
@@ -61,10 +91,13 @@ const ItemDetail = () => {
         image: item.image,
         sellerId: item.sellerId || "Unknown",
         sellerName: item.sellerName || "Fellow Student",
+        sellerLocations: item.locations || (item.location ? [item.location] : []),
         createdAt: serverTimestamp()
       });
-      alert("Item added to cart!");
-      navigate('/mycart');
+      // show a quick success toast then navigate
+      setNotifType('info');
+      setNotifMessage('Item added to cart! Redirecting...');
+      setTimeout(() => navigate('/mycart'), 800);
     } catch (error) {
       console.error("Error adding to cart:", error);
       alert("Failed to add to cart.");
@@ -119,7 +152,20 @@ const ItemDetail = () => {
                 <h1 className="text-3xl font-black text-gray-900">{item.title}</h1>
                 <span className="bg-brand-purple/10 text-brand-purple text-xs font-bold px-3 py-1.5 rounded-full whitespace-nowrap">{item.condition || 'Used'}</span>
               </div>
-              <div className="flex items-center gap-2 text-gray-600 mb-4"><MapPin size={16} /><span className="text-sm font-medium">{item.location}</span></div>
+              <div className="mb-4">
+                <div className="flex items-start gap-2 text-gray-600">
+                  <MapPin size={16} className="mt-0.5 flex-shrink-0" />
+                  <div className="flex flex-col gap-1">
+                    {(item.locations && item.locations.length > 0) ? (
+                      item.locations.map((loc, idx) => (
+                        <span key={idx} className="text-sm font-medium">{loc}</span>
+                      ))
+                    ) : (
+                      <span className="text-sm font-medium">{item.location || 'Location not specified'}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
               <div className="mb-6"><p className="text-4xl font-black text-brand-purple mb-2">RM {item.price?.toLocaleString()}</p></div>
             </div>
 
@@ -139,7 +185,12 @@ const ItemDetail = () => {
             )}
 
             <div className="space-y-3 sticky bottom-4">
-              <button className="w-full bg-brand-purple text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-purple-800 transition-all active:scale-95 text-lg">Contact Seller</button>
+              <button
+                onClick={handleContactSeller}
+                className="w-full bg-brand-purple text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-purple-800 transition-all active:scale-95 text-lg"
+              >
+                Contact Seller
+              </button>
               
               <button 
                 onClick={handleAddToCart} 
@@ -153,6 +204,16 @@ const ItemDetail = () => {
           </div>
         </div>
       </main>
+      <Notification message={notifMessage} type={notifType} onClose={() => setNotifMessage('')} />
+      <ConfirmModal open={showConfirm} title="Already in Cart" message={confirmMessage} onClose={() => setShowConfirm(false)} singleButton={true} confirmText={'OK'} />
+      <ConfirmModal 
+        open={showOwnItemModal} 
+        title="Warning" 
+        message="You cannot add your own item to the cart." 
+        onClose={() => setShowOwnItemModal(false)} 
+        singleButton={true} 
+        confirmText={'OK'} 
+      />
     </div>
   );
 };

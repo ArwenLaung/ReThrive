@@ -28,6 +28,10 @@ import MyDonations from "./users/pages/MyDonations.jsx";
 import MyDonationDetail from "./users/pages/MyDonationDetail.jsx";
 import MyDonatedItems from "./users/pages/MyDonatedItems.jsx";
 import MyClaimedItems from "./users/pages/MyClaimedItems.jsx";
+import Checkout from "./users/pages/Checkout.jsx";
+import PaymentSuccess from "./users/pages/PaymentSuccess.jsx";
+import Chat from "./users/pages/Chat.jsx";
+import ItemChat from "./users/pages/ItemChat.jsx";
 
 // ADMIN
 import ItemsApproval from "./admin/pages/ItemsApproval.jsx";
@@ -159,7 +163,6 @@ const AppContent = ({ aboutRef, eventsRef, activeLink, setActiveLink, currentUse
         <Route path="/donateitem" element={isAdmin ? <Navigate to="/itemsApproval" /> : <DonateItem />} />
         <Route path="/myaccount" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyAccount />} />
         <Route path="/myrewards" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyRewards />} />
-        <Route path="/mycart" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyCart />} />
         <Route path="/accountdetails" element={isAdmin ? <Navigate to="/itemsApproval" /> : <AccountDetails />} />
         <Route path="/editprofile" element={isAdmin ? <Navigate to="/itemsApproval" /> : <EditProfile />} />
         <Route path="/mylistings" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyListings />} />
@@ -170,6 +173,11 @@ const AppContent = ({ aboutRef, eventsRef, activeLink, setActiveLink, currentUse
         <Route path="/mydonation/:id" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyDonationDetail />} />
         <Route path="/mydonateditems" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyDonatedItems />} />
         <Route path="/myclaimeditems" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyClaimedItems />} />
+        <Route path="/mycart" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyCart />} />
+        <Route path="/checkout" element={isAdmin ? <Navigate to="/itemsApproval" /> : <Checkout />} />
+        <Route path="/payment-success/:orderId" element={isAdmin ? <Navigate to="/itemsApproval" /> : <PaymentSuccess />} />
+        <Route path="/chat/:orderId" element={isAdmin ? <Navigate to="/itemsApproval" /> : <Chat />} />
+        <Route path="/chat-item/:itemId" element={isAdmin ? <Navigate to="/itemsApproval" /> : <ItemChat />} />
 
         {/* ADMIN ROUTES BLOCKED FOR USERS */}
         <Route path="/itemsApproval" element={isAdmin ? adminWrapper(<ItemsApproval />) : <Navigate to="/" />} />

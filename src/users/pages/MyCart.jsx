@@ -4,6 +4,7 @@ import { ShoppingCart, Trash2, Loader2, CreditCard, Leaf } from 'lucide-react';
 import { auth, db } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
+import ConfirmModal from '../../components/ConfirmModal';
 
 const MyCart = () => {
   const navigate = useNavigate();
@@ -32,8 +33,23 @@ const MyCart = () => {
   }, [navigate]);
 
   const removeFromCart = async (id) => {
-    if (window.confirm("Remove item from cart?")) {
-      await deleteDoc(doc(db, "carts", id));
+    // open confirmation modal instead of native confirm
+    setRemoveTarget(id);
+    setShowRemoveConfirm(true);
+  };
+
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState(null);
+
+  const confirmRemove = async () => {
+    if (!removeTarget) return;
+    try {
+      await deleteDoc(doc(db, "carts", removeTarget));
+    } catch (error) {
+      console.error('Error removing cart item:', error);
+    } finally {
+      setShowRemoveConfirm(false);
+      setRemoveTarget(null);
     }
   };
 
@@ -121,11 +137,21 @@ const MyCart = () => {
                   <span className="text-4xl font-black text-brand-purple">RM {total}</span>
                 </div>
 
-                <button className="w-full bg-brand-purple hover:bg-purple-800 text-white font-bold py-4 rounded-2xl hover:shadow-purple-500 transition-all transform active:scale-[0.98] flex items-center justify-center gap-3 text-lg">
+                <button 
+                  onClick={() => navigate('/checkout')}
+                  className="w-full bg-brand-purple hover:bg-purple-800 text-white font-bold py-4 rounded-2xl hover:shadow-purple-500 transition-all transform active:scale-[0.98] flex items-center justify-center gap-3 text-lg"
+                >
                   <CreditCard size={22} /> 
                   Proceed to Checkout
                 </button>
-                
+              
+                <button
+                  onClick={() => navigate('/marketplace')}
+                  className="w-full mt-3 bg-white text-brand-purple border border-brand-purple/40 font-bold py-3 rounded-2xl hover:bg-purple-50 transition-all transform active:scale-[0.98] text-sm"
+                >
+                  Continue Shopping
+                </button>
+
                 <p className="text-center text-xs text-gray-400 mt-4 font-medium">
                   Secure checkout powered by ReThrive
                 </p>
@@ -134,6 +160,15 @@ const MyCart = () => {
           </div>
         )}
       </div>
+      <ConfirmModal
+        open={showRemoveConfirm}
+        title="Remove Item"
+        message="Are you sure you want to remove this item from your cart?"
+        onClose={() => { setShowRemoveConfirm(false); setRemoveTarget(null); }}
+        onConfirm={confirmRemove}
+        confirmText="Yes"
+        cancelText="No"
+      />
     </div>
   );
 };

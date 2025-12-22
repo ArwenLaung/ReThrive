@@ -80,7 +80,16 @@ const DonationDetail = () => {
             )}
 
             <div className="space-y-3 sticky bottom-4">
-              <button className="w-full bg-[#7db038] text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-[#4a6b1d] transition-all text-lg">Contact Donor</button>
+            <button
+              onClick={() => {
+                if (item?.donorEmail) {
+                  window.location.href = `mailto:${item.donorEmail}`;
+                }
+              }}
+              className="w-full bg-[#7db038] text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-[#4a6b1d] transition-all text-lg"
+            >
+              Contact Donor
+            </button>
               <button onClick={handleClaim} className="w-full bg-white border-2 border-[#7db038] text-[#364f15] font-bold py-3 rounded-2xl hover:bg-[#7db038]/10 flex items-center justify-center gap-2 transition-colors">
                 <CheckCircle size={20} /> Claim this Item
               </button>

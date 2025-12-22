@@ -8,6 +8,7 @@ import { auth, db } from '../../firebase';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, getCountFromServer, doc, getDoc, getDocs } from 'firebase/firestore';
 import DefaultProfilePic from '../assets/default_profile_pic.jpg';
+import ConfirmModal from '../../components/ConfirmModal';
 
 const MyAccount = () => {
   const navigate = useNavigate();
@@ -22,6 +23,7 @@ const MyAccount = () => {
     completedDonations: 0, 
     cartItems: 0 
   });
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -71,9 +73,18 @@ const MyAccount = () => {
     return () => unsubscribe();
   }, [navigate]);
 
-  const handleLogout = async () => {
-    if (window.confirm("Are you sure you want to log out?")) {
-      try { await signOut(auth); navigate('/login'); } catch (error) { alert("Error logging out: " + error.message); }
+  const handleLogout = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const handleConfirmLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate('/login');
+    } catch (error) {
+      alert("Error logging out: " + error.message);
+    } finally {
+      setShowLogoutConfirm(false);
     }
   };
 
@@ -163,6 +174,16 @@ const MyAccount = () => {
           <LogOut size={20} /> Log Out
         </button>
       </div>
+
+      <ConfirmModal
+        open={showLogoutConfirm}
+        title="Log out?"
+        message="Are you sure you want to log out of your account?"
+        confirmText="Log out"
+        cancelText="Cancel"
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={handleConfirmLogout}
+      />
 
       {/* FLOATING ACTION BUTTONS */}
       <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-50">

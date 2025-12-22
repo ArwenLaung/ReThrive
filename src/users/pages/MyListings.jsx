@@ -4,12 +4,14 @@ import { ArrowLeft, Package, Trash2, MapPin, Loader2 } from 'lucide-react';
 import { auth, db } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
+import ConfirmModal from '../../components/ConfirmModal';
 
 const MyListings = () => {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   // Check Auth & Fetch Data
   useEffect(() => {
@@ -49,13 +51,18 @@ const MyListings = () => {
 
   // Delete Item Handler
   const handleDelete = async (itemId) => {
-    if (window.confirm("Are you sure you want to delete this listing? This cannot be undone.")) {
-      try {
-        await deleteDoc(doc(db, "items", itemId));
-      } catch (error) {
-        console.error("Error deleting item:", error);
-        alert("Failed to delete item.");
-      }
+    setDeleteTarget(itemId);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteDoc(doc(db, "items", deleteTarget));
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      alert("Failed to delete item.");
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -135,6 +142,15 @@ const MyListings = () => {
           </div>
         )}
       </div>
+      <ConfirmModal
+        open={!!deleteTarget}
+        title="Delete listing?"
+        message="Are you sure you want to delete this listing? This cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 };

@@ -4,11 +4,13 @@ import { Gift, Trash2, MapPin, Loader2 } from 'lucide-react';
 import { auth, db } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
+import ConfirmModal from '../../components/ConfirmModal';
 
 const MyDonations = () => {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
@@ -26,11 +28,20 @@ const MyDonations = () => {
     return () => unsubscribeAuth();
   }, [navigate]);
 
-  const handleDelete = async (e, itemId) => {
+  const handleDelete = (e, itemId) => {
     e.preventDefault(); // Prevent navigation when clicking delete
     e.stopPropagation();
-    if (window.confirm("Delete this donation listing?")) {
-      try { await deleteDoc(doc(db, "donations", itemId)); } catch (error) { console.error("Error deleting:", error); }
+    setDeleteTarget(itemId);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteDoc(doc(db, "donations", deleteTarget));
+    } catch (error) {
+      console.error("Error deleting:", error);
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -94,6 +105,15 @@ const MyDonations = () => {
           </div>
         )}
       </div>
+      <ConfirmModal
+        open={!!deleteTarget}
+        title="Delete donation?"
+        message="Are you sure you want to delete this donation listing?"
+        confirmText="Delete"
+        cancelText="Cancel"
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 };
