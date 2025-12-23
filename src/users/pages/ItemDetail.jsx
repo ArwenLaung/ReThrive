@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, MapPin, Loader2, ShoppingBag, User, Mail, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, MapPin, Loader2, ShoppingBag, User, Mail, ShoppingCart, Clock, Calendar } from 'lucide-react';
 import { db, auth } from '../../firebase';
 import { doc, getDoc, addDoc, collection, serverTimestamp, getDocs, query, where } from 'firebase/firestore';
 import Notification from '../../components/Notification';
@@ -92,6 +92,8 @@ const ItemDetail = () => {
         sellerId: item.sellerId || "Unknown",
         sellerName: item.sellerName || "Fellow Student",
         sellerLocations: item.locations || (item.location ? [item.location] : []),
+        availabilityDays: item.availabilityDays || [],
+        availabilitySlots: item.availabilitySlots || [],
         createdAt: serverTimestamp()
       });
       // show a quick success toast then navigate
@@ -173,6 +175,30 @@ const ItemDetail = () => {
               <h2 className="text-lg font-bold text-gray-900 mb-3">Description</h2>
               <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{item.description || 'No description provided.'}</p>
             </div>
+
+            {(item.availabilityDays || item.availabilitySlots) && (
+             <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+                <h2 className="text-lg font-bold text-gray-900 mb-4">Meetup Availability</h2>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-[#59287a] font-bold text-sm">
+                            <Calendar size={16} /> <span>Preferred Days</span>
+                        </div>
+                        <ul className="text-sm text-gray-600 list-disc list-inside">
+                            {item.availabilityDays?.map(d => <li key={d}>{d}</li>) || <li>Flexible</li>}
+                        </ul>
+                    </div>
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-[#59287a] font-bold text-sm">
+                            <Clock size={16} /> <span>Time Slots</span>
+                        </div>
+                        <ul className="text-sm text-gray-600 list-disc list-inside">
+                             {item.availabilitySlots?.map(s => <li key={s}>{s}</li>) || <li>Flexible</li>}
+                        </ul>
+                    </div>
+                </div>
+             </div>
+            )}
 
             {(item.sellerName || item.sellerEmail) && (
               <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">

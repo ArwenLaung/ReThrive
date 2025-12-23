@@ -18,6 +18,9 @@ const fileToDataURL = (file) => {
   });
 };
 
+const AVAILABILITY_DAYS = ['Weekdays (Mon-Fri)', 'Weekends (Sat-Sun)', 'Flexible'];
+const AVAILABILITY_SLOTS = ['Morning (8am-12pm)', 'Afternoon (12pm-6pm)', 'Evening (After 6pm)'];
+
 const SellItem = () => {
   const navigate = useNavigate();
 
@@ -30,6 +33,8 @@ const SellItem = () => {
   const [price, setPrice] = useState("");
   const [condition, setCondition] = useState("Lightly Used"); 
   const [locations, setLocations] = useState([]);
+  const [availDays, setAvailDays] = useState([]);
+  const [availSlots, setAvailSlots] = useState([]);
   const [otherChecked, setOtherChecked] = useState(false);
   const [otherLocation, setOtherLocation] = useState("");
   // --- SUCCESS STATE ---
@@ -195,6 +200,11 @@ const SellItem = () => {
     }
     const finalLocation = finalLocations[0];
 
+    if (availDays.length === 0 || availSlots.length === 0) {
+      alert("Please select your availability (Days and Time slots).");
+      return;
+    }
+
     // Keyword block using list from firebase
     const combinedText = (title + " " + description).toLowerCase();
     // Print exactly what we are checking to debug
@@ -229,6 +239,8 @@ const SellItem = () => {
         category,
         location: finalLocation,
         locations: finalLocations,
+        availabilityDays: availDays,
+        availabilitySlots: availSlots,
         condition,
         images: imageUrls,
         image: imageUrls[0],
@@ -333,41 +345,76 @@ const SellItem = () => {
               <hr className="border-gray-100" />
 
               <div>
-                <h2 className="text-lg font-bold text-gray-800 mb-4">Price & Location</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div><label className="block text-sm font-semibold text-gray-700 mb-2">Price (RM)</label><input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#59287a] outline-none" /></div>
-                  <div>
+        <h2 className="text-lg font-bold text-gray-800 mb-4">Price & Logistics</h2>
+        <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Price (RM)</label>
+                    <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#59287a] outline-none" />
+                </div>
+                {/* Location Selection (Existing code) */}
+                <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Pickup Location(s)</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {[
-                        'Desasiswa Restu',
-                        'Desasiswa Saujana',
-                        'Desasiswa Tekun',
-                        'Desasiswa Aman Damai',
-                        'Desasiswa Indah Kembara',
-                        'Desasiswa Fajar Harapan',
-                        'Desasiswa Bakti Permai',
-                        'Desasiswa Cahaya Gemilang',
-                        'Main Library',
-                      ].map((opt) => (
+                    <div className="grid grid-cols-1 gap-2 border p-3 rounded-xl border-gray-100 max-h-40 overflow-y-auto">
+                        {[
+                        'Desasiswa Restu', 'Desasiswa Saujana', 'Desasiswa Tekun', 
+                        'Desasiswa Aman Damai', 'Desasiswa Indah Kembara', 'Desasiswa Fajar Harapan',
+                        'Desasiswa Bakti Permai', 'Desasiswa Cahaya Gemilang', 'Main Library'
+                        ].map((opt) => (
                         <label key={opt} className="inline-flex items-center gap-2">
-                          <input type="checkbox" checked={locations.includes(opt)} onChange={() => {
+                            <input type="checkbox" checked={locations.includes(opt)} onChange={() => {
                             setLocations((prev) => prev.includes(opt) ? prev.filter((p) => p !== opt) : [...prev, opt]);
-                          }} />
-                          <span className="text-sm">{opt}</span>
+                            }} className="rounded text-[#59287a] focus:ring-[#59287a]" />
+                            <span className="text-sm">{opt}</span>
                         </label>
-                      ))}
-                      <label className="inline-flex items-center gap-2">
-                        <input type="checkbox" checked={otherChecked} onChange={() => setOtherChecked((v) => !v)} />
-                        <span className="text-sm">Other</span>
-                      </label>
+                        ))}
+                        <label className="inline-flex items-center gap-2">
+                            <input type="checkbox" checked={otherChecked} onChange={() => setOtherChecked((v) => !v)} className="rounded text-[#59287a]" />
+                            <span className="text-sm">Other</span>
+                        </label>
                     </div>
-                      {otherChecked && (
-                        <input type="text" placeholder="Enter other location..." value={otherLocation} onChange={(e) => setOtherLocation(e.target.value)} className="w-full mt-2 p-3 rounded-xl border border-[#dccae8] bg-[#f3eefc] focus:ring-2 focus:ring-[#59287a] outline-none" />
-                      )}
+                    {otherChecked && (
+                        <input type="text" placeholder="Enter other location..." value={otherLocation} onChange={(e) => setOtherLocation(e.target.value)} className="w-full mt-2 p-2 rounded-lg border border-[#dccae8] bg-[#f3eefc] text-sm" />
+                    )}
+                </div>
+            </div>
+
+            {/* [NEW] Availability Section */}
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                <h3 className="text-sm font-bold text-gray-800 mb-3">When are you available to meet?</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Days */}
+                    <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Days</label>
+                        <div className="space-y-2">
+                            {AVAILABILITY_DAYS.map((day) => (
+                                <label key={day} className="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" checked={availDays.includes(day)} onChange={() => {
+                                        setAvailDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
+                                    }} className="rounded text-[#59287a]" />
+                                    <span className="text-sm text-gray-700">{day}</span>
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+                    {/* Slots */}
+                    <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Time Slots</label>
+                        <div className="space-y-2">
+                            {AVAILABILITY_SLOTS.map((slot) => (
+                                <label key={slot} className="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" checked={availSlots.includes(slot)} onChange={() => {
+                                        setAvailSlots(prev => prev.includes(slot) ? prev.filter(s => s !== slot) : [...prev, slot]);
+                                    }} className="rounded text-[#59287a]" />
+                                    <span className="text-sm text-gray-700">{slot}</span>
+                                </label>
+                            ))}
+                        </div>
                     </div>
                 </div>
-              </div>
+            </div>
+        </div>
+      </div>
 
               <div className="pt-4 mt-auto">
                 <button onClick={handlePostItem} disabled={isSubmitting} className="w-full bg-[#59287a] text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-[#451d5e] transition-transform active:scale-95 text-lg flex justify-center items-center gap-2 disabled:opacity-50">
