@@ -1,0 +1,270 @@
+/* PAGE */
+.admin-page-content {
+  padding: 32px;
+  padding-left: 130px;
+  background: #f6f3ea;
+  min-height: 100vh;
+}
+
+.admin-page-wrapper.collapsed .admin-page-content {
+  padding-left: 50px;
+}
+
+/* HEADER */
+.event-admin-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.event-admin-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #2d1b3f;
+  margin-bottom: 16px;
+}
+
+/* ACTION BAR */
+.event-add-btn {
+  background: #5b2d6f;
+  color: white;
+  border: none;
+  padding: 12px 22px;
+  border-radius: 999px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.event-add-btn:hover {
+  background: #4a235e;
+}
+
+/* TABLE */
+.event-table-card {
+  background: #fffaf0;
+  padding: 20px;
+  border-radius: 22px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+.event-table-image {
+  width: 70px;
+  height: 50px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+/* ACTIONS */
+.event-actions-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 100%;
+}
+
+.event-edit-btn {
+  background: transparent;
+  border: 2px solid #5b2d6f;
+  border-radius: 999px;
+  color: #5b2d6f;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 3px 8px;
+}
+
+.event-edit-btn:hover {
+  background: rgba(91, 45, 111, 0.1);
+}
+
+.event-delete-btn {
+  background: #5b2d6f;
+  border: 2px solid #5d2d6f;
+  border-radius: 999px;
+  color: white;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.event-delete-btn:hover {
+  background: #4a235e;
+}
+
+.event-edit-btn,
+.event-delete-btn {
+  padding: 6px 14px;
+  line-height: 1;
+}
+
+/* DIALOG */
+.event-dialog-title {
+  font-weight: 700;
+  color: #2d1b3f;
+}
+
+.event-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 10px;
+}
+
+.event-dialog-content .MuiOutlinedInput-root {
+  border-radius: 14px;
+  background-color: #fffaf0;
+}
+
+.event-dialog-content .MuiOutlinedInput-notchedOutline {
+  border-color: #d6cce6;
+}
+
+.event-dialog-content .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: #5b2d6f;
+}
+
+.event-dialog-content .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: #5b2d6f;
+  border-width: 2px;
+}
+
+.event-dialog-content .MuiInputLabel-root.Mui-focused {
+  color: #5b2d6f;
+}
+
+/* IMAGE */
+.event-image-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.event-upload-btn {
+  padding: 14px;
+  border-radius: 12px;
+  border: 2px dashed #c3b6d8;
+  text-align: center;
+  cursor: pointer;
+  color: #5b2d6f;
+  font-weight: 600;
+}
+
+.event-preview-image {
+  width: 100%;
+  border-radius: 14px;
+  object-fit: cover;
+}
+
+/* GRID */
+.event-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* DIALOG ACTIONS */
+.event-dialog-actions {
+  padding: 14px 30px !important;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.event-cancel-btn {
+  background: transparent;
+  border: 2px solid #c3b6d8;
+  color: #5b2d6f;
+  padding: 10px 20px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.event-save-btn {
+  background: #5b2d6f;
+  color: white;
+  border: none;
+  padding: 10px 22px;
+  border: 2px solid #5b2d6f;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.event-save-btn:hover {
+  background: #4a235e;
+}
+
+.delete-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.delete-modal-content {
+  background-color: #ffffff;
+  padding: 30px 25px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.delete-prompt {
+  font-size: 18px;
+  margin-bottom: 25px;
+  color: #3d0b37;
+  font-weight: 500;
+}
+
+.delete-confirmation-buttons-container {
+  display: flex;
+  justify-content: space-around;
+  gap: 10px;
+}
+
+.delete-yes-button,
+.delete-cancel-button {
+  padding: 10px 50px;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.delete-yes-button {
+  background-color: #dda15e;
+  color: #fff;
+}
+
+.delete-yes-button:hover {
+  background-color: #bc6c25;
+}
+
+.delete-cancel-button {
+  background-color: #f0f0f0;
+  /* light grey */
+  color: #333;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.delete-cancel-button:hover {
+  background-color: #e0e0e0;
+}
