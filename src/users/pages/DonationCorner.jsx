@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, MapPin, Loader2, Gift } from 'lucide-react';
+import { Search, Loader2, Gift } from 'lucide-react';
 
 import { db } from '../../firebase';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
@@ -83,7 +83,6 @@ const DonationCorner = () => {
                   <div className="p-4">
                     <div className="flex flex-col gap-1 mb-3">
                       <h3 className="font-bold text-gray-900 text-[15px] line-clamp-2 leading-snug group-hover:text-[#7db038] transition-colors">{item.title}</h3>
-                      <div className="flex items-center gap-1.5 text-gray-400 text-xs font-medium"><MapPin size={12} /><span className="truncate">{item.location}</span></div>
                     </div>
                     <div className="flex items-end justify-between border-t border-gray-50 pt-3 mt-auto">
                       <p className="text-[#7db038] font-black text-xl tracking-tight">FREE</p>

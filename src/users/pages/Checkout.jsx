@@ -192,12 +192,6 @@ const Checkout = () => {
   return (
     <div className="min-h-screen bg-[#FDFBF7] pb-32 pt-24 px-6">
       <div className="max-w-5xl mx-auto mb-8">
-        <button
-          onClick={() => navigate('/mycart')}
-          className="inline-flex items-center gap-2 text-gray-600 hover:text-brand-purple transition-colors mb-6"
-        >
-          <ArrowLeft size={20} /> <span className="font-medium">Back to Cart</span>
-        </button>
         <h1 className="text-3xl font-black text-brand-purple tracking-tight">Checkout</h1>
       </div>
 

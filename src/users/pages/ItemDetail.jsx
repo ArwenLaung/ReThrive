@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, MapPin, Loader2, ShoppingBag, User, Mail, ShoppingCart, Clock, Calendar } from 'lucide-react';
 import { db, auth } from '../../firebase';
-import { doc, getDoc, addDoc, collection, serverTimestamp, getDocs, query, where } from 'firebase/firestore';
+import { doc, getDoc, addDoc, collection, serverTimestamp, getDocs, query, where, limit } from 'firebase/firestore';
 import Notification from '../../components/Notification';
 import ConfirmModal from '../../components/ConfirmModal';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -11,6 +11,7 @@ const ItemDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [item, setItem] = useState(null);
+  const [relatedItems, setRelatedItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [currentUser, setCurrentUser] = useState(null);
@@ -27,18 +28,10 @@ const ItemDetail = () => {
     });
     return () => unsubscribe();
   }, []);
-  const handleContactSeller = () => {
-    if (!currentUser) {
-      alert("Please login to contact the seller.");
-      navigate('/login');
-      return;
-    }
-    if (!item) return;
-    navigate(`/chat-item/${item.id}`);
-  };
 
   useEffect(() => {
     const fetchItem = async () => {
+      setLoading(true);
       try {
         const itemDoc = await getDoc(doc(db, 'items', id));
         if (itemDoc.exists()) {
@@ -54,6 +47,50 @@ const ItemDetail = () => {
     };
     if (id) fetchItem();
   }, [id]);
+
+  useEffect(() => {
+    const fetchRelated = async () => {
+      if (!item || !item.category) return;
+
+      try {
+        // Query items with same category
+        const q = query(
+          collection(db, "items"),
+          where("category", "==", item.category),
+          where("status", "==", "active"),
+          limit(5)
+        );
+        
+        const querySnapshot = await getDocs(q);
+        const items = [];
+        
+        querySnapshot.forEach((doc) => {
+          // Exclude current item
+          if (doc.id !== item.id) {
+            items.push({ id: doc.id, ...doc.data() });
+          }
+        });
+
+        setRelatedItems(items.slice(0, 4));
+      } catch (error) {
+        console.error("Error fetching related items:", error);
+      }
+    };
+
+    if (item) {
+      fetchRelated();
+    }
+  }, [item]);
+
+  const handleContactSeller = () => {
+    if (!currentUser) {
+      alert("Please login to contact the seller.");
+      navigate('/login');
+      return;
+    }
+    if (!item) return;
+    navigate(`/chat-item/${item.id}`);
+  };
 
   const handleAddToCart = async () => {
     if (!currentUser) {
@@ -154,20 +191,6 @@ const ItemDetail = () => {
                 <h1 className="text-3xl font-black text-gray-900">{item.title}</h1>
                 <span className="bg-brand-purple/10 text-brand-purple text-xs font-bold px-3 py-1.5 rounded-full whitespace-nowrap">{item.condition || 'Used'}</span>
               </div>
-              <div className="mb-4">
-                <div className="flex items-start gap-2 text-gray-600">
-                  <MapPin size={16} className="mt-0.5 flex-shrink-0" />
-                  <div className="flex flex-col gap-1">
-                    {(item.locations && item.locations.length > 0) ? (
-                      item.locations.map((loc, idx) => (
-                        <span key={idx} className="text-sm font-medium">{loc}</span>
-                      ))
-                    ) : (
-                      <span className="text-sm font-medium">{item.location || 'Location not specified'}</span>
-                    )}
-                  </div>
-                </div>
-              </div>
               <div className="mb-6"><p className="text-4xl font-black text-brand-purple mb-2">RM {item.price?.toLocaleString()}</p></div>
             </div>
 
@@ -176,30 +199,66 @@ const ItemDetail = () => {
               <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{item.description || 'No description provided.'}</p>
             </div>
 
-            {(item.availabilityDays || item.availabilitySlots) && (
-             <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
-                <h2 className="text-lg font-bold text-gray-900 mb-4">Meetup Availability</h2>
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-[#59287a] font-bold text-sm">
-                            <Calendar size={16} /> <span>Preferred Days</span>
+            <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+                <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+                   <MapPin className="text-brand-purple" size={20} />
+                   Meetup & Availability
+                </h2>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    {/* COLUMN 1: Locations */}
+                    <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-brand-purple">
+                            <MapPin size={16} />
+                            <span className="text-xs font-bold uppercase tracking-wider">Locations</span>
                         </div>
-                        <ul className="text-sm text-gray-600 list-disc list-inside">
-                            {item.availabilityDays?.map(d => <li key={d}>{d}</li>) || <li>Flexible</li>}
+                        <ul className="list-disc pl-4 space-y-2 text-gray-700 text-sm font-medium">
+                            {(item.locations && item.locations.length > 0) ? (
+                              item.locations.map((loc, idx) => (
+                                <li key={idx} className="leading-tight">{loc}</li>
+                              ))
+                            ) : (
+                                <li className="leading-tight">{item.location || 'Location not specified'}</li>
+                            )}
                         </ul>
                     </div>
-                    <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-[#59287a] font-bold text-sm">
-                            <Clock size={16} /> <span>Time Slots</span>
+
+                    {/* COLUMN 2: Preferred Days */}
+                    <div className="space-y-3 md:border-l md:border-gray-100 md:pl-6">
+                        <div className="flex items-center gap-2 text-brand-purple">
+                            <Calendar size={16} />
+                            <span className="text-xs font-bold uppercase tracking-wider">Preferred Days</span>
                         </div>
-                        <ul className="text-sm text-gray-600 list-disc list-inside">
-                             {item.availabilitySlots?.map(s => <li key={s}>{s}</li>) || <li>Flexible</li>}
+                        <ul className="list-disc pl-4 space-y-2 text-gray-700 text-sm font-medium">
+                            {item.availabilityDays && item.availabilityDays.length > 0 ? (
+                                item.availabilityDays.map(d => (
+                                    <li key={d}>{d}</li>
+                                ))
+                            ) : (
+                                <li>Flexible</li>
+                            )}
+                        </ul>
+                    </div>
+
+                    {/* COLUMN 3: Time Slots */}
+                    <div className="space-y-3 md:border-l md:border-gray-100 md:pl-6">
+                        <div className="flex items-center gap-2 text-brand-purple">
+                            <Clock size={16} />
+                            <span className="text-xs font-bold uppercase tracking-wider">Time Slots</span>
+                        </div>
+                        <ul className="list-disc pl-4 space-y-2 text-gray-700 text-sm font-medium">
+                            {item.availabilitySlots && item.availabilitySlots.length > 0 ? (
+                                item.availabilitySlots.map(s => (
+                                    <li key={s}>{s}</li>
+                                ))
+                            ) : (
+                                <li>Flexible</li>
+                            )}
                         </ul>
                     </div>
                 </div>
-             </div>
-            )}
-
+            </div>
+            
             {(item.sellerName || item.sellerEmail) && (
               <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
                 <h2 className="text-lg font-bold text-gray-900 mb-4">Seller Information</h2>
@@ -229,6 +288,41 @@ const ItemDetail = () => {
             </div>
           </div>
         </div>
+
+        {relatedItems.length > 0 && (
+          <div className="mt-16 border-t border-gray-200 pt-10 mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">More in {item.category || 'this category'}</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {relatedItems.map((related) => (
+                <Link 
+                    to={`/item/${related.id}`} 
+                    key={related.id} 
+                    className="group bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col h-full"
+                    onClick={() => window.scrollTo(0,0)} // Scroll to top when clicking related item
+                >
+                  <div className="aspect-square bg-gray-100 relative overflow-hidden">
+                    {related.image || (related.images && related.images[0]) ? (
+                        <img 
+                            src={related.image || related.images[0]} 
+                            alt={related.title} 
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                        />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-300">
+                            <ShoppingBag size={32} />
+                        </div>
+                    )}
+                  </div>
+                  <div className="p-4 flex flex-col flex-1">
+                    <h3 className="font-bold text-gray-900 mb-1 truncate">{related.title}</h3>
+                    <p className="text-brand-purple font-black mt-auto">RM {related.price?.toLocaleString()}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
       </main>
       <Notification message={notifMessage} type={notifType} onClose={() => setNotifMessage('')} />
       <ConfirmModal open={showConfirm} title="Already in Cart" message={confirmMessage} onClose={() => setShowConfirm(false)} singleButton={true} confirmText={'OK'} />

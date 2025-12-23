@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Upload, Loader2, X, Gift, CheckCircle2, MapPin } from 'lucide-react';
+import { ArrowLeft, Upload, Loader2, X, Gift, CheckCircle2, MapPin, Tag } from 'lucide-react';
 import { classifyImage } from '../../utils/aiImage';
 import { generateDescription } from '../../utils/textGen';
 import { db, storage, auth } from '../../firebase';
@@ -18,6 +18,9 @@ const fileToDataURL = (file) => {
   });
 };
 
+const AVAILABILITY_DAYS = ['Weekdays (Mon-Fri)', 'Weekends (Sat-Sun)', 'Flexible'];
+const AVAILABILITY_SLOTS = ['Morning (8am-12pm)', 'Afternoon (12pm-6pm)', 'Evening (After 6pm)'];
+
 const DonateItem = () => {
   const navigate = useNavigate();
 
@@ -27,8 +30,11 @@ const DonateItem = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [condition, setCondition] = useState("Lightly Used"); 
-  const [locationSelection, setLocationSelection] = useState("Desasiswa Restu");
-  const [customLocation, setCustomLocation] = useState("");
+  const [locations, setLocations] = useState([]);
+  const [otherChecked, setOtherChecked] = useState(false);
+  const [otherLocation, setOtherLocation] = useState("");
+  const [availDays, setAvailDays] = useState([]);
+  const [availSlots, setAvailSlots] = useState([]);
   const [donorName, setDonorName] = useState("");
   const [donorEmail, setDonorEmail] = useState("");
   const [donorId, setDonorId] = useState("");
@@ -177,9 +183,17 @@ const DonateItem = () => {
       alert("Please fill in all required fields and upload at least one image.");
       return;
     }
-    const finalLocation = locationSelection === "Other" ? customLocation : locationSelection;
-    if (!finalLocation.trim()) {
-      alert("Please specify the location.");
+    const finalLocations = [...locations];
+    if (otherChecked && otherLocation && otherLocation.trim()) finalLocations.push(otherLocation.trim());
+    
+    if (finalLocations.length === 0) {
+      alert("Please select at least one pickup location.");
+      return;
+    }
+    const finalLocation = finalLocations[0];
+
+    if (availDays.length === 0 || availSlots.length === 0) {
+      alert("Please select your availability (Days and Time slots).");
       return;
     }
 
@@ -213,7 +227,10 @@ const DonateItem = () => {
         title: title.trim(),
         description: description.trim(),
         category,
-        location: finalLocation.trim(),
+        location: finalLocation,
+        locations: finalLocations,
+        availabilityDays: availDays,
+        availabilitySlots: availSlots,
         condition,
         images: imageUrls,
         image: imageUrls[0],
@@ -320,15 +337,69 @@ const DonateItem = () => {
               <hr className="border-gray-100" />
 
               <div>
-                <h2 className="text-lg font-bold text-[#364f15] mb-4">Location</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-600 mb-2">Pickup Location</label>
-                    <select value={locationSelection} onChange={e => setLocationSelection(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 focus:border-[#7db038] focus:ring-2 focus:ring-[#7db038]/20 outline-none bg-white mb-2">
-                      <option>Desasiswa Restu</option><option>Desasiswa Saujana</option><option>Desasiswa Tekun</option><option>Desasiswa Aman Damai</option><option>Desasiswa Indah Kembara</option><option>Desasiswa Fajar Harapan</option><option>Desasiswa Bakti Permai</option><option>Desasiswa Cahaya Gemilang</option><option>Main Library</option><option value="Other">Other</option>
-                    </select>
-                    {locationSelection === "Other" && <input type="text" placeholder="Enter location..." value={customLocation} onChange={e => setCustomLocation(e.target.value)} className="w-full p-3 rounded-xl border border-[#7db038]/40 bg-[#7db038]/5 focus:border-[#7db038] focus:ring-2 focus:ring-[#7db038]/20 outline-none" />}
-                  </div>
+                <h2 className="text-lg font-bold text-[#364f15] mb-4">Pickup & Availability</h2>
+                <div className="space-y-6">
+                    
+                    {/* Location Selection */}
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Pickup Location(s)</label>
+                        <div className="grid grid-cols-1 gap-2 border p-3 rounded-xl border-gray-100 max-h-40 overflow-y-auto">
+                            {[
+                            'Desasiswa Restu', 'Desasiswa Saujana', 'Desasiswa Tekun', 
+                            'Desasiswa Aman Damai', 'Desasiswa Indah Kembara', 'Desasiswa Fajar Harapan',
+                            'Desasiswa Bakti Permai', 'Desasiswa Cahaya Gemilang', 'Main Library'
+                            ].map((opt) => (
+                            <label key={opt} className="inline-flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" checked={locations.includes(opt)} onChange={() => {
+                                setLocations((prev) => prev.includes(opt) ? prev.filter((p) => p !== opt) : [...prev, opt]);
+                                }} className="rounded text-[#7db038] focus:ring-[#7db038]" />
+                                <span className="text-sm">{opt}</span>
+                            </label>
+                            ))}
+                            <label className="inline-flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" checked={otherChecked} onChange={() => setOtherChecked((v) => !v)} className="rounded text-[#7db038] focus:ring-[#7db038]" />
+                                <span className="text-sm">Other</span>
+                            </label>
+                        </div>
+                        {otherChecked && (
+                            <input type="text" placeholder="Enter other location..." value={otherLocation} onChange={(e) => setOtherLocation(e.target.value)} className="w-full mt-2 p-2 rounded-lg border border-[#7db038]/30 bg-[#7db038]/5 text-sm outline-none focus:border-[#7db038]" />
+                        )}
+                    </div>
+
+                    {/* Availability Section */}
+                    <div className="bg-[#7db038]/5 p-4 rounded-xl border border-[#7db038]/20">
+                        <h3 className="text-sm font-bold text-[#364f15] mb-3">When are you available to meet?</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Days */}
+                            <div>
+                                <label className="block text-xs font-bold text-[#7db038] uppercase tracking-wider mb-2">Days</label>
+                                <div className="space-y-2">
+                                    {AVAILABILITY_DAYS.map((day) => (
+                                        <label key={day} className="flex items-center gap-2 cursor-pointer">
+                                            <input type="checkbox" checked={availDays.includes(day)} onChange={() => {
+                                                setAvailDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
+                                            }} className="rounded text-[#7db038] focus:ring-[#7db038]" />
+                                            <span className="text-sm text-gray-700">{day}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                            {/* Slots */}
+                            <div>
+                                <label className="block text-xs font-bold text-[#7db038] uppercase tracking-wider mb-2">Time Slots</label>
+                                <div className="space-y-2">
+                                    {AVAILABILITY_SLOTS.map((slot) => (
+                                        <label key={slot} className="flex items-center gap-2 cursor-pointer">
+                                            <input type="checkbox" checked={availSlots.includes(slot)} onChange={() => {
+                                                setAvailSlots(prev => prev.includes(slot) ? prev.filter(s => s !== slot) : [...prev, slot]);
+                                            }} className="rounded text-[#7db038] focus:ring-[#7db038]" />
+                                            <span className="text-sm text-gray-700">{slot}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
               </div>
 
