@@ -255,7 +255,11 @@ const MyPurchases = () => {
                       {/* Action Buttons */}
                       <div className="flex flex-wrap gap-3 pt-2">
                         <button
-                          onClick={() => navigate(`/chat/${order.id}`)}
+                          onClick={() => {
+                            if (!order.itemId) return;
+                            // Use the same item-based chat thread as "Contact Seller"
+                            navigate(`/chat-item/${order.itemId}`);
+                          }}
                           className="flex items-center gap-2 px-4 py-2 bg-brand-purple text-white rounded-xl font-semibold hover:bg-purple-800 transition-all active:scale-95"
                         >
                           <MessageCircle size={18} />

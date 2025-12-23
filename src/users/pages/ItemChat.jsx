@@ -110,9 +110,27 @@ const ItemChat = () => {
             ...d.data(),
           }));
           // Only show buyers who have at least one message (lastMessage is set)
-          const chats = allChats.filter(
+          const filtered = allChats.filter(
             (c) => c.itemId === item.id && c.lastMessage && c.lastMessage !== ''
           );
+          // Deduplicate by buyerId so each buyer appears only once
+          const byBuyer = new Map();
+          filtered.forEach((c) => {
+            const key = c.buyerId || c.buyerName || c.id;
+            const existing = byBuyer.get(key);
+            const currentTs =
+              c.lastMessageAt && c.lastMessageAt.toMillis
+                ? c.lastMessageAt.toMillis()
+                : 0;
+            const existingTs =
+              existing && existing.lastMessageAt && existing.lastMessageAt.toMillis
+                ? existing.lastMessageAt.toMillis()
+                : 0;
+            if (!existing || currentTs > existingTs) {
+              byBuyer.set(key, c);
+            }
+          });
+          const chats = Array.from(byBuyer.values());
           setSellerChats(chats);
           if (chats.length > 0) {
             setActiveChat(chats[0]);
@@ -305,9 +323,9 @@ const ItemChat = () => {
   const headerTitle = isSeller ? 'Chat with Buyer' : 'Chat with Seller';
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] flex flex-col">
+    <div className="min-h-screen bg-[#FDFBF7] pt-24 pb-20 flex flex-col">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+      <div className="bg-white border-b border-gray-200">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
             <button
               onClick={() => navigate(-1)}

@@ -111,6 +111,12 @@ const ClaimDonation = () => {
       return;
     }
 
+    // Ensure user has enough EcoPoints (guard on top of disabled button)
+    if (ecoPoints < CLAIM_COST) {
+      alert('You do not have enough EcoPoints to claim this item.');
+      return;
+    }
+
     // Enforce 1-claim-per-week using timestamp on user doc instead of query index
     try {
       const userRef = doc(db, 'users', user.uid);
@@ -145,14 +151,19 @@ const ClaimDonation = () => {
         claimedAt: serverTimestamp(),
       });
 
-      // Record the claim time on the user document for future checks
+      // Deduct EcoPoints and record the claim time on the user document
       try {
         const userRef = doc(db, 'users', user.uid);
         await setDoc(
           userRef,
-          { lastDonationClaimAt: serverTimestamp() },
+          {
+            ecoPoints: Math.max(0, (ecoPoints || 0) - CLAIM_COST),
+            lastDonationClaimAt: serverTimestamp(),
+          },
           { merge: true }
         );
+        // Update local state so the UI reflects the new balance until navigation
+        setEcoPoints((prev) => Math.max(0, (prev || 0) - CLAIM_COST));
       } catch (e) {
         console.error('Error updating lastDonationClaimAt on user:', e);
       }

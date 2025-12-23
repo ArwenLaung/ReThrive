@@ -181,7 +181,12 @@ const MySoldItems = () => {
                       {/* Action Buttons */}
                       <div className="flex flex-wrap gap-3 pt-2">
                         <button
-                          onClick={() => navigate(`/chat/${order.id}`)}
+                          onClick={() => {
+                            if (!order.itemId || !order.buyerId) return;
+                            // Open the dedicated item chat thread for this buyer + item
+                            const chatId = `${order.itemId}_${order.buyerId}`;
+                            navigate(`/chat-item/${order.itemId}?chatId=${encodeURIComponent(chatId)}`);
+                          }}
                           className="flex items-center gap-2 px-4 py-2 bg-brand-purple text-white rounded-xl font-semibold hover:bg-purple-800 transition-all active:scale-95"
                         >
                           <MessageCircle size={18} />
