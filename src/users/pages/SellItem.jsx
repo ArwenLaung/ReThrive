@@ -3,12 +3,23 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Upload, Loader2, X, CheckCircle2, MapPin, Tag } from 'lucide-react';
 import { classifyImage } from '../../utils/aiImage';
 import { generateDescription } from '../../utils/textGen';
-
-// --- FIREBASE IMPORTS ---
 import { db, storage, auth } from '../../firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { onAuthStateChanged } from 'firebase/auth';
+
+// Helper to convert file to Base64
+const fileToDataURL = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = (error) => reject(error);
+  });
+};
+
+const AVAILABILITY_DAYS = ['Weekdays (Mon-Fri)', 'Weekends (Sat-Sun)', 'Flexible'];
+const AVAILABILITY_SLOTS = ['Morning (8am-12pm)', 'Afternoon (12pm-6pm)', 'Evening (After 6pm)'];
 
 const SellItem = () => {
   const navigate = useNavigate();
@@ -22,8 +33,14 @@ const SellItem = () => {
   const [price, setPrice] = useState("");
   const [condition, setCondition] = useState("Lightly Used");
   const [locations, setLocations] = useState([]);
+  const [availDays, setAvailDays] = useState([]);
+  const [availSlots, setAvailSlots] = useState([]);
   const [otherChecked, setOtherChecked] = useState(false);
   const [otherLocation, setOtherLocation] = useState("");
+  // --- SUCCESS STATE ---
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [postedItem, setPostedItem] = useState(null);
+
 
   const [sellerName, setSellerName] = useState("");
   const [sellerEmail, setSellerEmail] = useState("");
@@ -33,20 +50,80 @@ const SellItem = () => {
   const [isGeneratingText, setIsGeneratingText] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [unsafeKeywords, setUnsafeKeywords] = useState([]);
 
-  // --- SUCCESS STATE ---
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [postedItem, setPostedItem] = useState(null);
+  // Bank info (stored in users/{uid})
+  const [bankName, setBankName] = useState('');
+  const [bankAccountNumber, setBankAccountNumber] = useState('');
+  const [bankAccountHolder, setBankAccountHolder] = useState('');
+  const [hasBankInfo, setHasBankInfo] = useState(false);
+
+  // Fallback list (Only used if Firebase fails)
+  const DEFAULT_BANNED_WORDS = [
+    "gun", "knife", "drug", "alcohol", "beer", "broken", "poker", "gambling",
+    "medicine", "pill", "tablet", "capsule", "vitamin", "panadol", "antibiotic",
+    "cigarette", "vape", "tobacco", "smoke", "wine", "vodka", "liquor"
+  ];
+  const FORBIDDEN_CLASSES = ["Weapon / Dangerous Item", "Restricted Item"];
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
       if (user) {
         setSellerId(user.uid);
         setSellerName(user.displayName || user.email || "");
         setSellerEmail(user.email || "");
+
+        // Load bank info from users collection (if any)
+        try {
+          const userRef = doc(db, 'users', user.uid);
+          const userSnap = await getDoc(userRef);
+          if (userSnap.exists()) {
+            const data = userSnap.data();
+            const bName = data.bankName || '';
+            const bNo = data.bankAccountNumber || '';
+            const bHolder = data.bankAccountHolder || '';
+            setBankName(bName);
+            setBankAccountNumber(bNo);
+            setBankAccountHolder(bHolder);
+            setHasBankInfo(!!(bName && bNo && bHolder));
+          }
+        } catch (e) {
+          console.error('Error loading bank info:', e);
+        }
       }
     });
+
+    // Fetch moderation keywords from firebase
+    const fetchKeywords = async () => {
+      try {
+        const docRef = doc(db, "settings", "moderation");
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists() && docSnap.data().bannedKeywords) {
+          const rawList = docSnap.data().bannedKeywords;
+
+          const cleanList = rawList
+            .map(word => word.toString().replace(/['"]+/g, '').toLowerCase().trim())
+            .filter(word => word.length > 0);
+
+          if (cleanList.length > 0) {
+            setUnsafeKeywords(cleanList);
+            console.log("Loaded Banned Words:", cleanList);
+          } else {
+            setUnsafeKeywords(DEFAULT_BANNED_WORDS);
+          }
+        } else {
+          console.warn("Moderation doc not found.");
+          setUnsafeKeywords(DEFAULT_BANNED_WORDS);
+        }
+      } catch (error) {
+        console.error("Error fetching keywords (Check Firestore Rules!):", error);
+        setUnsafeKeywords(DEFAULT_BANNED_WORDS);
+      }
+    };
+
+    fetchKeywords();
     return () => unsubscribe();
   }, []);
 
@@ -62,26 +139,33 @@ const SellItem = () => {
       file: file,
       preview: URL.createObjectURL(file),
     }));
-    setImages((prev) => [...prev, ...newImages]);
 
-    if (images.length === 0 && newImages.length > 0) {
-      const firstImgUrl = newImages[0].preview;
-      const imgElement = document.createElement("img");
-      imgElement.crossOrigin = "anonymous";
-      imgElement.src = firstImgUrl;
-      imgElement.onload = async () => {
-        try {
-          const prediction = await classifyImage(imgElement);
-          if (prediction?.className) setCategory(prediction.className);
-        } catch (error) {
-          console.error("AI Error:", error);
-        } finally {
+    const firstImgUrl = newImages[0].preview;
+    const imgElement = document.createElement("img");
+    imgElement.crossOrigin = "anonymous";
+    imgElement.src = firstImgUrl;
+
+    imgElement.onload = async () => {
+      try {
+        const prediction = await classifyImage(imgElement);
+
+        // AI visual block (Immediate)
+        if (FORBIDDEN_CLASSES.includes(prediction?.className) && prediction?.probability > 0.8) {
+          alert(`Listing Blocked: The system has identified this item as a '${prediction.className}'. To maintain a safe campus environment, this item cannot be listed.`);
           setIsAnalyzingImage(false);
+          return; // Stop execution
         }
-      };
-    } else {
-      setIsAnalyzingImage(false);
-    }
+
+        setImages((prev) => [...prev, ...newImages]);
+        if (prediction?.className && !FORBIDDEN_CLASSES.includes(prediction.className)) {
+          setCategory(prediction.className);
+        }
+      } catch (error) {
+        console.error("AI Error:", error);
+      } finally {
+        setIsAnalyzingImage(false);
+      }
+    };
   };
 
   const removeImage = (indexToRemove) => {
@@ -93,13 +177,35 @@ const SellItem = () => {
       alert("Please select a category and add some keywords.");
       return;
     }
+
+    // Check keywords before sending to AI
+    const foundKeyword = unsafeKeywords.find(word => keywords.toLowerCase().includes(word));
+    if (foundKeyword) {
+      alert(`Generation Blocked: Your input contains the restricted word "${foundKeyword}". Please remove prohibited keywords.`);
+      return;
+    }
+
     setIsGeneratingText(true);
     try {
-      const result = await generateDescription(keywords, category, null);
+      let imageDataUrl = null;
+      // Convert raw file to Base64 so AI can detect inappropriate items visually
+      if (images.length > 0) {
+        imageDataUrl = await fileToDataURL(images[0].file);
+      }
+      const result = await generateDescription(keywords, category, imageDataUrl);
+
+      if (result.title === "Restricted Item" || result.title.includes("Violation")) {
+        alert(`Safety Restriction: ${result.description}`);
+        setTitle(""); // Clear existing if any
+        setDescription(""); // Clear existing if any
+        return; // Exit here to prevent writing message into textboxes
+      }
+
       setTitle(result.title);
       setDescription(result.description);
     } catch (error) {
       console.error("Error generating text:", error);
+      alert("AI Generation failed. Please try again.");
     } finally {
       setIsGeneratingText(false);
     }
@@ -117,9 +223,50 @@ const SellItem = () => {
       return;
     }
     const finalLocation = finalLocations[0];
+
+    if (availDays.length === 0 || availSlots.length === 0) {
+      alert("Please select your availability (Days and Time slots).");
+      return;
+    }
+
+    // Require bank info only if not already saved
+    if (!hasBankInfo) {
+      if (!bankName.trim() || !bankAccountNumber.trim() || !bankAccountHolder.trim()) {
+        alert('Please fill in your bank information (bank name, account holder, and account number) before posting your first item.');
+        return;
+      }
+    }
+
+    // Keyword block using list from firebase
+    const combinedText = (title + " " + description).toLowerCase();
+    // Print exactly what we are checking to debug
+    console.log("--- POST CHECK START ---");
+    console.log("Checking Text:", combinedText);
+    console.log("Using Banned List:", unsafeKeywords);
+    // Check if any keyword in the array is present in the text
+    const foundKeyword = unsafeKeywords.find(word => combinedText.includes(word));
+
+    if (foundKeyword) {
+      // Direct block logic
+      alert(`Post Blocked: Your description contains the restricted word "${foundKeyword}". Please remove prohibited keywords to proceed.`);
+      return; // Stop execution immediately. Do not upload.
+    }
+
     setIsSubmitting(true);
 
     try {
+      // If first time, save bank info to users collection
+      if (!hasBankInfo && currentUser) {
+        const userRef = doc(db, 'users', currentUser.uid);
+        await setDoc(userRef, {
+          bankName: bankName.trim(),
+          bankAccountNumber: bankAccountNumber.trim(),
+          bankAccountHolder: bankAccountHolder.trim(),
+          updatedAt: new Date(),
+        }, { merge: true });
+        setHasBankInfo(true);
+      }
+
       const imageUrls = await Promise.all(
         images.map(async (imgObj, index) => {
           const cleanName = imgObj.file.name.replace(/[^a-zA-Z0-9.]/g, "_");
@@ -136,6 +283,8 @@ const SellItem = () => {
         category,
         location: finalLocation,
         locations: finalLocations,
+        availabilityDays: availDays,
+        availabilitySlots: availSlots,
         condition,
         images: imageUrls,
         image: imageUrls[0],
@@ -240,39 +389,134 @@ const SellItem = () => {
               <hr className="border-gray-100" />
 
               <div>
-                <h2 className="text-lg font-bold text-gray-800 mb-4">Price & Location</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div><label className="block text-sm font-semibold text-gray-700 mb-2">Price (RM)</label><input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#59287a] outline-none" /></div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Pickup Location(s)</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {[
-                        'Desasiswa Restu',
-                        'Desasiswa Saujana',
-                        'Desasiswa Tekun',
-                        'Desasiswa Aman Damai',
-                        'Desasiswa Indah Kembara',
-                        'Desasiswa Fajar Harapan',
-                        'Desasiswa Bakti Permai',
-                        'Desasiswa Cahaya Gemilang',
-                        'Main Library',
-                      ].map((opt) => (
-                        <label key={opt} className="inline-flex items-center gap-2">
-                          <input type="checkbox" checked={locations.includes(opt)} onChange={() => {
-                            setLocations((prev) => prev.includes(opt) ? prev.filter((p) => p !== opt) : [...prev, opt]);
-                          }} />
-                          <span className="text-sm">{opt}</span>
-                        </label>
-                      ))}
-                      <label className="inline-flex items-center gap-2">
-                        <input type="checkbox" checked={otherChecked} onChange={() => setOtherChecked((v) => !v)} />
-                        <span className="text-sm">Other</span>
-                      </label>
+                <h2 className="text-lg font-bold text-gray-800 mb-4">Price & Logistics</h2>
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Price (RM)</label>
+                      <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#59287a] outline-none" />
                     </div>
-                    {otherChecked && (
-                      <input type="text" placeholder="Enter other location..." value={otherLocation} onChange={(e) => setOtherLocation(e.target.value)} className="w-full mt-2 p-3 rounded-xl border border-[#dccae8] bg-[#f3eefc] focus:ring-2 focus:ring-[#59287a] outline-none" />
-                    )}
+                    {/* Location Selection (Existing code) */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Pickup Location(s)</label>
+                      <div className="grid grid-cols-1 gap-2 border p-3 rounded-xl border-gray-100 max-h-40 overflow-y-auto">
+                        {[
+                          'Desasiswa Restu', 'Desasiswa Saujana', 'Desasiswa Tekun',
+                          'Desasiswa Aman Damai', 'Desasiswa Indah Kembara', 'Desasiswa Fajar Harapan',
+                          'Desasiswa Bakti Permai', 'Desasiswa Cahaya Gemilang', 'Main Library'
+                        ].map((opt) => (
+                          <label key={opt} className="inline-flex items-center gap-2">
+                            <input type="checkbox" checked={locations.includes(opt)} onChange={() => {
+                              setLocations((prev) => prev.includes(opt) ? prev.filter((p) => p !== opt) : [...prev, opt]);
+                            }} className="rounded text-[#59287a] focus:ring-[#59287a]" />
+                            <span className="text-sm">{opt}</span>
+                          </label>
+                        ))}
+                        <label className="inline-flex items-center gap-2">
+                          <input type="checkbox" checked={otherChecked} onChange={() => setOtherChecked((v) => !v)} className="rounded text-[#59287a]" />
+                          <span className="text-sm">Other</span>
+                        </label>
+                      </div>
+                      {otherChecked && (
+                        <input type="text" placeholder="Enter other location..." value={otherLocation} onChange={(e) => setOtherLocation(e.target.value)} className="w-full mt-2 p-2 rounded-lg border border-[#dccae8] bg-[#f3eefc] text-sm" />
+                      )}
+                    </div>
                   </div>
+
+                  {/* [NEW] Availability Section */}
+                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <h3 className="text-sm font-bold text-gray-800 mb-3">When are you available to meet?</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Days */}
+                      <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Days</label>
+                        <div className="space-y-2">
+                          {AVAILABILITY_DAYS.map((day) => (
+                            <label key={day} className="flex items-center gap-2 cursor-pointer">
+                              <input type="checkbox" checked={availDays.includes(day)} onChange={() => {
+                                setAvailDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
+                              }} className="rounded text-[#59287a]" />
+                              <span className="text-sm text-gray-700">{day}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      {/* Slots */}
+                      <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Time Slots</label>
+                        <div className="space-y-2">
+                          {AVAILABILITY_SLOTS.map((slot) => (
+                            <label key={slot} className="flex items-center gap-2 cursor-pointer">
+                              <input type="checkbox" checked={availSlots.includes(slot)} onChange={() => {
+                                setAvailSlots(prev => prev.includes(slot) ? prev.filter(s => s !== slot) : [...prev, slot]);
+                              }} className="rounded text-[#59287a]" />
+                              <span className="text-sm text-gray-700">{slot}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bank Information - only shown until saved once */}
+              <div className="mt-6">
+                <div className="bg-[#FEFAE0] rounded-2xl p-4 border border-amber-200">
+                  <h3 className="text-sm font-bold text-gray-800 mb-2">
+                    Bank Information for Payouts
+                  </h3>
+                  {hasBankInfo ? (
+                    <p className="text-sm text-gray-600">
+                      Your bank details are already saved. You can view and edit them anytime from the
+                      <span className="font-semibold text-[#59287a]"> Account Details</span> page.
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-xs text-gray-600">
+                        Please fill in your bank details once. They will be saved to your account and reused
+                        for future sales.
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-700 mb-1">
+                            Bank Name
+                          </label>
+                          <input
+                            type="text"
+                            value={bankName}
+                            onChange={(e) => setBankName(e.target.value)}
+                            className="w-full p-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#59287a] outline-none text-sm"
+                            placeholder="e.g. Maybank"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-700 mb-1">
+                            Account Holder Name
+                          </label>
+                          <input
+                            type="text"
+                            value={bankAccountHolder}
+                            onChange={(e) => setBankAccountHolder(e.target.value)}
+                            className="w-full p-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#59287a] outline-none text-sm"
+                            placeholder="Name on bank account"
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-xs font-semibold text-gray-700 mb-1">
+                            Account Number
+                          </label>
+                          <input
+                            type="text"
+                            value={bankAccountNumber}
+                            onChange={(e) => setBankAccountNumber(e.target.value)}
+                            className="w-full p-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#59287a] outline-none text-sm"
+                            placeholder="e.g. 1234567890"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

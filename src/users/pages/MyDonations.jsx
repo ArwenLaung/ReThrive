@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Gift, Trash2, MapPin, Loader2 } from 'lucide-react';
+import { Gift, Trash2, MapPin, Loader2, MessageCircle } from 'lucide-react';
 import { auth, db } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
@@ -74,7 +74,7 @@ const MyDonations = () => {
             {items.map((item) => (
               <Link
                 key={item.id}
-                to={`/mydonationdetail/${item.id}`}
+                to={`/mydonation/${item.id}`}
                 className="bg-white rounded-2xl overflow-hidden border border-[#7db038]/20 shadow-sm hover:shadow-md transition-all relative block group"
               >
                 <div className="relative aspect-square bg-gray-100">
@@ -89,15 +89,35 @@ const MyDonations = () => {
                   </div>
                 </div>
                 <div className="p-4">
-                  <h3 className="font-bold text-gray-900 truncate mb-1 group-hover:text-[#7db038] transition-colors">{item.title}</h3>
-                  <div className="flex items-center justify-between mt-2">
-                    <div className="flex items-center gap-1 text-xs text-gray-500"><MapPin size={12} /> {item.location}</div>
-                    <button
-                      onClick={(e) => handleDelete(e, item.id)}
-                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                  <h3 className="font-bold text-gray-900 truncate mb-1 group-hover:text-[#7db038] transition-colors">
+                    {item.title}
+                  </h3>
+                  <div className="flex flex-col gap-2 mt-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1 text-xs text-gray-500">
+                        <MapPin size={12} /> {item.location}
+                      </div>
+                      <button
+                        onClick={(e) => handleDelete(e, item.id)}
+                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+
+                    {item.receiverId && (
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          navigate(`/chat-donation/${item.id}`);
+                        }}
+                        className="mt-1 inline-flex items-center justify-center gap-2 px-3 py-2 w-full bg-[#7db038] text-white rounded-xl text-xs font-semibold hover:bg-[#4a6b1d] transition-all active:scale-95"
+                      >
+                        <MessageCircle size={14} />
+                        Chat with Receiver
+                      </button>
+                    )}
                   </div>
                 </div>
               </Link>

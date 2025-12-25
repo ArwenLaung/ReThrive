@@ -1,12 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Upload, Loader2, X, Gift, CheckCircle2, MapPin } from 'lucide-react';
+import { ArrowLeft, Upload, Loader2, X, Gift, CheckCircle2, MapPin, Tag } from 'lucide-react';
 import { classifyImage } from '../../utils/aiImage';
 import { generateDescription } from '../../utils/textGen';
 import { db, storage, auth } from '../../firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { onAuthStateChanged } from 'firebase/auth';
+
+// Helper to convert file to Base64 (Required for Gemini Vision)
+const fileToDataURL = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = (error) => reject(error);
+  });
+};
+
+const AVAILABILITY_DAYS = ['Weekdays (Mon-Fri)', 'Weekends (Sat-Sun)', 'Flexible'];
+const AVAILABILITY_SLOTS = ['Morning (8am-12pm)', 'Afternoon (12pm-6pm)', 'Evening (After 6pm)'];
 
 const DonateItem = () => {
   const navigate = useNavigate();
@@ -17,20 +30,30 @@ const DonateItem = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [condition, setCondition] = useState("Lightly Used");
-  const [locationSelection, setLocationSelection] = useState("Desasiswa Restu");
-  const [customLocation, setCustomLocation] = useState("");
+  const [locations, setLocations] = useState([]);
+  const [otherChecked, setOtherChecked] = useState(false);
+  const [otherLocation, setOtherLocation] = useState("");
+  const [availDays, setAvailDays] = useState([]);
+  const [availSlots, setAvailSlots] = useState([]);
   const [donorName, setDonorName] = useState("");
   const [donorEmail, setDonorEmail] = useState("");
   const [donorId, setDonorId] = useState("");
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [postedDonation, setPostedDonation] = useState(null);
 
   const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
   const [isGeneratingText, setIsGeneratingText] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [unsafeKeywords, setUnsafeKeywords] = useState([]);
 
-  // --- SUCCESS STATE ---
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [postedDonation, setPostedDonation] = useState(null);
+  // Fallback list (Only used if Firebase fails)
+  const DEFAULT_BANNED_WORDS = [
+    "gun", "knife", "drug", "alcohol", "beer", "broken", "poker", "gambling",
+    "medicine", "pill", "tablet", "capsule", "vitamin", "panadol", "antibiotic",
+    "cigarette", "vape", "tobacco", "smoke", "wine", "vodka", "liquor"
+  ];
+  const FORBIDDEN_CLASSES = ["Weapon / Dangerous Item", "Restricted Item"];
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -41,6 +64,36 @@ const DonateItem = () => {
         setDonorEmail(user.email || "");
       }
     });
+
+    // Fetch banned keywords from Firebase
+    const fetchKeywords = async () => {
+      try {
+        const docRef = doc(db, "settings", "moderation");
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists() && docSnap.data().bannedKeywords) {
+          const rawList = docSnap.data().bannedKeywords;
+
+          const cleanList = rawList
+            .map(word => word.toString().replace(/['"]+/g, '').toLowerCase().trim())
+            .filter(word => word.length > 0);
+
+          if (cleanList.length > 0) {
+            setUnsafeKeywords(cleanList);
+            console.log("Loaded Banned Words:", cleanList);
+          } else {
+            setUnsafeKeywords(DEFAULT_BANNED_WORDS);
+          }
+        } else {
+          setUnsafeKeywords(DEFAULT_BANNED_WORDS);
+        }
+      } catch (error) {
+        console.error("Error fetching keywords (Check Firestore Rules!):", error);
+        setUnsafeKeywords(DEFAULT_BANNED_WORDS);
+      }
+    };
+
+    fetchKeywords();
     return () => unsubscribe();
   }, []);
 
@@ -56,26 +109,33 @@ const DonateItem = () => {
       file,
       preview: URL.createObjectURL(file)
     }));
-    setImages(prev => [...prev, ...newImages]);
 
-    if (images.length === 0 && newImages.length > 0) {
-      const firstImgUrl = newImages[0].preview;
-      const imgElement = document.createElement("img");
-      imgElement.crossOrigin = "anonymous";
-      imgElement.src = firstImgUrl;
-      imgElement.onload = async () => {
-        try {
-          const prediction = await classifyImage(imgElement);
-          if (prediction?.className) setCategory(prediction.className);
-        } catch (error) {
-          console.error("AI Error:", error);
-        } finally {
+    const firstImgUrl = newImages[0].preview;
+    const imgElement = document.createElement("img");
+    imgElement.crossOrigin = "anonymous";
+    imgElement.src = firstImgUrl;
+
+    imgElement.onload = async () => {
+      try {
+        const prediction = await classifyImage(imgElement);
+
+        // Block if forbidden class detected with high confidence
+        if (FORBIDDEN_CLASSES.includes(prediction?.className) && prediction?.probability > 0.8) {
+          alert(`Donation Blocked: The system identified this as a '${prediction.className}'. To maintain a safe campus environment, this item cannot be listed.`);
           setIsAnalyzingImage(false);
+          return; // Stop execution
         }
-      };
-    } else {
-      setIsAnalyzingImage(false);
-    }
+
+        setImages(prev => [...prev, ...newImages]);
+        if (prediction?.className && !FORBIDDEN_CLASSES.includes(prediction.className)) {
+          setCategory(prediction.className);
+        }
+      } catch (error) {
+        console.error("AI Error:", error);
+      } finally {
+        setIsAnalyzingImage(false);
+      }
+    };
   };
 
   const removeImage = (indexToRemove) => {
@@ -87,28 +147,70 @@ const DonateItem = () => {
       alert("Please select a category and add some keywords.");
       return;
     }
+    // Check for unsafe keywords before generating
+    const foundKeyword = unsafeKeywords.find(word => keywords.toLowerCase().includes(word));
+
+    if (foundKeyword) {
+      alert(`Generation Blocked: Your input contains the restricted word "${foundKeyword}". Please remove prohibited keywords.`);
+      return; // Stop execution
+    }
     setIsGeneratingText(true);
     try {
-      const result = await generateDescription(keywords, category, null);
+      let imageDataUrl = null;
+      // Convert raw file to Base64 so AI can detect inappropriate items visually
+      if (images.length > 0) {
+        imageDataUrl = await fileToDataURL(images[0].file);
+      }
+      const result = await generateDescription(keywords, category, imageDataUrl);
+      if (result.title === "Restricted Item" || result.title.includes("Violation")) {
+        alert(`Safety Restriction: ${result.description}`);
+        setTitle("");
+        setDescription("");
+        return;
+      }
       setTitle(result.title);
       setDescription(result.description);
     } catch (error) {
       console.error("Error generating text:", error);
+      alert("AI Generation failed. Please try again.");
     } finally {
       setIsGeneratingText(false);
     }
   };
 
   const handleDonate = async () => {
-    if (images.length === 0 || !title || !donorName || !category) {
+    if (images.length === 0 || !title || !category) {
       alert("Please fill in all required fields and upload at least one image.");
       return;
     }
-    const finalLocation = locationSelection === "Other" ? customLocation : locationSelection;
-    if (!finalLocation.trim()) {
-      alert("Please specify the location.");
+    const finalLocations = [...locations];
+    if (otherChecked && otherLocation && otherLocation.trim()) finalLocations.push(otherLocation.trim());
+
+    if (finalLocations.length === 0) {
+      alert("Please select at least one pickup location.");
       return;
     }
+    const finalLocation = finalLocations[0];
+
+    if (availDays.length === 0 || availSlots.length === 0) {
+      alert("Please select your availability (Days and Time slots).");
+      return;
+    }
+
+    // Keyword block using list from firebase
+    const combinedText = (title + " " + description).toLowerCase();
+    console.log("--- DONATION CHECK START ---");
+    console.log("Checking Text:", combinedText);
+    console.log("Using Banned List:", unsafeKeywords);
+    // Check if any keyword in the array is present in the text
+    const foundKeyword = unsafeKeywords.find(word => combinedText.includes(word.toLowerCase()));
+
+    if (foundKeyword) {
+      // Direct block logic
+      alert(`Donation Blocked: Your description contains the restricted word "${foundKeyword}". Please remove prohibited keywords to proceed.`);
+      return; // Stop execution immediately. Do not upload.
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -125,12 +227,15 @@ const DonateItem = () => {
         title: title.trim(),
         description: description.trim(),
         category,
-        location: finalLocation.trim(),
+        location: finalLocation,
+        locations: finalLocations,
+        availabilityDays: availDays,
+        availabilitySlots: availSlots,
         condition,
         images: imageUrls,
         image: imageUrls[0],
         donorId: donorId || (currentUser ? currentUser.uid : null),
-        donorName: donorName || (currentUser ? (currentUser.displayName || "Anonymous") : ""),
+        donorName: donorName || (currentUser ? (currentUser.displayName || "USM Student") : ""),
         donorEmail: donorEmail || (currentUser ? currentUser.email : null),
         createdAt: serverTimestamp(),
         status: "active",
@@ -232,14 +337,68 @@ const DonateItem = () => {
               <hr className="border-gray-100" />
 
               <div>
-                <h2 className="text-lg font-bold text-[#364f15] mb-4">Location</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <h2 className="text-lg font-bold text-[#364f15] mb-4">Pickup & Availability</h2>
+                <div className="space-y-6">
+
+                  {/* Location Selection */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-600 mb-2">Pickup Location</label>
-                    <select value={locationSelection} onChange={e => setLocationSelection(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 focus:border-[#7db038] focus:ring-2 focus:ring-[#7db038]/20 outline-none bg-white mb-2">
-                      <option>Desasiswa Restu</option><option>Desasiswa Saujana</option><option>Desasiswa Tekun</option><option>Desasiswa Aman Damai</option><option>Desasiswa Indah Kembara</option><option>Desasiswa Fajar Harapan</option><option>Desasiswa Bakti Permai</option><option>Desasiswa Cahaya Gemilang</option><option>Main Library</option><option value="Other">Other</option>
-                    </select>
-                    {locationSelection === "Other" && <input type="text" placeholder="Enter location..." value={customLocation} onChange={e => setCustomLocation(e.target.value)} className="w-full p-3 rounded-xl border border-[#7db038]/40 bg-[#7db038]/5 focus:border-[#7db038] focus:ring-2 focus:ring-[#7db038]/20 outline-none" />}
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Pickup Location(s)</label>
+                    <div className="grid grid-cols-1 gap-2 border p-3 rounded-xl border-gray-100 max-h-40 overflow-y-auto">
+                      {[
+                        'Desasiswa Restu', 'Desasiswa Saujana', 'Desasiswa Tekun',
+                        'Desasiswa Aman Damai', 'Desasiswa Indah Kembara', 'Desasiswa Fajar Harapan',
+                        'Desasiswa Bakti Permai', 'Desasiswa Cahaya Gemilang', 'Main Library'
+                      ].map((opt) => (
+                        <label key={opt} className="inline-flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" checked={locations.includes(opt)} onChange={() => {
+                            setLocations((prev) => prev.includes(opt) ? prev.filter((p) => p !== opt) : [...prev, opt]);
+                          }} className="rounded text-[#7db038] focus:ring-[#7db038]" />
+                          <span className="text-sm">{opt}</span>
+                        </label>
+                      ))}
+                      <label className="inline-flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked={otherChecked} onChange={() => setOtherChecked((v) => !v)} className="rounded text-[#7db038] focus:ring-[#7db038]" />
+                        <span className="text-sm">Other</span>
+                      </label>
+                    </div>
+                    {otherChecked && (
+                      <input type="text" placeholder="Enter other location..." value={otherLocation} onChange={(e) => setOtherLocation(e.target.value)} className="w-full mt-2 p-2 rounded-lg border border-[#7db038]/30 bg-[#7db038]/5 text-sm outline-none focus:border-[#7db038]" />
+                    )}
+                  </div>
+
+                  {/* Availability Section */}
+                  <div className="bg-[#7db038]/5 p-4 rounded-xl border border-[#7db038]/20">
+                    <h3 className="text-sm font-bold text-[#364f15] mb-3">When are you available to meet?</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Days */}
+                      <div>
+                        <label className="block text-xs font-bold text-[#7db038] uppercase tracking-wider mb-2">Days</label>
+                        <div className="space-y-2">
+                          {AVAILABILITY_DAYS.map((day) => (
+                            <label key={day} className="flex items-center gap-2 cursor-pointer">
+                              <input type="checkbox" checked={availDays.includes(day)} onChange={() => {
+                                setAvailDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
+                              }} className="rounded text-[#7db038] focus:ring-[#7db038]" />
+                              <span className="text-sm text-gray-700">{day}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      {/* Slots */}
+                      <div>
+                        <label className="block text-xs font-bold text-[#7db038] uppercase tracking-wider mb-2">Time Slots</label>
+                        <div className="space-y-2">
+                          {AVAILABILITY_SLOTS.map((slot) => (
+                            <label key={slot} className="flex items-center gap-2 cursor-pointer">
+                              <input type="checkbox" checked={availSlots.includes(slot)} onChange={() => {
+                                setAvailSlots(prev => prev.includes(slot) ? prev.filter(s => s !== slot) : [...prev, slot]);
+                              }} className="rounded text-[#7db038] focus:ring-[#7db038]" />
+                              <span className="text-sm text-gray-700">{slot}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

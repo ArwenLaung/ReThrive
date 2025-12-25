@@ -36,7 +36,7 @@ const Chat = () => {
         if (orderDoc.exists()) {
           const orderData = { id: orderDoc.id, ...orderDoc.data() };
           setOrder(orderData);
-          
+
           // Check if user is buyer or seller
           if (currentUser && orderData.buyerId !== currentUser.uid && orderData.sellerId !== currentUser.uid) {
             alert("You don't have access to this chat.");
@@ -56,27 +56,40 @@ const Chat = () => {
   }, [orderId, currentUser, navigate]);
 
   useEffect(() => {
-    if (!orderId) return;
+    if (!orderId || !currentUser) return;
 
     // Subscribe to messages for this order
     const messagesRef = collection(db, 'orders', orderId, 'messages');
     const q = query(messagesRef, orderBy('createdAt', 'asc'));
-    
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
       const msgs = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
       setMessages(msgs);
-      
+
       // Auto-scroll to bottom
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
+
+      // Clear unread flag for this user when viewing the chat
+      if (order) {
+        const isBuyer = currentUser.uid === order.buyerId;
+        const update = isBuyer
+          ? { unreadForBuyer: false }
+          : { unreadForSeller: false };
+        try {
+          await updateDoc(doc(db, 'orders', orderId), update);
+        } catch (e) {
+          console.error('Error clearing unread flags for order chat:', e);
+        }
+      }
     });
 
     return () => unsubscribe();
-  }, [orderId]);
+  }, [orderId, currentUser, order]);
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !currentUser || !order) return;
@@ -91,9 +104,13 @@ const Chat = () => {
         createdAt: serverTimestamp(),
       });
 
-      // Update order's lastMessageAt for sorting
+      // Update order's lastMessageAt and unread flags for the other party
+      const isBuyerSender = currentUser.uid === order.buyerId;
       await updateDoc(doc(db, 'orders', orderId), {
         lastMessageAt: serverTimestamp(),
+        lastMessageSenderId: currentUser.uid,
+        unreadForBuyer: !isBuyerSender,
+        unreadForSeller: isBuyerSender,
       });
 
       setNewMessage('');
@@ -180,11 +197,10 @@ const Chat = () => {
               <h3 className="font-bold text-gray-900">{order.itemTitle}</h3>
               <p className="text-sm text-gray-500">RM {order.itemPrice}</p>
             </div>
-            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-              order.status === 'completed' ? 'bg-green-100 text-green-800' :
-              order.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
-              'bg-yellow-100 text-yellow-800'
-            }`}>
+            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${order.status === 'completed' ? 'bg-green-100 text-green-800' :
+                order.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
+                  'bg-yellow-100 text-yellow-800'
+              }`}>
               {order.status?.toUpperCase() || 'PENDING'}
             </span>
           </div>
@@ -210,19 +226,17 @@ const Chat = () => {
                   className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-xs md:max-w-md px-4 py-3 rounded-2xl ${
-                      isOwnMessage
+                    className={`max-w-xs md:max-w-md px-4 py-3 rounded-2xl ${isOwnMessage
                         ? 'bg-brand-purple text-white rounded-br-sm'
                         : 'bg-gray-100 text-gray-900 rounded-bl-sm'
-                    }`}
+                      }`}
                   >
                     <p className="text-sm font-medium mb-1">{msg.senderName}</p>
                     <p className="text-sm whitespace-pre-wrap break-words">{msg.text}</p>
                     {msg.createdAt && (
-                      <p className={`text-xs mt-1 ${
-                        isOwnMessage ? 'text-purple-100' : 'text-gray-500'
-                      }`}>
-                        {msg.createdAt.toDate ? 
+                      <p className={`text-xs mt-1 ${isOwnMessage ? 'text-purple-100' : 'text-gray-500'
+                        }`}>
+                        {msg.createdAt.toDate ?
                           new Date(msg.createdAt.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) :
                           'Just now'
                         }

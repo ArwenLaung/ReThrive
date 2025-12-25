@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Gift, Loader2, MapPin } from 'lucide-react';
+import { Gift, Loader2, MapPin, MessageCircle, CheckCircle } from 'lucide-react';
 import { auth, db } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import ConfirmModal from '../../components/ConfirmModal';
 
 const MyClaimedItems = () => {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [updatingStatus, setUpdatingStatus] = useState(null);
+  const [confirmModalItem, setConfirmModalItem] = useState(null);
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
@@ -24,40 +27,187 @@ const MyClaimedItems = () => {
     return () => unsubscribeAuth();
   }, [navigate]);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-white"><Loader2 className="animate-spin text-[#7db038]" size={40} /></div>;
+  const handleMarkReceived = async (itemId) => {
+    setUpdatingStatus(itemId);
+    try {
+      await updateDoc(doc(db, 'donations', itemId), {
+        receiverStatus: 'received',
+        receiverStatusUpdatedAt: serverTimestamp(),
+      });
+      // Optimistic update
+      setItems((prev) =>
+        prev.map((it) =>
+          it.id === itemId ? { ...it, receiverStatus: 'received' } : it
+        )
+      );
+    } catch (e) {
+      console.error('Error marking donation as received:', e);
+      alert('Failed to update status. Please try again.');
+    } finally {
+      setUpdatingStatus(null);
+    }
+  };
+
+  const handleConfirmModalConfirm = async () => {
+    if (!confirmModalItem) {
+      setConfirmModalItem(null);
+      return;
+    }
+    await handleMarkReceived(confirmModalItem.id);
+    setConfirmModalItem(null);
+  };
+
+  const handleConfirmModalClose = () => {
+    setConfirmModalItem(null);
+  };
+
+  if (loading)
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="animate-spin text-[#7db038]" size={40} />
+      </div>
+    );
 
   return (
-    <div className="min-h-screen bg-[#9af71e]/5 pb-20 pt-6 px-4">
-      <div className="max-w-6xl mx-auto mb-8 flex items-center gap-4">
-        <Link to="/myaccount" className="p-2 bg-white rounded-full hover:bg-gray-100 text-[#364f15] transition-colors shadow-sm"><ArrowLeft size={24} /></Link>
-        <h1 className="text-2xl font-extrabold text-[#364f15]">My Claimed Items</h1>
+    <div className="min-h-screen bg-[#9af71e]/5 pb-32 pt-24 px-6">
+      <div className="max-w-5xl mx-auto mb-10 flex items-center gap-4">
+        <h1 className="text-3xl font-extrabold text-[#364f15]">My Claimed Items</h1>
       </div>
 
       <div className="max-w-6xl mx-auto">
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl shadow-sm border border-[#7db038]/20">
-            <div className="bg-[#7db038]/10 p-6 rounded-full mb-4"><Gift size={48} className="text-[#7db038]" /></div>
+            <div className="bg-[#7db038]/10 p-6 rounded-full mb-4">
+              <Gift size={48} className="text-[#7db038]" />
+            </div>
             <h2 className="text-xl font-bold text-gray-800 mb-2">No claimed items</h2>
-            <Link to="/donationcorner" className="bg-[#7db038] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#4a6b1d] transition-colors">Browse Donations</Link>
+            <Link
+              to="/donationcorner"
+              className="bg-[#7db038] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#4a6b1d] transition-colors"
+            >
+              Browse Donations
+            </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="space-y-6">
             {items.map((item) => (
-              <div key={item.id} className="bg-white rounded-2xl overflow-hidden border border-[#7db038]/20 shadow-sm hover:shadow-md transition-all relative">
-                <div className="relative aspect-square bg-gray-100 opacity-90">
-                  <img src={item.image} alt={item.title} className="w-full h-full object-cover grayscale-[0.2]" />
-                  <div className="absolute top-3 left-3"><span className="px-3 py-1 rounded-full text-xs font-bold text-white bg-green-600 shadow-sm">CLAIMED</span></div>
-                </div>
-                <div className="p-4">
-                  <h3 className="font-bold text-gray-900 truncate mb-1">{item.title}</h3>
-                  <div className="flex items-center gap-1 text-xs text-gray-500 mb-3"><MapPin size={12} /> {item.location}</div>
-                  <Link to={`/donation/${item.id}`} className="text-xs font-bold text-gray-400 hover:text-[#7db038]">View Details</Link>
+              <div
+                key={item.id}
+                className="bg-white rounded-2xl overflow-hidden border border-[#7db038]/20 shadow-sm hover:shadow-md transition-all"
+              >
+                <div className="p-6">
+                  <div className="flex flex-col md:flex-row gap-6">
+                    {/* Image */}
+                    <div className="relative w-full md:w-32 h-32 flex-shrink-0 rounded-xl overflow-hidden bg-gray-100">
+                      <img
+                        src={item.image}
+                        alt={item.title}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute top-2 left-2">
+                        {(() => {
+                          const fullyCompleted =
+                            item.receiverStatus === 'received' &&
+                            item.donorDeliveryStatus === 'delivered';
+                          return (
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-bold text-white shadow-sm ${fullyCompleted ? 'bg-green-600' : 'bg-yellow-500'
+                                }`}
+                            >
+                              {fullyCompleted ? 'CLAIMED' : 'PENDING'}
+                            </span>
+                          );
+                        })()}
+                      </div>
+                    </div>
+
+                    {/* Details */}
+                    <div className="flex-1 space-y-3">
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900 mb-1">
+                          {item.title}
+                        </h3>
+                        {item.claimedAt && item.claimedAt.toDate && (
+                          <p className="text-xs text-gray-500">
+                            Claimed on{' '}
+                            {new Date(
+                              item.claimedAt.toDate()
+                            ).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap gap-4 text-sm">
+                        <div className="flex items-center gap-1 text-gray-500">
+                          <MapPin size={12} />
+                          <span>
+                            {item.meetupLocation ||
+                              item.location ||
+                              (item.locations && item.locations[0])}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex flex-wrap gap-3 pt-2">
+                        <button
+                          onClick={() => navigate(`/chat-donation/${item.id}`)}
+                          className="flex items-center gap-2 px-4 py-2 bg-[#7db038] text-white rounded-xl font-semibold hover:bg-[#4a6b1d] transition-all active:scale-95"
+                        >
+                          <MessageCircle size={18} />
+                          Contact Donor
+                        </button>
+
+                        {item.receiverStatus === 'received' ? (
+                          <div className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-xl font-semibold">
+                            <CheckCircle size={18} />
+                            Claimed
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setConfirmModalItem(item)}
+                            disabled={updatingStatus === item.id}
+                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {updatingStatus === item.id ? (
+                              <>
+                                <Loader2 className="animate-spin" size={18} />
+                                Updating...
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle size={18} />
+                                Received
+                              </>
+                            )}
+                          </button>
+                        )}
+
+                        <Link
+                          to={`/donation/${item.id}`}
+                          className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-all active:scale-95"
+                        >
+                          View Details
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        open={!!confirmModalItem}
+        title="Mark as received?"
+        message="Confirm that you have received this donated item?"
+        confirmText="Confirm"
+        cancelText="Cancel"
+        onClose={handleConfirmModalClose}
+        onConfirm={handleConfirmModalConfirm}
+      />
     </div>
   );
 };

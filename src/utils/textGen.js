@@ -6,7 +6,7 @@ const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
  * Generate title and description for a marketplace item
  * @param {string} keywords - User-provided keywords about the item
  * @param {string} category - Item category
- * @param {string} imageDataUrl - Optional: Base64 image data URL for image analysis
+ * @param {string} imageDataUrl - Base64 image data URL for image analysis
  * @returns {Promise<{title: string, description: string}>}
  */
 export const generateDescription = async (keywords, category, imageDataUrl = null) => {
@@ -35,6 +35,9 @@ Create an engaging listing for this secondhand item that will appeal to students
 - Appealing to budget-conscious students
 - Specific about what makes this item valuable
 - Written in a friendly, casual tone suitable for a student marketplace
+
+IMPORTANT SAFETY RULE:
+If the user is trying to sell a weapon (gun, knife), drugs, alcohol, or illegal items, DO NOT write a description. Instead, return a JSON with title: "Restricted Item" and description: "This item appears to violate marketplace policies and description cannot be generated."
 
 Requirements:
 - Title: Maximum 60 characters, simple, catchy, casual and descriptive
@@ -88,9 +91,7 @@ Return ONLY a valid JSON object with this exact format (no markdown, no code blo
   }
 };
 
-/**
- * Parse AI response and extract JSON
- */
+// Parse AI response and extract JSON
 const parseAIResponse = (text) => {
   // Remove markdown code blocks if present
   let cleanText = text.replace(/```json|```/g, '').trim();
