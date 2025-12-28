@@ -123,7 +123,7 @@ const MarketplaceModeration = () => {
   return (
     <div className="admin-page-content">
       <div className="item-admin-header">
-        <h2 className="item-admin-title">Items Moderation</h2>
+        <h2 className="item-admin-title">Marketplace Moderation</h2>
       </div>
 
       <div className="item-tabs-wrapper">
