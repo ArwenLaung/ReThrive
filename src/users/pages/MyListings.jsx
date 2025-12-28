@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Package, Trash2, MapPin, Loader2 } from 'lucide-react';
+import { ArrowLeft, Package, Trash2, MapPin, Loader2, MessageCircle } from 'lucide-react';
 import { auth, db } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
@@ -52,6 +52,10 @@ const MyListings = () => {
   // Delete Item Handler
   const handleDelete = async (itemId) => {
     setDeleteTarget(itemId);
+  };
+
+  const handleViewMessages = (itemId) => {
+    navigate(`/chat-item/${itemId}`);
   };
 
   const handleConfirmDelete = async () => {
@@ -120,12 +124,12 @@ const MyListings = () => {
                     <MapPin size={12} /> {item.location}
                   </div>
                   
-                  <div className="flex items-center justify-between mt-2">
+                  <div className="flex items-center justify-between mt-2 gap-2">
                     <p className="text-[#59287a] font-black text-lg">RM {item.price}</p>
-                    
                     <button 
                       onClick={(e) => {
                         e.preventDefault();
+                        e.stopPropagation();
                         handleDelete(item.id);
                       }}
                       className="relative z-20 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
@@ -134,6 +138,20 @@ const MyListings = () => {
                       <Trash2 size={18} />
                     </button>
                   </div>
+
+                  {/* Chat with buyer button (full width, above overlay link) */}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleViewMessages(item.id);
+                    }}
+                    className="relative z-20 mt-1 inline-flex items-center justify-center gap-2 px-3 py-2 w-full bg-brand-purple text-white rounded-xl text-xs font-semibold hover:bg-purple-800 transition-all active:scale-95"
+                    title="Chat with buyer"
+                  >
+                    <MessageCircle size={14} />
+                    <span>Chat with buyer</span>
+                  </button>
                 </div>
 
                 <Link to={`/listing/${item.id}`} className="absolute inset-0 z-10" />

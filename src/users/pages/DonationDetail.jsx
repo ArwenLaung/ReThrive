@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, MapPin, Loader2, Gift, User, Mail, CheckCircle, Calendar, Clock, ShoppingBag } from 'lucide-react';
-import { db } from '../../firebase';
+import { db, auth } from '../../firebase';
 import { doc, getDoc, collection, query, where, limit, getDocs } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
 
 const DonationDetail = () => {
   const { id } = useParams();
@@ -11,6 +12,14 @@ const DonationDetail = () => {
   const [relatedItems, setRelatedItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const fetchItem = async () => {
@@ -58,7 +67,30 @@ const DonationDetail = () => {
     }
   }, [item]);
 
+  const handleContactDonor = () => {
+    if (!currentUser) {
+      alert('Please login to contact the donor.');
+      navigate('/login');
+      return;
+    }
+    if (!item) return;
+    if (item.donorId && item.donorId === currentUser.uid) {
+      alert('You cannot contact yourself about your own donation.');
+      return;
+    }
+    navigate(`/chat-donation/${item.id}`);
+  };
+
   const handleClaim = () => {
+    if (!currentUser) {
+      alert('Please login to claim this donation.');
+      navigate('/login');
+      return;
+    }
+    if (item?.donorId && item.donorId === currentUser.uid) {
+      alert('You cannot claim the donation you posted.');
+      return;
+    }
     navigate(`/claimdonation/${id}`);
   };
 
@@ -175,16 +207,12 @@ const DonationDetail = () => {
             )}
 
             <div className="space-y-3 sticky bottom-4">
-            <button
-              onClick={() => {
-                if (item?.donorEmail) {
-                  window.location.href = `mailto:${item.donorEmail}`;
-                }
-              }}
-              className="w-full bg-[#7db038] text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-[#4a6b1d] transition-all text-lg"
-            >
-              Contact Donor
-            </button>
+              <button
+                onClick={handleContactDonor}
+                className="w-full bg-[#7db038] text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-[#4a6b1d] transition-all text-lg"
+              >
+                Contact Donor
+              </button>
               <button onClick={handleClaim} className="w-full bg-white border-2 border-[#7db038] text-[#364f15] font-bold py-3 rounded-2xl hover:bg-[#7db038]/10 flex items-center justify-center gap-2 transition-colors">
                 <CheckCircle size={20} /> Claim this Item
               </button>

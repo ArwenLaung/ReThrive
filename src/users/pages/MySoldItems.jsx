@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, MapPin, Loader2, DollarSign, MessageCircle, CheckCircle } from 'lucide-react';
+import { ShoppingBag, MapPin, Loader2, DollarSign, MessageCircle, CheckCircle, Clock } from 'lucide-react';
 import { auth, db } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp, orderBy } from 'firebase/firestore';
-import ConfirmModal from '../../components/ConfirmModal';
 
 const MySoldItems = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [confirmingOrder, setConfirmingOrder] = useState(null);
-  const [confirmModalOrder, setConfirmModalOrder] = useState(null);
+  const [updatingDelivery, setUpdatingDelivery] = useState(null);
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
@@ -46,37 +44,32 @@ const MySoldItems = () => {
     return () => unsubscribeAuth();
   }, [navigate]);
 
-  const handleConfirmOrder = async (orderId) => {
-    setConfirmingOrder(orderId);
+  const handleMarkDelivered = async (orderId) => {
+    setUpdatingDelivery(orderId);
     try {
+      // Optimistic UI update
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === orderId ? { ...o, sellerDeliveryStatus: 'delivered' } : o
+        )
+      );
+
       await updateDoc(doc(db, "orders", orderId), {
-        status: 'confirmed',
-        confirmedAt: serverTimestamp(),
+        sellerDeliveryStatus: 'delivered',
+        sellerDeliveryUpdatedAt: serverTimestamp(),
       });
-      alert("Order confirmed successfully!");
     } catch (error) {
-      console.error("Error confirming order:", error);
-      alert("Failed to confirm order. Please try again.");
+      console.error("Error marking order as delivered:", error);
+      alert("Failed to update delivery status. Please try again.");
+      // Revert local state on error
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === orderId ? { ...o, sellerDeliveryStatus: null } : o
+        )
+      );
     } finally {
-      setConfirmingOrder(null);
+      setUpdatingDelivery(null);
     }
-  };
-
-  const handleConfirmOrderClick = (order) => {
-    setConfirmModalOrder(order);
-  };
-
-  const handleConfirmModalConfirm = async () => {
-    if (!confirmModalOrder) {
-      setConfirmModalOrder(null);
-      return;
-    }
-    await handleConfirmOrder(confirmModalOrder.id);
-    setConfirmModalOrder(null);
-  };
-
-  const handleConfirmModalClose = () => {
-    setConfirmModalOrder(null);
   };
 
   const getStatusBadge = (status) => {
@@ -188,44 +181,67 @@ const MySoldItems = () => {
                       {/* Action Buttons */}
                       <div className="flex flex-wrap gap-3 pt-2">
                         <button
-                          onClick={() => navigate(`/chat/${order.id}`)}
+                          onClick={() => {
+                            if (!order.itemId || !order.buyerId) return;
+                            // Open the dedicated item chat thread for this buyer + item
+                            const chatId = `${order.itemId}_${order.buyerId}`;
+                            navigate(`/chat-item/${order.itemId}?chatId=${encodeURIComponent(chatId)}`);
+                          }}
                           className="flex items-center gap-2 px-4 py-2 bg-brand-purple text-white rounded-xl font-semibold hover:bg-purple-800 transition-all active:scale-95"
                         >
                           <MessageCircle size={18} />
                           Chat with Buyer
                         </button>
                         
-                        {order.status === 'pending' && (
+                        {/* Status chips */}
+                        {!order.sellerDeliveryStatus && (
+                          <>
+                            {order.status === 'pending' && (
+                              <div className="flex items-center gap-2 px-4 py-2 bg-yellow-50 text-yellow-800 rounded-xl font-semibold">
+                                <Clock size={18} />
+                                Pending
+                              </div>
+                            )}
+                            {order.status === 'confirmed' && (
+                              <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl font-semibold">
+                                <CheckCircle size={18} />
+                                Confirmed
+                              </div>
+                            )}
+                            {order.status === 'completed' && (
+                              <div className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-xl font-semibold">
+                                <CheckCircle size={18} />
+                                Completed
+                              </div>
+                            )}
+                          </>
+                        )}
+
+                        {/* Seller delivery status controls */}
+                        {!order.sellerDeliveryStatus && (
                           <button
-                            onClick={() => handleConfirmOrderClick(order)}
-                            disabled={confirmingOrder === order.id}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={() => handleMarkDelivered(order.id)}
+                            disabled={updatingDelivery === order.id}
+                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {confirmingOrder === order.id ? (
+                            {updatingDelivery === order.id ? (
                               <>
                                 <Loader2 className="animate-spin" size={18} />
-                                Processing...
+                                Updating...
                               </>
                             ) : (
                               <>
                                 <CheckCircle size={18} />
-                                Confirm Order
+                                Mark Delivered
                               </>
                             )}
                           </button>
                         )}
 
-                        {order.status === 'confirmed' && (
-                          <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl font-semibold">
-                            <CheckCircle size={18} />
-                            Confirmed
-                          </div>
-                        )}
-
-                        {order.status === 'completed' && (
+                        {order.sellerDeliveryStatus === 'delivered' && (
                           <div className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-xl font-semibold">
                             <CheckCircle size={18} />
-                            Completed
+                            Marked as delivered
                           </div>
                         )}
 
@@ -246,15 +262,6 @@ const MySoldItems = () => {
           </div>
         )}
       </div>
-      <ConfirmModal
-        open={!!confirmModalOrder}
-        title="Confirm order?"
-        message="Confirm this order? The buyer will be notified."
-        confirmText="Confirm"
-        cancelText="Cancel"
-        onClose={handleConfirmModalClose}
-        onConfirm={handleConfirmModalConfirm}
-      />
     </div>
   );
 };

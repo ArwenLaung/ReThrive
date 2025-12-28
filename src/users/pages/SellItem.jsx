@@ -4,7 +4,7 @@ import { ArrowLeft, Upload, Loader2, X, CheckCircle2, MapPin, Tag } from 'lucide
 import { classifyImage } from '../../utils/aiImage';
 import { generateDescription } from '../../utils/textGen';
 import { db, storage, auth } from '../../firebase';
-import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { onAuthStateChanged } from 'firebase/auth';
 
@@ -52,6 +52,12 @@ const SellItem = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [unsafeKeywords, setUnsafeKeywords] = useState([]);
 
+  // Bank info (stored in users/{uid})
+  const [bankName, setBankName] = useState('');
+  const [bankAccountNumber, setBankAccountNumber] = useState('');
+  const [bankAccountHolder, setBankAccountHolder] = useState('');
+  const [hasBankInfo, setHasBankInfo] = useState(false);
+
   // Fallback list (Only used if Firebase fails)
   const DEFAULT_BANNED_WORDS = [
     "gun", "knife", "drug", "alcohol", "beer", "broken", "poker", "gambling",
@@ -61,12 +67,30 @@ const SellItem = () => {
   const FORBIDDEN_CLASSES = ["Weapon / Dangerous Item", "Restricted Item"];
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
       if (user) {
         setSellerId(user.uid);
         setSellerName(user.displayName || user.email || "");
         setSellerEmail(user.email || "");
+
+        // Load bank info from users collection (if any)
+        try {
+          const userRef = doc(db, 'users', user.uid);
+          const userSnap = await getDoc(userRef);
+          if (userSnap.exists()) {
+            const data = userSnap.data();
+            const bName = data.bankName || '';
+            const bNo = data.bankAccountNumber || '';
+            const bHolder = data.bankAccountHolder || '';
+            setBankName(bName);
+            setBankAccountNumber(bNo);
+            setBankAccountHolder(bHolder);
+            setHasBankInfo(!!(bName && bNo && bHolder));
+          }
+        } catch (e) {
+          console.error('Error loading bank info:', e);
+        }
       }
     });
 
@@ -205,6 +229,14 @@ const SellItem = () => {
       return;
     }
 
+    // Require bank info only if not already saved
+    if (!hasBankInfo) {
+      if (!bankName.trim() || !bankAccountNumber.trim() || !bankAccountHolder.trim()) {
+        alert('Please fill in your bank information (bank name, account holder, and account number) before posting your first item.');
+        return;
+      }
+    }
+
     // Keyword block using list from firebase
     const combinedText = (title + " " + description).toLowerCase();
     // Print exactly what we are checking to debug
@@ -223,6 +255,18 @@ const SellItem = () => {
     setIsSubmitting(true);
 
     try {
+      // If first time, save bank info to users collection
+      if (!hasBankInfo && currentUser) {
+        const userRef = doc(db, 'users', currentUser.uid);
+        await setDoc(userRef, {
+          bankName: bankName.trim(),
+          bankAccountNumber: bankAccountNumber.trim(),
+          bankAccountHolder: bankAccountHolder.trim(),
+          updatedAt: new Date(),
+        }, { merge: true });
+        setHasBankInfo(true);
+      }
+
       const imageUrls = await Promise.all(
         images.map(async (imgObj, index) => {
           const cleanName = imgObj.file.name.replace(/[^a-zA-Z0-9.]/g, "_");
@@ -413,6 +457,66 @@ const SellItem = () => {
                     </div>
                 </div>
             </div>
+        </div>
+      </div>
+
+      {/* Bank Information - only shown until saved once */}
+      <div className="mt-6">
+        <div className="bg-[#FEFAE0] rounded-2xl p-4 border border-amber-200">
+          <h3 className="text-sm font-bold text-gray-800 mb-2">
+            Bank Information for Payouts
+          </h3>
+          {hasBankInfo ? (
+            <p className="text-sm text-gray-600">
+              Your bank details are already saved. You can view and edit them anytime from the
+              <span className="font-semibold text-[#59287a]"> Account Details</span> page.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-xs text-gray-600">
+                Please fill in your bank details once. They will be saved to your account and reused
+                for future sales.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Bank Name
+                  </label>
+                  <input
+                    type="text"
+                    value={bankName}
+                    onChange={(e) => setBankName(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#59287a] outline-none text-sm"
+                    placeholder="e.g. Maybank"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Account Holder Name
+                  </label>
+                  <input
+                    type="text"
+                    value={bankAccountHolder}
+                    onChange={(e) => setBankAccountHolder(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#59287a] outline-none text-sm"
+                    placeholder="Name on bank account"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Account Number
+                  </label>
+                  <input
+                    type="text"
+                    value={bankAccountNumber}
+                    onChange={(e) => setBankAccountNumber(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#59287a] outline-none text-sm"
+                    placeholder="e.g. 1234567890"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

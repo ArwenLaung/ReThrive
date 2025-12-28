@@ -88,6 +88,10 @@ const ItemDetail = () => {
       navigate('/login');
       return;
     }
+    if (item && item.sellerId === currentUser.uid) {
+      alert("You cannot contact yourself about your own item.");
+      return;
+    }
     if (!item) return;
     navigate(`/chat-item/${item.id}`);
   };

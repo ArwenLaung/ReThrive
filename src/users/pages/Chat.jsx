@@ -56,13 +56,13 @@ const Chat = () => {
   }, [orderId, currentUser, navigate]);
 
   useEffect(() => {
-    if (!orderId) return;
+    if (!orderId || !currentUser) return;
 
     // Subscribe to messages for this order
     const messagesRef = collection(db, 'orders', orderId, 'messages');
     const q = query(messagesRef, orderBy('createdAt', 'asc'));
     
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
       const msgs = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -73,10 +73,23 @@ const Chat = () => {
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
+
+      // Clear unread flag for this user when viewing the chat
+      if (order) {
+        const isBuyer = currentUser.uid === order.buyerId;
+        const update = isBuyer
+          ? { unreadForBuyer: false }
+          : { unreadForSeller: false };
+        try {
+          await updateDoc(doc(db, 'orders', orderId), update);
+        } catch (e) {
+          console.error('Error clearing unread flags for order chat:', e);
+        }
+      }
     });
 
     return () => unsubscribe();
-  }, [orderId]);
+  }, [orderId, currentUser, order]);
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !currentUser || !order) return;
@@ -91,9 +104,13 @@ const Chat = () => {
         createdAt: serverTimestamp(),
       });
 
-      // Update order's lastMessageAt for sorting
+      // Update order's lastMessageAt and unread flags for the other party
+      const isBuyerSender = currentUser.uid === order.buyerId;
       await updateDoc(doc(db, 'orders', orderId), {
         lastMessageAt: serverTimestamp(),
+        lastMessageSenderId: currentUser.uid,
+        unreadForBuyer: !isBuyerSender,
+        unreadForSeller: isBuyerSender,
       });
 
       setNewMessage('');
@@ -270,12 +287,3 @@ const Chat = () => {
 };
 
 export default Chat;
-
-
-
-
-
-
-
-
-

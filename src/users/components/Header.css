@@ -118,6 +118,152 @@ body {
   align-items: center;
 }
 
+.auth-with-notification {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.notif-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.notif-btn:hover {
+  background-color: rgba(100, 2, 126, 0.06);
+}
+
+.notif-icon-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.notif-icon {
+  color: #64027e;
+}
+
+.notif-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background-color: #e11d48;
+  border: 2px solid #ffffff;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notif-container {
+  position: relative;
+}
+
+.notif-dropdown {
+  position: absolute;
+  top: 40px;
+  right: 0;
+  width: 260px;
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  z-index: 150;
+  padding: 8px 0;
+}
+
+.notif-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px 8px;
+  border-bottom: 1px solid #f1f5f0;
+}
+
+.notif-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #364f15;
+}
+
+.notif-count {
+  background: #e11d48;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 10px;
+  padding: 2px 8px;
+  font-weight: 700;
+}
+
+.notif-empty {
+  padding: 10px 14px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.notif-list {
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.notif-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.notif-item:hover {
+  background-color: #f2f9e6;
+}
+
+.notif-item-main {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.notif-item-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notif-item-subtitle {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.notif-item-tag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background-color: #f3f4ff;
+  color: #4b5563;
+}
+
 .mobile-auth-container {
   display: none;
 }

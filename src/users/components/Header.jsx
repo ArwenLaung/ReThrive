@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { LogIn, ChevronDown, LogOut, User, Gift, Package, ShoppingBag, ShoppingCart } from 'lucide-react';
-import { auth } from '../../firebase';
+import { LogIn, ChevronDown, LogOut, User, Gift, Package, ShoppingBag, ShoppingCart, MessageCircle, Bell, Heart } from 'lucide-react';
+import { auth, db } from '../../firebase';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { onIdTokenChanged, signOut } from 'firebase/auth';
 import ReThriveLogo from '../assets/logo.svg';
 import DefaultProfilePic from '../assets/default_profile_pic.jpg'; 
@@ -13,9 +14,12 @@ const Header = ({ activeLink }) => {
   const [user, setUser] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [notifItems, setNotifItems] = useState([]);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
   
   const dropdownRef = useRef(null);
   const mobileProfileRef = useRef(null);
+  const notifRef = useRef(null);
 
   useEffect(() => {
     const unsubscribe = onIdTokenChanged(auth, (currentUser) => {
@@ -23,19 +27,168 @@ const Header = ({ activeLink }) => {
         setUser({ ...currentUser }); 
       } else {
         setUser(null);
+        setNotifItems([]);
+        setIsNotifOpen(false);
       }
     });
     return () => unsubscribe();
   }, []);
 
+  const unreadCount = notifItems.length;
+
+  // Listen for unread chats for this user (buyer or seller)
+  useEffect(() => {
+    if (!user?.uid) {
+      setNotifItems([]);
+      return;
+    }
+
+    const uid = user.uid;
+
+    const itemChatsBuyerQ = query(
+      collection(db, 'itemChats'),
+      where('buyerId', '==', uid),
+      where('unreadForBuyer', '==', true)
+    );
+    const itemChatsSellerQ = query(
+      collection(db, 'itemChats'),
+      where('sellerId', '==', uid),
+      where('unreadForSeller', '==', true)
+    );
+
+    const ordersBuyerQ = query(
+      collection(db, 'orders'),
+      where('buyerId', '==', uid),
+      where('unreadForBuyer', '==', true)
+    );
+    const ordersSellerQ = query(
+      collection(db, 'orders'),
+      where('sellerId', '==', uid),
+      where('unreadForSeller', '==', true)
+    );
+
+    const buckets = {
+      buyerItems: [],
+      sellerItems: [],
+      buyerOrders: [],
+      sellerOrders: [],
+    };
+
+    const recompute = () => {
+      const merged = [
+        ...buckets.buyerItems,
+        ...buckets.sellerItems,
+        ...buckets.buyerOrders,
+        ...buckets.sellerOrders,
+      ];
+      // Sort by createdAt desc if available
+      merged.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      setNotifItems(merged);
+    };
+
+    const unsubItemBuyer = onSnapshot(itemChatsBuyerQ, (snap) => {
+      buckets.buyerItems = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          type: 'itemChat',
+          role: 'buyer',
+          title: data.itemTitle || 'Marketplace item',
+          subtitle: data.sellerName || 'Seller',
+          route: `/chat-item/${data.itemId}`,
+          createdAt: data.lastMessageAt?.toMillis
+            ? data.lastMessageAt.toMillis()
+            : 0,
+        };
+      });
+      recompute();
+    });
+
+    const unsubItemSeller = onSnapshot(itemChatsSellerQ, (snap) => {
+      buckets.sellerItems = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          type: 'itemChat',
+          role: 'seller',
+          title: data.itemTitle || 'Marketplace item',
+          subtitle: data.buyerName || 'Buyer',
+          route: `/chat-item/${data.itemId}`,
+          createdAt: data.lastMessageAt?.toMillis
+            ? data.lastMessageAt.toMillis()
+            : 0,
+        };
+      });
+      recompute();
+    });
+
+    const unsubOrdersBuyer = onSnapshot(ordersBuyerQ, (snap) => {
+      // Map order notifications to the same item-based chat thread
+      buckets.buyerOrders = snap.docs.map((d) => {
+        const data = d.data();
+        const chatId = `${data.itemId}_${data.buyerId}`;
+        return {
+          id: chatId,
+          type: 'itemChat',
+          role: 'buyer',
+          title: data.itemTitle || 'Order',
+          subtitle: data.sellerName || 'Seller',
+          route: `/chat-item/${data.itemId}?chatId=${encodeURIComponent(
+            chatId
+          )}`,
+          createdAt: data.lastMessageAt?.toMillis
+            ? data.lastMessageAt.toMillis()
+            : 0,
+        };
+      });
+      recompute();
+    });
+
+    const unsubOrdersSeller = onSnapshot(ordersSellerQ, (snap) => {
+      // Seller order notifications also point to the same item chat thread
+      buckets.sellerOrders = snap.docs
+        .map((d) => {
+          const data = d.data();
+          if (!data.buyerId) return null;
+          const chatId = `${data.itemId}_${data.buyerId}`;
+          return {
+            id: chatId,
+            type: 'itemChat',
+            role: 'seller',
+            title: data.itemTitle || 'Order',
+            subtitle: data.buyerName || 'Buyer',
+            route: `/chat-item/${data.itemId}?chatId=${encodeURIComponent(
+              chatId
+            )}`,
+            createdAt: data.lastMessageAt?.toMillis
+              ? data.lastMessageAt.toMillis()
+              : 0,
+          };
+        })
+        .filter(Boolean);
+      recompute();
+    });
+
+    return () => {
+      unsubItemBuyer();
+      unsubItemSeller();
+      unsubOrdersBuyer();
+      unsubOrdersSeller();
+    };
+  }, [user]);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (event.target.closest('.profile-btn')) return;
+      if (event.target.closest('.notif-btn')) return;
       if (
         dropdownRef.current && !dropdownRef.current.contains(event.target) &&
         mobileProfileRef.current && !mobileProfileRef.current.contains(event.target)
       ) {
         setIsDropdownOpen(false);
+      }
+      if (notifRef.current && !notifRef.current.contains(event.target)) {
+        setIsNotifOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -115,50 +268,130 @@ const Header = ({ activeLink }) => {
     }
 
     return (
-      <div 
-        className={`profile-container ${isMobile ? 'mobile-profile' : ''}`}
-        ref={isMobile ? mobileProfileRef : dropdownRef}
-      >
-        <button className="profile-btn" onClick={toggleDropdown}>
-          <img src={user.photoURL || DefaultProfilePic} alt="Profile" className="profile-avatar" />
-          <span className="profile-name">{getUsername()}</span>
-          <ChevronDown size={16} className={`profile-arrow ${isDropdownOpen ? 'open' : ''}`} />
-        </button>
-
-        {isDropdownOpen && (
-          <div className={`dropdown-menu ${isMobile ? 'mobile-dropdown' : ''}`}>
-            <div className="dropdown-header">
-              <p className="d-name">{getUsername()}</p>
-              <p className="d-email">{user.email}</p>
+      <div className="auth-with-notification">
+        {/* Notification bell */}
+        <div className="notif-container" ref={notifRef}>
+          <button
+            type="button"
+            className="notif-btn"
+            onClick={() => setIsNotifOpen((prev) => !prev)}
+          >
+            <div className="notif-icon-wrapper">
+              <Bell size={18} className="notif-icon" />
+              {unreadCount > 0 && (
+                <span className="notif-badge">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
             </div>
-
-            <div className="dropdown-links">
-              <button className="dropdown-item" onClick={() => handleLinkClick('/myaccount')}>
-                <User size={16} /> My Account
-              </button>
-              <button className="dropdown-item" onClick={() => handleLinkClick('/myrewards')}>
-                <Gift size={16} /> Missions & Rewards
-              </button>
-
-              <button className="dropdown-item" onClick={() => handleLinkClick('/mycart')}>
-                <ShoppingCart size={16} /> My Cart
-              </button>
-
-              <button className="dropdown-item" onClick={() => handleLinkClick('/mylistings')}>
-                <Package size={16} /> My Listings
-              </button>
-              <button className="dropdown-item" onClick={() => handleLinkClick('/purchasehistory')}>
-                <ShoppingBag size={16} /> My Purchases
-              </button>
+          </button>
+          {isNotifOpen && (
+            <div className="notif-dropdown">
+              <div className="notif-header">
+                <span className="notif-title">Messages</span>
+                {unreadCount > 0 && (
+                  <span className="notif-count">{unreadCount}</span>
+                )}
+              </div>
+              {notifItems.length === 0 ? (
+                <div className="notif-empty">No new messages</div>
+              ) : (
+                <div className="notif-list">
+                  {notifItems.map((item) => (
+                    <button
+                      key={`${item.type}-${item.id}-${item.role}`}
+                      className="notif-item"
+                      onClick={() => {
+                        // Close dropdown and optimistically clear this notification
+                        setIsNotifOpen(false);
+                        setNotifItems((prev) =>
+                          prev.filter(
+                            (n) =>
+                              !(
+                                n.id === item.id &&
+                                n.type === item.type &&
+                                n.role === item.role
+                              )
+                          )
+                        );
+                        handleLinkClick(item.route);
+                      }}
+                    >
+                      <div className="notif-item-main">
+                        <span className="notif-item-title">
+                          {item.title}
+                        </span>
+                        <span className="notif-item-subtitle">
+                          {item.subtitle}
+                        </span>
+                      </div>
+                      <span className="notif-item-tag">
+                        {item.type === 'itemChat' ? 'Item' : 'Order'}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
+          )}
+        </div>
 
-            <div className="dropdown-footer">
-              <button className="dropdown-item logout" onClick={handleLogout}>
-                <LogOut size={16} /> Log Out
-              </button>
+        {/* Profile dropdown */}
+        <div 
+          className={`profile-container ${isMobile ? 'mobile-profile' : ''}`}
+          ref={isMobile ? mobileProfileRef : dropdownRef}
+        >
+          <button className="profile-btn" onClick={toggleDropdown}>
+            <div className="profile-avatar-wrapper">
+              <img src={user.photoURL || DefaultProfilePic} alt="Profile" className="profile-avatar" />
             </div>
-          </div>
-        )}
+            <span className="profile-name">{getUsername()}</span>
+            <ChevronDown size={16} className={`profile-arrow ${isDropdownOpen ? 'open' : ''}`} />
+          </button>
+          {isDropdownOpen && (
+            <div className={`dropdown-menu ${isMobile ? 'mobile-dropdown' : ''}`}>
+              <div className="dropdown-header">
+                <p className="d-name">{getUsername()}</p>
+                <p className="d-email">{user.email}</p>
+              </div>
+
+              <div className="dropdown-links">
+                <button className="dropdown-item" onClick={() => handleLinkClick('/myaccount')}>
+                  <User size={16} /> My Account
+                </button>
+                <button className="dropdown-item" onClick={() => handleLinkClick('/myrewards')}>
+                  <Gift size={16} /> Missions & Rewards
+                </button>
+
+                <button className="dropdown-item" onClick={() => handleLinkClick('/mycart')}>
+                  <ShoppingCart size={16} /> My Cart
+                </button>
+
+                <button className="dropdown-item" onClick={() => handleLinkClick('/mylistings')}>
+                  <Package size={16} /> My Listings
+                </button>
+                <button className="dropdown-item" onClick={() => handleLinkClick('/purchasehistory')}>
+                  <ShoppingBag size={16} /> My Purchases
+                </button>
+                <button className="dropdown-item" onClick={() => handleLinkClick('/conversations')}>
+                  <MessageCircle size={16} /> Messages
+                </button>
+                <button className="dropdown-item" onClick={() => handleLinkClick('/mydonations')}>
+                  <Gift size={16} /> My Donations
+                </button>
+                <button className="dropdown-item" onClick={() => handleLinkClick('/myclaimeditems')}>
+                  <Heart size={16} /> My Claimed Items
+                </button>
+              </div>
+
+              <div className="dropdown-footer">
+                <button className="dropdown-item logout" onClick={handleLogout}>
+                  <LogOut size={16} /> Log Out
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     );
   };
