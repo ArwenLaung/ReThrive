@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import ReThriveLogo from "../assets/logo.svg";
-import { auth } from '../../firebase'; 
+import { auth } from '../../firebase';
 import { signInWithEmailAndPassword } from "firebase/auth";
 
 import BadmintonHall from "../assets/badminton-hall.mp4";
@@ -41,7 +41,7 @@ const Login = () => {
       // 2. Check Role and Redirect
       if (uid === ADMIN_UID) {
         // Admin successfully logged in: Redirect to the Admin Dashboard
-        navigate("/itemsApproval");
+        navigate("/marketplaceModeration");
       } else {
         // Normal user successfully logged in: Redirect to the Home Page
         navigate('/');

@@ -10,18 +10,18 @@
   padding-left: 50px;
 }
 
-/* HEADER */
-.event-admin-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-.event-admin-title {
+.event-admin-header h2 {
   font-size: 28px;
   font-weight: 700;
   color: #2d1b3f;
   margin-bottom: 16px;
+}
+
+.options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 20px;
 }
 
 /* ACTION BAR */
@@ -37,6 +37,45 @@
 
 .event-add-btn:hover {
   background: #4a235e;
+}
+
+.event-tabs-wrapper {
+  background: #fffaf0;
+  padding: 6px;
+  border-radius: 999px;
+  width: fit-content;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.event-tabs-wrapper .MuiTabs-indicator {
+  display: none;
+}
+
+.event-tabs-wrapper .MuiTab-root {
+  text-transform: none;
+  font-weight: 600;
+  font-size: 15px;
+  color: #7b6b8c;
+  padding: 10px 26px;
+  border-radius: 999px;
+  min-height: unset;
+  transition: all 0.25s ease;
+}
+
+.event-tabs-wrapper .MuiTab-root:hover {
+  background: rgba(91, 45, 111, 0.08);
+}
+
+/* ACTIVE TAB */
+.event-tabs-wrapper .Mui-selected {
+  background: #5b2d6f;
+  color: white !important;
+  box-shadow: 0 6px 14px rgba(91, 45, 111, 0.35);
+}
+
+/* FOCUS RING REMOVE */
+.event-tabs-wrapper .MuiTab-root.Mui-focusVisible {
+  outline: none;
 }
 
 /* TABLE */

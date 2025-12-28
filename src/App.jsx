@@ -37,7 +37,8 @@ import DonationChat from "./users/pages/DonationChat.jsx";
 import ClaimDonation from "./users/pages/ClaimDonation.jsx";
 
 // ADMIN
-import ItemsApproval from "./admin/pages/ItemsApproval.jsx";
+import MarketplaceModeration from "./admin/pages/MarketplaceModeration.jsx";
+import DonationModeration from "./admin/pages/DonationModeration.jsx";
 import EventPosting from "./admin/pages/EventPosting.jsx";
 import TransactionModeration from "./admin/pages/TransactionModeration.jsx";
 import VoucherManagement from "./admin/pages/VoucherManagement.jsx";
@@ -117,7 +118,7 @@ const AppContent = ({ aboutRef, eventsRef, activeLink, setActiveLink, currentUse
   const isAdmin = currentUser?.uid === ADMIN_UID;
 
   const adminPaths = [
-    "/itemsApproval",
+    "/marketplaceModeration",
     "/transactionModeration",
     "/eventPosting",
     "/voucherManagement",
@@ -148,45 +149,46 @@ const AppContent = ({ aboutRef, eventsRef, activeLink, setActiveLink, currentUse
       <Routes>
         <Route
           path="/"
-          element={isAdmin ? <Navigate to="/itemsApproval" /> : <Home aboutRef={aboutRef} eventsRef={eventsRef} />}
+          element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <Home aboutRef={aboutRef} eventsRef={eventsRef} />}
         />
 
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
 
         {/* USER ROUTES BLOCKED FOR ADMIN */}
-        <Route path="/marketplace" element={isAdmin ? <Navigate to="/itemsApproval" /> : <Marketplace />} />
-        <Route path="/item/:id" element={isAdmin ? <Navigate to="/itemsApproval" /> : <ItemDetail />} />
-        <Route path="/sellitem" element={isAdmin ? <Navigate to="/itemsApproval" /> : <SellItem />} />
-        <Route path="/events/:id" element={isAdmin ? <Navigate to="/itemsApproval" /> : <EventDetail />} />
-        <Route path="/register/:id" element={isAdmin ? <Navigate to="/itemsApproval" /> : <EventRegistration />} />
-        <Route path="/donationcorner" element={isAdmin ? <Navigate to="/itemsApproval" /> : <DonationCorner />} />
-        <Route path="/donation/:id" element={isAdmin ? <Navigate to="/itemsApproval" /> : <DonationDetail />} />
-        <Route path="/donation" element={isAdmin ? <Navigate to="/itemsApproval" /> : <DonationCorner />} />
-        <Route path="/donateitem" element={isAdmin ? <Navigate to="/itemsApproval" /> : <DonateItem />} />
-        <Route path="/claimdonation/:id" element={isAdmin ? <Navigate to="/itemsApproval" /> : <ClaimDonation />} />
-        <Route path="/myaccount" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyAccount />} />
-        <Route path="/myrewards" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyRewards />} />
-        <Route path="/accountdetails" element={isAdmin ? <Navigate to="/itemsApproval" /> : <AccountDetails />} />
-        <Route path="/editprofile" element={isAdmin ? <Navigate to="/itemsApproval" /> : <EditProfile />} />
-        <Route path="/mylistings" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyListings />} />
-        <Route path="/listing/:id" element={isAdmin ? <Navigate to="/itemsApproval" /> : <ListingDetail />} />
-        <Route path="/purchasehistory" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyPurchases />} />
-        <Route path="/solditems" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MySoldItems />} />
-        <Route path="/mydonations" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyDonations />} />
-        <Route path="/mydonation/:id" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyDonationDetail />} />
-        <Route path="/mydonateditems" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyDonatedItems />} />
-        <Route path="/myclaimeditems" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyClaimedItems />} />
-        <Route path="/mycart" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyCart />} />
-        <Route path="/checkout" element={isAdmin ? <Navigate to="/itemsApproval" /> : <Checkout />} />
-        <Route path="/payment-success/:orderId" element={isAdmin ? <Navigate to="/itemsApproval" /> : <PaymentSuccess />} />
-        <Route path="/conversations" element={isAdmin ? <Navigate to="/itemsApproval" /> : <Conversations />} />
-        <Route path="/chat/:orderId" element={isAdmin ? <Navigate to="/itemsApproval" /> : <Chat />} />
-        <Route path="/chat-item/:itemId" element={isAdmin ? <Navigate to="/itemsApproval" /> : <ItemChat />} />
-        <Route path="/chat-donation/:donationId" element={isAdmin ? <Navigate to="/itemsApproval" /> : <DonationChat />} />
+        <Route path="/marketplace" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <Marketplace />} />
+        <Route path="/item/:id" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <ItemDetail />} />
+        <Route path="/sellitem" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <SellItem />} />
+        <Route path="/events/:id" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <EventDetail />} />
+        <Route path="/register/:id" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <EventRegistration />} />
+        <Route path="/donationcorner" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <DonationCorner />} />
+        <Route path="/donation/:id" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <DonationDetail />} />
+        <Route path="/donation" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <DonationCorner />} />
+        <Route path="/donateitem" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <DonateItem />} />
+        <Route path="/claimdonation/:id" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <ClaimDonation />} />
+        <Route path="/myaccount" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <MyAccount />} />
+        <Route path="/myrewards" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <MyRewards />} />
+        <Route path="/accountdetails" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <AccountDetails />} />
+        <Route path="/editprofile" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <EditProfile />} />
+        <Route path="/mylistings" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <MyListings />} />
+        <Route path="/listing/:id" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <ListingDetail />} />
+        <Route path="/purchasehistory" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <MyPurchases />} />
+        <Route path="/solditems" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <MySoldItems />} />
+        <Route path="/mydonations" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <MyDonations />} />
+        <Route path="/mydonation/:id" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <MyDonationDetail />} />
+        <Route path="/mydonateditems" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <MyDonatedItems />} />
+        <Route path="/myclaimeditems" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <MyClaimedItems />} />
+        <Route path="/mycart" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <MyCart />} />
+        <Route path="/checkout" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <Checkout />} />
+        <Route path="/payment-success/:orderId" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <PaymentSuccess />} />
+        <Route path="/conversations" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <Conversations />} />
+        <Route path="/chat/:orderId" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <Chat />} />
+        <Route path="/chat-item/:itemId" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <ItemChat />} />
+        <Route path="/chat-donation/:donationId" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <DonationChat />} />
 
         {/* ADMIN ROUTES BLOCKED FOR USERS */}
-        <Route path="/itemsApproval" element={isAdmin ? adminWrapper(<ItemsApproval />) : <Navigate to="/" />} />
+        <Route path="/marketplaceModeration" element={isAdmin ? adminWrapper(<MarketplaceModeration />) : <Navigate to="/" />} />
+        <Route path="/donationModeration" element={isAdmin ? adminWrapper(<DonationModeration />) : <Navigate to="/" />} />
         <Route path="/eventPosting" element={isAdmin ? adminWrapper(<EventPosting />) : <Navigate to="/" />} />
         <Route path="/transactionModeration" element={isAdmin ? adminWrapper(<TransactionModeration />) : <Navigate to="/" />} />
         <Route path="/voucherManagement" element={isAdmin ? adminWrapper(<VoucherManagement />) : <Navigate to="/" />} />

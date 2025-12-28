@@ -45,11 +45,11 @@ const LeftColumnBar = ({ onCollapseChange }) => {
       </div>
 
       <div className="admin-selections-container">
-        <NavLink to="/itemsApproval" className={({ isActive }) => `admin-selection ${isActive ? "active" : ""}`}>
-          Items Approval
+        <NavLink to="/marketplaceModeration" className={({ isActive }) => `admin-selection ${isActive ? "active" : ""}`}>
+          Marketplace Moderation
         </NavLink>
-        <NavLink to="/transactionModeration" className={({ isActive }) => `admin-selection ${isActive ? "active" : ""}`}>
-          Transaction Moderation
+        <NavLink to="/donationModeration" className={({ isActive }) => `admin-selection ${isActive ? "active" : ""}`}>
+          Donation Moderation
         </NavLink>
         <NavLink to="/eventPosting" className={({ isActive }) => `admin-selection ${isActive ? "active" : ""}`}>
           Event Posting
@@ -57,13 +57,12 @@ const LeftColumnBar = ({ onCollapseChange }) => {
         <NavLink to="/voucherManagement" className={({ isActive }) => `admin-selection ${isActive ? "active" : ""}`}>
           Voucher Management
         </NavLink>
-        <NavLink to="/reportModeration" className={({ isActive }) => `admin-selection ${isActive ? "active" : ""}`}>
-          Report Moderation
-        </NavLink>
         <NavLink to="/dataVisualisation" className={({ isActive }) => `admin-selection ${isActive ? "active" : ""}`}>
           Data Visualisation
         </NavLink>
+      </div>
 
+      <div className="logout-button-container">
         <button className="logout-button" onClick={() => setShowLogoutModal(true)}>
           <LogOut className="logout-button-icon" />
           <p className="logout-button-text">

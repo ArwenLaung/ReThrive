@@ -1,0 +1,182 @@
+/* PAGE */
+.admin-page-content {
+  padding: 32px;
+  padding-left: 130px;
+  background: #f6f3ea;
+  min-height: 100vh;
+}
+
+.admin-page-wrapper.collapsed .admin-page-content {
+  padding-left: 50px;
+}
+
+/* HEADER */
+.item-admin-header h2 {
+  font-size: 28px !important;
+  font-weight: 700;
+  color: #2d1b3f !important;
+  margin-bottom: 16px !important;
+}
+
+/* TABS */
+.item-tabs-wrapper {
+  margin-bottom: 20px;
+  background: #fffaf0;
+  padding: 6px;
+  border-radius: 999px;
+  width: fit-content;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  margin-bottom: 24px;
+}
+
+.item-tabs-wrapper .MuiTabs-indicator {
+  display: none;
+}
+
+.item-tabs-wrapper .MuiTab-root {
+  text-transform: none;
+  font-weight: 600;
+  font-size: 15px;
+  color: #7b6b8c;
+  padding: 10px 26px;
+  border-radius: 999px;
+  min-height: unset;
+  transition: all 0.25s ease;
+}
+
+.item-tabs-wrapper .MuiTab-root:hover {
+  background: rgba(91, 45, 111, 0.08);
+}
+
+.item-tabs-wrapper .Mui-selected {
+  background: #5b2d6f;
+  color: white !important;
+  box-shadow: 0 6px 14px rgba(91, 45, 111, 0.35);
+}
+
+.item-tabs-wrapper .MuiTab-root.Mui-focusVisible {
+  outline: none;
+}
+
+.item-view-btn {
+  background: transparent;
+  border: 2px solid #5b2d6f;
+  border-radius: 999px;
+  color: #5b2d6f;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 3px 8px;
+}
+
+.item-view-btn:hover {
+  background: rgba(91, 45, 111, 0.1);
+}
+
+.item-action-delete-btn {
+  background: #5b2d6f;
+  border: 2px solid #5d2d6f;
+  border-radius: 999px;
+  color: white;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.item-action-delete-btn:hover {
+  background: #4a235e;
+}
+
+.item-actions-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 100%;
+}
+
+.item-view-btn,
+.item-action-delete-btn {
+  padding: 6px 14px;
+  line-height: 1;
+}
+
+.item-table-card {
+  background: #fffaf0;
+  padding: 20px;
+  border-radius: 22px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+.item-dialog-title {
+  font-weight: 700;
+  color: #2d1b3f;
+}
+
+.item-dialog-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.item-dialog-content .MuiOutlinedInput-root {
+  border-radius: 14px;
+  background-color: #fffaf0;
+}
+
+.item-dialog-content .MuiOutlinedInput-notchedOutline {
+  border-color: #d6cce6;
+  transition: border-color 0.25s ease;
+}
+
+.item-dialog-content .MuiInputLabel-root {
+  color: #7b6b8c;
+  font-weight: 500;
+}
+
+.item-dialog-content .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: #5b2d6f;
+}
+
+.item-dialog-content .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: #5b2d6f !important;
+  border-width: 2px;
+}
+
+.item-dialog-content .MuiInputLabel-root.Mui-focused {
+  color: #5b2d6f !important;
+}
+
+.item-dialog-actions {
+  padding: 18px 30px !important;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.item-close-btn {
+  background: transparent;
+  border: 2px solid #c3b6d8;
+  color: #5b2d6f;
+  padding: 10px 20px;
+  border-radius: 999px !important;
+  cursor: pointer;
+}
+
+.item-delete-btn {
+  background: #5b2d6f;
+  color: white;
+  border: none;
+  padding: 10px 22px;
+  border: 2px solid #5b2d6f !important;
+  border-radius: 999px !important;
+  cursor: pointer;
+}
+
+.item-delete-btn:hover {
+  background: #4a235e;
+}
+
+.item-dialog-actions button {
+  min-width: 120px;
+  height: 42px;
+  font-size: 15px;
+  padding: 0 20px;
+  border-radius: 8px;
+}

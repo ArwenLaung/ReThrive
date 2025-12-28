@@ -16,6 +16,9 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Tabs,
+  Tab,
+  Box,
 } from "@mui/material";
 import "./EventPosting.css";
 
@@ -24,6 +27,8 @@ const EventPosting = () => {
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState(null);
   const [imageFile, setImageFile] = useState(null);
+
+  const [tab, setTab] = useState(0);
 
   const [form, setForm] = useState({
     title: "",
@@ -107,6 +112,11 @@ const EventPosting = () => {
     setShowConfirmationModal(false);
   };
 
+  const today = new Date().toISOString().split("T")[0];
+
+  const ongoingEvents = events.filter((e) => e.date >= today);
+  const pastEvents = events.filter((e) => e.date < today);
+
   const columns = [
     { field: "title", headerName: "Title", flex: 1 },
     {
@@ -157,18 +167,50 @@ const EventPosting = () => {
   return (
     <div className="admin-page-content">
       <div className="event-admin-header">
-        <h2 className="event-admin-title">Event Posting</h2>
+        <h2>Event Posting</h2>
+      </div>
+
+      <div className="options">
+        <div className="event-tabs-wrapper">
+          <Tabs
+            value={tab}
+            onChange={(e, newValue) => setTab(newValue)}
+          >
+            <Tab label="Ongoing Events" />
+            <Tab label="Past Events" />
+          </Tabs>
+        </div>
 
         <button className="event-add-btn" onClick={handleOpen}>
           + Add Event
         </button>
       </div>
 
-      <div className="event-table-card">
-        <DataGrid autoHeight rows={events} columns={columns} pageSize={5} />
-      </div>
 
-      {/* ADD / EDIT DIALOG */}
+      <Box className="event-table-card">
+
+        <div style={{ marginTop: 16 }}>
+          {tab === 0 && (
+            <DataGrid
+              autoHeight
+              rows={ongoingEvents}
+              columns={columns}
+              pageSize={5}
+            />
+          )}
+
+          {tab === 1 && (
+            <DataGrid
+              autoHeight
+              rows={pastEvents}
+              columns={columns}
+              pageSize={5}
+            />
+          )}
+        </div>
+      </Box>
+
+      {/* ADD / EDIT DIALOG (unchanged) */}
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle className="event-dialog-title">
           {editId ? "Edit Event" : "Add Event"}
@@ -266,7 +308,7 @@ const EventPosting = () => {
         </DialogActions>
       </Dialog>
 
-      {/* DELETE CONFIRMATION */}
+      {/* DELETE CONFIRMATION (unchanged) */}
       {showConfirmationModal && (
         <div className="delete-modal">
           <div className="delete-modal-content">

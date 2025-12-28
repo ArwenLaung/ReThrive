@@ -166,20 +166,25 @@ const VoucherManagement = () => {
         <h2>Voucher Management</h2>
       </div>
 
-      <div className="voucher-tabs-wrapper">
-        <Tabs value={tab} onChange={(e, v) => setTab(v)}>
-          <Tab label="Available" />
-          <Tab label="Expired" />
-        </Tabs>
-      </div>
-
-      {tab === 0 && (
-        <div className="voucher-action-bar">
-          <button className="voucher-add-btn" onClick={handleOpen}>
-            + Add Voucher
-          </button>
+      <div className="options">
+        <div className="voucher-tabs-wrapper">
+          <Tabs
+            value={tab}
+            onChange={(e, v) => setTab(v)}
+          >
+            <Tab label="Available" />
+            <Tab label="Expired" />
+          </Tabs>
         </div>
-      )}
+
+        {tab === 0 && (
+          <div className="voucher-action-bar">
+            <button className="voucher-add-btn" onClick={handleOpen}>
+              + Add Voucher
+            </button>
+          </div>
+        )}
+      </div>
 
       <div className="voucher-table-card">
         <DataGrid
