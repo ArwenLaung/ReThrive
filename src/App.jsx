@@ -172,6 +172,7 @@ const AppContent = ({ aboutRef, eventsRef, activeLink, setActiveLink, currentUse
         <Route path="/editprofile" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <EditProfile />} />
         <Route path="/mylistings" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <MyListings />} />
         <Route path="/listing/:id" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <ListingDetail />} />
+        <Route path="/mypurchases" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <MyPurchases />} />
         <Route path="/purchasehistory" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <MyPurchases />} />
         <Route path="/solditems" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <MySoldItems />} />
         <Route path="/mydonations" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <MyDonations />} />

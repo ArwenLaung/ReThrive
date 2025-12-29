@@ -68,7 +68,8 @@ const VouchersSection = ({ ecoPoints, claimedVouchers, userId }) => {
           {vouchers.map((voucher) => {
             const alreadyClaimed = claimedVouchers.includes(voucher.id);
             const notEnoughPoints = ecoPoints < voucher.ecoPoints;
-            const disabled = alreadyClaimed || notEnoughPoints;
+            const outOfStock = voucher.remainingQuantity <= 0;
+            const disabled = alreadyClaimed || notEnoughPoints || outOfStock;
 
             return (
               <div key={voucher.id} className="voucher">
@@ -92,8 +93,7 @@ const VouchersSection = ({ ecoPoints, claimedVouchers, userId }) => {
 
                 <button
                   disabled={disabled}
-                  className={`claim-now-button ${disabled ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
+                  className={`claim-now-button ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
                   onClick={async () => {
                     try {
                       await claimVouchers(userId, voucher);
@@ -105,9 +105,11 @@ const VouchersSection = ({ ecoPoints, claimedVouchers, userId }) => {
                 >
                   {alreadyClaimed
                     ? "Claimed"
-                    : notEnoughPoints
-                      ? "Not Enough Points"
-                      : "Claim Now"}
+                    : outOfStock
+                      ? "Fully Redeemed"
+                      : notEnoughPoints
+                        ? "Not Enough Points"
+                        : "Claim Now"}
                 </button>
               </div>
             );

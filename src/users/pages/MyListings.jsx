@@ -220,97 +220,80 @@ const MyListings = () => {
                 );
               })}
             </div>
-          </div>
-        ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {items.map((item) => (
-            <div key={item.id} className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all group relative">
-
-              {/* Image */}
-              <div className="relative aspect-square bg-gray-100">
-                <img
-                  src={item.image}
-                  alt={item.title}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute top-3 left-3">
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold text-white shadow-sm ${item.status === 'sold' ? 'bg-gray-500' : 'bg-green-500'}`}>
-                    {item.status === 'sold' ? 'SOLD' : 'ACTIVE'}
-                  </span>
           )}
-                </div>
+        </div>
 
-                {/* --- SECTION 2: ACTIVE LISTINGS --- */}
-                <div>
-                  <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                    <Package className="text-green-600" /> Active Listings
-                  </h2>
-                  {activeItems.length === 0 ? (
-                    <div className="text-center py-10 bg-white rounded-3xl border border-gray-100">
-                      <p className="text-gray-500 mb-4">You have no active items for sale.</p>
-                      <Link to="/sellitem" className="bg-brand-purple text-white px-6 py-3 rounded-xl font-bold">Sell Item</Link>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {activeItems.map(item => (
-                        <div key={item.id} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col md:flex-row gap-6 items-center hover:shadow-md transition-shadow">
-                          {/* Image */}
-                          <div className="w-full md:w-24 h-24 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 relative">
-                            <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
-                            <div className="absolute top-1 left-1 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded">ACTIVE</div>
-                          </div>
-
-                          {/* Details */}
-                          <div className="flex-1 w-full text-center md:text-left">
-                            <h3 className="font-bold text-gray-900">{item.title}</h3>
-                            <p className="text-brand-purple font-bold">RM {item.price}</p>
-                            <div className="text-xs text-gray-400 mt-1 flex items-center justify-center md:justify-start gap-1">
-                              <MapPin size={12} /> {item.location}
-                            </div>
-                          </div>
-
-                          {/* Actions for Active */}
-                          <div className="flex flex-wrap gap-3 justify-center md:justify-end">
-                            <button
-                              onClick={() => navigate(`/chat-item/${item.id}`)}
-                              className="flex items-center gap-2 px-4 py-2 bg-[#f3eefc] text-brand-purple rounded-xl text-sm font-bold hover:bg-[#e9dff7] transition-all"
-                            >
-                              <MessageCircle size={16} /> Chat with Buyers
-                            </button>
-
-                            <Link
-                              to={`/listing/${item.id}`} // Takes you to Update Listing Page
-                              className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-sm font-bold hover:bg-blue-100 transition-all"
-                            >
-                              <Edit size={16} /> Edit
-                            </Link>
-
-                            <button
-                              onClick={() => handleDelete(item.id)}
-                              className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-xl text-sm font-bold hover:bg-red-100 transition-all"
-                            >
-                              <Trash2 size={16} /> Delete
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-              </div>
-
-              <ConfirmModal
-                open={!!deleteTarget}
-                title="Delete listing?"
-                message="Are you sure you want to delete this listing? This cannot be undone."
-                confirmText="Delete"
-                cancelText="Cancel"
-                onClose={() => setDeleteTarget(null)}
-                onConfirm={handleConfirmDelete}
-              />
+        {/* --- SECTION 2: ACTIVE LISTINGS --- */}
+        <div>
+          <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <Package className="text-green-600" /> Active Listings
+          </h2>
+          {activeItems.length === 0 ? (
+            <div className="text-center py-10 bg-white rounded-3xl border border-gray-100">
+              <p className="text-gray-500 mb-4">You have no active items for sale.</p>
+              <Link to="/sellitem" className="bg-brand-purple text-white px-6 py-3 rounded-xl font-bold">Sell Item</Link>
             </div>
-          );
+          ) : (
+            <div className="space-y-4">
+              {activeItems.map(item => (
+                <div key={item.id} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col md:flex-row gap-6 items-center hover:shadow-md transition-shadow">
+                  {/* Image */}
+                  <div className="w-full md:w-24 h-24 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 relative">
+                    <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
+                    <div className="absolute top-1 left-1 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded">ACTIVE</div>
+                  </div>
+
+                  {/* Details */}
+                  <div className="flex-1 w-full text-center md:text-left">
+                    <h3 className="font-bold text-gray-900">{item.title}</h3>
+                    <p className="text-brand-purple font-bold">RM {item.price}</p>
+                    <div className="text-xs text-gray-400 mt-1 flex items-center justify-center md:justify-start gap-1">
+                      <MapPin size={12} /> {item.location}
+                    </div>
+                  </div>
+
+                  {/* Actions for Active */}
+                  <div className="flex flex-wrap gap-3 justify-center md:justify-end">
+                    <button
+                      onClick={() => navigate(`/chat-item/${item.id}`)}
+                      className="flex items-center gap-2 px-4 py-2 bg-[#f3eefc] text-brand-purple rounded-xl text-sm font-bold hover:bg-[#e9dff7] transition-all"
+                    >
+                      <MessageCircle size={16} /> Chat with Buyers
+                    </button>
+
+                    <Link
+                      to={`/listing/${item.id}`} // Takes you to Update Listing Page
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-sm font-bold hover:bg-blue-100 transition-all"
+                    >
+                      <Edit size={16} /> Edit
+                    </Link>
+
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-xl text-sm font-bold hover:bg-red-100 transition-all"
+                    >
+                      <Trash2 size={16} /> Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+      </div>
+
+      <ConfirmModal
+        open={!!deleteTarget}
+        title="Delete listing?"
+        message="Are you sure you want to delete this listing? This cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
+    </div>
+  );
 };
 
-          export default MyListings;
+export default MyListings;

@@ -226,7 +226,7 @@ const MyPurchases = () => {
 
       {/* [MODIFICATION] Completely replaced the main content area to support sections */}
       <div className="max-w-6xl mx-auto space-y-12">
-        
+
         {/* --- SECTION 1: PENDING ORDERS --- */}
         <div>
           <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -244,7 +244,7 @@ const MyPurchases = () => {
                     <div className="flex flex-col md:flex-row gap-6">
                       {/* Image */}
                       <div className="relative w-full md:w-40 h-40 flex-shrink-0 rounded-xl overflow-hidden bg-gray-100">
-                        <img src={order.itemImage} alt={order.itemTitle} className="w-full h-full object-cover"/>
+                        <img src={order.itemImage} alt={order.itemTitle} className="w-full h-full object-cover" />
                         <span className="absolute top-2 left-2 px-2 py-1 bg-yellow-500 text-white text-[10px] font-bold rounded">PENDING</span>
                       </div>
 
@@ -256,66 +256,54 @@ const MyPurchases = () => {
 
                         {/* [MODIFICATION] Pickup Details Block */}
                         <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-                            <div className="flex items-start gap-2">
-                                <MapPin size={16} className="text-[#59287a] mt-0.5 shrink-0" />
-                                <div>
-                                    <p className="font-bold text-gray-700">Location</p>
-                                    <p className="text-gray-600">{order.meetupLocation || "Not specified"}</p>
-                                </div>
+                          <div className="flex items-start gap-2">
+                            <MapPin size={16} className="text-[#59287a] mt-0.5 shrink-0" />
+                            <div>
+                              <p className="font-bold text-gray-700">Location</p>
+                              <p className="text-gray-600">{order.meetupLocation || "Not specified"}</p>
                             </div>
-                            <div className="flex items-start gap-2">
-                                <Calendar size={16} className="text-[#59287a] mt-0.5 shrink-0" />
-                                <div>
-                                    <p className="font-bold text-gray-700">Day</p>
-                                    <p className="text-gray-600">{order.meetupDay || "Not specified"}</p>
-                                </div>
-                            </div>
-                            <div className="flex items-start gap-2">
-                                <Clock size={16} className="text-[#59287a] mt-0.5 shrink-0" />
-                                <div>
-                                    <p className="font-bold text-gray-700">Time</p>
-                                    <p className="text-gray-600">{order.meetupTime || "Not specified"}</p>
-                                </div>
-                            </div>
-                        </div>
-                        {order.createdAt && (
-                          <div>
-                            <span className="text-gray-500">Ordered:</span>
-                            <span className="text-gray-700 ml-2">
-                              {order.createdAt.toDate ?
-                                new Date(order.createdAt.toDate()).toLocaleDateString() :
-                                'Recently'
-                              }
-                            </span>
                           </div>
-                        )}
-                      </div>
+                          <div className="flex items-start gap-2">
+                            <Calendar size={16} className="text-[#59287a] mt-0.5 shrink-0" />
+                            <div>
+                              <p className="font-bold text-gray-700">Day</p>
+                              <p className="text-gray-600">{order.meetupDay || "Not specified"}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <Clock size={16} className="text-[#59287a] mt-0.5 shrink-0" />
+                            <div>
+                              <p className="font-bold text-gray-700">Time</p>
+                              <p className="text-gray-600">{order.meetupTime || "Not specified"}</p>
+                            </div>
+                          </div>
+                        </div>
 
                         {/* Status & Actions */}
                         <div className="flex flex-wrap items-center justify-between gap-4">
-                           <div className="text-sm">
-                              <span className="text-gray-500">Seller:</span> <span className="font-semibold">{order.sellerName}</span>
-                              <span className="mx-2 text-gray-300">|</span>
-                              <span className="font-bold text-brand-purple">RM {order.itemPrice}</span>
-                           </div>
+                          <div className="text-sm">
+                            <span className="text-gray-500">Seller:</span> <span className="font-semibold">{order.sellerName}</span>
+                            <span className="mx-2 text-gray-300">|</span>
+                            <span className="font-bold text-brand-purple">RM {order.itemPrice}</span>
+                          </div>
 
-                           <div className="flex gap-3">
-                              <button onClick={() => navigate(`/chat-item/${order.itemId}`)} className="flex items-center gap-2 px-4 py-2 bg-[#f3eefc] text-brand-purple rounded-xl font-bold hover:bg-[#e9dff7]">
-                                <MessageCircle size={18} /> Chat with Seller
+                          <div className="flex gap-3">
+                            <button onClick={() => navigate(`/chat-item/${order.itemId}`)} className="flex items-center gap-2 px-4 py-2 bg-[#f3eefc] text-brand-purple rounded-xl font-bold hover:bg-[#e9dff7]">
+                              <MessageCircle size={18} /> Chat with Seller
+                            </button>
+
+                            {order.deliveryStatus !== 'received' && (
+                              <button onClick={() => setConfirmModal({ type: 'received', order })} disabled={completingOrder === order.id} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 disabled:opacity-50">
+                                {completingOrder === order.id ? <Loader2 className="animate-spin" size={18} /> : <CheckCircle size={18} />} Received
                               </button>
-                              
-                              {order.deliveryStatus !== 'received' && (
-                                <button onClick={() => setConfirmModal({ type: 'received', order })} disabled={completingOrder === order.id} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 disabled:opacity-50">
-                                  {completingOrder === order.id ? <Loader2 className="animate-spin" size={18}/> : <CheckCircle size={18} />} Received
-                                </button>
-                              )}
-                              
-                              {order.deliveryStatus === 'received' && (
-                                <div className="flex items-center gap-2 px-4 py-2 bg-yellow-50 text-yellow-700 rounded-xl font-bold border border-yellow-200">
-                                   <Clock size={18} /> Waiting for Seller
-                                </div>
-                              )}
-                           </div>
+                            )}
+
+                            {order.deliveryStatus === 'received' && (
+                              <div className="flex items-center gap-2 px-4 py-2 bg-yellow-50 text-yellow-700 rounded-xl font-bold border border-yellow-200">
+                                <Clock size={18} /> Waiting for Seller
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -339,15 +327,15 @@ const MyPurchases = () => {
                 <div key={order.id} className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all opacity-80 hover:opacity-100">
                   <div className="p-5 flex gap-5 items-center">
                     <div className="w-20 h-20 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
-                       <img src={order.itemImage} className="w-full h-full object-cover" />
+                      <img src={order.itemImage} className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1">
-                       <h3 className="font-bold text-gray-900">{order.itemTitle}</h3>
-                       <p className="text-sm text-gray-500">Sold by {order.sellerName} • RM {order.itemPrice}</p>
-                       <p className="text-xs text-gray-400 mt-1">Completed: {order.completedAt?.toDate ? order.completedAt.toDate().toLocaleDateString() : ''}</p>
+                      <h3 className="font-bold text-gray-900">{order.itemTitle}</h3>
+                      <p className="text-sm text-gray-500">Sold by {order.sellerName} • RM {order.itemPrice}</p>
+                      <p className="text-xs text-gray-400 mt-1">Completed: {order.completedAt?.toDate ? order.completedAt.toDate().toLocaleDateString() : ''}</p>
                     </div>
                     <div className="px-4 py-2 bg-green-50 text-green-700 rounded-xl font-bold text-sm flex items-center gap-2">
-                       <CheckCircle size={16}/> Completed
+                      <CheckCircle size={16} /> Completed
                     </div>
                   </div>
                 </div>
@@ -379,7 +367,7 @@ const MyPurchases = () => {
         onClose={handleConfirmModalClose}
         onConfirm={handleConfirmModalConfirm}
       />
-    </div >
+    </div>
   );
 };
 

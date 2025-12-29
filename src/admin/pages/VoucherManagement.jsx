@@ -34,7 +34,7 @@ const VoucherManagement = () => {
     sponsor: "",
     value: "",
     ecoPoints: "",
-    image: "",
+    image: null,
     expiryDate: "",
   });
 
@@ -78,8 +78,10 @@ const VoucherManagement = () => {
       sponsor: "",
       value: "",
       ecoPoints: "",
-      image: "",
+      image: null,
       expiryDate: "",
+      totalQuantity: "",
+      remainingQuantity: "",
     });
   };
 
@@ -100,8 +102,12 @@ const VoucherManagement = () => {
 
     const payload = {
       ...form,
-      image: imageURL,
       ecoPoints: Number(form.ecoPoints),
+      image: imageURL,
+      totalQuantity: Number(form.totalQuantity),
+      remainingQuantity: editId
+        ? form.remainingQuantity
+        : Number(form.totalQuantity),
     };
 
     if (editId) {
@@ -130,9 +136,33 @@ const VoucherManagement = () => {
 
   const columns = [
     { field: "sponsor", headerName: "Sponsor", flex: 1 },
+    {
+      field: "image",
+      headerName: "Image",
+      width: 120,
+      sortable: false,
+      filterable: false,
+      renderCell: (params) => {
+        if (!params.value) return null;
+        return (
+          <img
+            src={params.value}
+            alt="Voucher"
+            style={{
+              width: "80px",
+              height: "50px",
+              objectFit: "cover",
+              borderRadius: "6px",
+            }}
+          />
+        );
+      },
+    },
     { field: "value", headerName: "Value", flex: 1 },
     { field: "ecoPoints", headerName: "EcoPoints", flex: 1 },
     { field: "expiryDate", headerName: "Expiry Date", flex: 1 },
+    { field: "totalQuantity", headerName: "Total Quantity", flex: 1 },
+    { field: "remainingQuantity", headerName: "Remaining", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
@@ -233,6 +263,23 @@ const VoucherManagement = () => {
             }
           />
 
+          <TextField
+            label="Total Quantity"
+            type="number"
+            value={form.totalQuantity}
+            onChange={(e) =>
+              setForm({ ...form, totalQuantity: e.target.value })
+            }
+            disabled={!!editId}
+          />
+
+          <TextField
+            label="Remaining Quantity"
+            helperText="Auto-updated when users claim vouchers"
+            disabled
+            value={form.remainingQuantity}
+          />
+
           <div className="voucher-image-upload">
             <label className="voucher-upload-btn">
               Upload Image
@@ -243,7 +290,7 @@ const VoucherManagement = () => {
               />
             </label>
 
-            {(imageFile || form.image) && (
+            {(imageFile || form.image !== null) && (
               <img
                 className="voucher-preview-image"
                 src={imageFile ? URL.createObjectURL(imageFile) : form.image}
