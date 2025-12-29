@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Gift, Loader2, MapPin, MessageCircle, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Gift, Loader2, MapPin, MessageCircle, CheckCircle } from 'lucide-react';
 import { auth, db } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp } from 'firebase/firestore';

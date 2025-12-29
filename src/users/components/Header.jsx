@@ -123,15 +123,19 @@ const Header = ({ activeLink }) => {
     });
 
     const unsubOrdersBuyer = onSnapshot(ordersBuyerQ, (snap) => {
+      // Map order notifications to the same item-based chat thread
       buckets.buyerOrders = snap.docs.map((d) => {
         const data = d.data();
+        const chatId = `${data.itemId}_${data.buyerId}`;
         return {
-          id: d.id,
-          type: 'orderChat',
+          id: chatId,
+          type: 'itemChat',
           role: 'buyer',
           title: data.itemTitle || 'Order',
           subtitle: data.sellerName || 'Seller',
-          route: `/chat/${d.id}`,
+          route: `/chat-item/${data.itemId}?chatId=${encodeURIComponent(
+            chatId
+          )}`,
           createdAt: data.lastMessageAt?.toMillis
             ? data.lastMessageAt.toMillis()
             : 0,
@@ -141,20 +145,27 @@ const Header = ({ activeLink }) => {
     });
 
     const unsubOrdersSeller = onSnapshot(ordersSellerQ, (snap) => {
-      buckets.sellerOrders = snap.docs.map((d) => {
-        const data = d.data();
-        return {
-          id: d.id,
-          type: 'orderChat',
-          role: 'seller',
-          title: data.itemTitle || 'Order',
-          subtitle: data.buyerName || 'Buyer',
-          route: `/chat/${d.id}`,
-          createdAt: data.lastMessageAt?.toMillis
-            ? data.lastMessageAt.toMillis()
-            : 0,
-        };
-      });
+      // Seller order notifications also point to the same item chat thread
+      buckets.sellerOrders = snap.docs
+        .map((d) => {
+          const data = d.data();
+          if (!data.buyerId) return null;
+          const chatId = `${data.itemId}_${data.buyerId}`;
+          return {
+            id: chatId,
+            type: 'itemChat',
+            role: 'seller',
+            title: data.itemTitle || 'Order',
+            subtitle: data.buyerName || 'Buyer',
+            route: `/chat-item/${data.itemId}?chatId=${encodeURIComponent(
+              chatId
+            )}`,
+            createdAt: data.lastMessageAt?.toMillis
+              ? data.lastMessageAt.toMillis()
+              : 0,
+          };
+        })
+        .filter(Boolean);
       recompute();
     });
 
@@ -291,7 +302,18 @@ const Header = ({ activeLink }) => {
                       key={`${item.type}-${item.id}-${item.role}`}
                       className="notif-item"
                       onClick={() => {
+                        // Close dropdown and optimistically clear this notification
                         setIsNotifOpen(false);
+                        setNotifItems((prev) =>
+                          prev.filter(
+                            (n) =>
+                              !(
+                                n.id === item.id &&
+                                n.type === item.type &&
+                                n.role === item.role
+                              )
+                          )
+                        );
                         handleLinkClick(item.route);
                       }}
                     >
@@ -348,7 +370,7 @@ const Header = ({ activeLink }) => {
                 <button className="dropdown-item" onClick={() => handleLinkClick('/mylistings')}>
                   <Package size={16} /> My Listings
                 </button>
-                <button className="dropdown-item" onClick={() => handleLinkClick('/purchasehistory')}>
+                <button className="dropdown-item" onClick={() => handleLinkClick('/mypurchases')}>
                   <ShoppingBag size={16} /> My Purchases
                 </button>
                 <button className="dropdown-item" onClick={() => handleLinkClick('/conversations')}>
@@ -418,4 +440,3 @@ const Header = ({ activeLink }) => {
 };
 
 export default Header;
-

@@ -22,6 +22,7 @@ const MySoldItems = () => {
       const q = query(
         collection(db, "orders"),
         where("sellerId", "==", currentUser.uid),
+        where("status", "==", "completed"),
         orderBy("createdAt", "desc")
       );
 

@@ -125,7 +125,9 @@ const Checkout = () => {
           itemImage: cartItem.image,
           sellerId: cartItem.sellerId,
           sellerName: cartItem.sellerName,
-          status: 'pending', // pending -> confirmed -> completed
+          status: 'pending',
+          sellerDeliveryStatus: 'pending',
+          deliveryStatus: 'pending',
           paymentMethod: paymentMethod,
           paymentStatus: 'paid',
           createdAt: serverTimestamp(),
@@ -136,8 +138,9 @@ const Checkout = () => {
         if (cartItem.itemId) {
           try {
             await updateDoc(doc(db, "items", cartItem.itemId), {
-              status: 'sold',
+              status: 'pending',
               buyerId: currentUser.uid,
+              currentOrderId: orderRef.id,
               soldAt: serverTimestamp(),
             });
           } catch (error) {
@@ -156,7 +159,7 @@ const Checkout = () => {
       // All orders created successfully
       if (orderIds && orderIds.length > 0) {
         alert("Payment successful! Your order has been created.");
-        navigate('/purchasehistory');
+        navigate('/mypurchases');
       }
     } catch (error) {
       console.error("Error processing checkout:", error);

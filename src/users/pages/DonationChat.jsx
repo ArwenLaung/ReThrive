@@ -6,13 +6,11 @@ import { onAuthStateChanged } from 'firebase/auth';
 import {
   doc,
   getDoc,
-  getDocs,
   collection,
   query,
   orderBy,
   onSnapshot,
   addDoc,
-  setDoc,
   serverTimestamp,
 } from 'firebase/firestore';
 
@@ -44,7 +42,6 @@ const DonationChat = () => {
     return () => unsubscribeAuth();
   }, [navigate]);
 
-  // 2. Fetch Donation Details
   useEffect(() => {
     const fetchDonation = async () => {
       if (!donationId) return;
@@ -56,7 +53,7 @@ const DonationChat = () => {
           setDonation(null);
         }
       } catch (error) {
-        console.error('Error fetching donation:', error);
+        console.error('Error fetching donation for chat:', error);
       } finally {
         setLoading(false);
       }
