@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, Loader2, MapPin, MessageCircle, CheckCircle, Clock } from 'lucide-react';
+import { ShoppingBag, Loader2, MapPin, MessageCircle, CheckCircle, Clock, Calendar } from 'lucide-react';
 import { auth, db } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp, orderBy } from 'firebase/firestore';
@@ -80,31 +80,63 @@ const MyPurchases = () => {
   const handleMarkAsReceived = async (orderId, order) => {
     setCompletingOrder(orderId);
     try {
-      // Update order status
-      await updateDoc(doc(db, "orders", orderId), {
-        status: 'completed',
-        completedAt: serverTimestamp(),
+      // Prepare updates: Always mark buyer side as 'received'
+      const updates = {
         deliveryStatus: 'received',
+        deliveryUpdatedAt: serverTimestamp(),
         autoCompleted: false,
-      });
+      };
 
-      // Optimistically update local state so UI changes immediately
+      // CHECK: Has the Seller already marked it as 'delivered'?
+      const isSellerDelivered = order.sellerDeliveryStatus === 'delivered';
+
+      // Only "Complete" the order if BOTH parties have confirmed
+      if (isSellerDelivered) {
+        updates.status = 'completed'; // Finalize Order
+        updates.completedAt = serverTimestamp();
+
+        // Try to update Item to 'sold'. Catch error if already sold.
+        if (order.itemId) {
+          try {
+            await updateDoc(doc(db, "items", order.itemId), { status: 'sold' });
+          } catch (itemError) {
+            // If item is already sold, this error happens. We ignore it so we can finish the Order.
+            console.warn("Item status update skipped (likely already sold):", itemError.message);
+          }
+        }
+
+        // Award EcoPoints to BOTH Buyer and Seller
+        const pointsToEarn = 10;
+        await addEcoPoints(order.buyerId, pointsToEarn); // Buyer
+        if (order.sellerId) {
+          await addEcoPoints(order.sellerId, pointsToEarn); // Seller
+        }
+
+        alert(`Transaction Complete! Both you and the seller earned ${pointsToEarn} EcoPoints!`);
+      } else {
+        // Seller hasn't clicked yet
+        alert("Marked as Received! Waiting for Seller to mark as Delivered to complete the order.");
+      }
+
+      // 4. Apply the updates to the Order document
+      await updateDoc(doc(db, "orders", orderId), updates);
+
+      // Optimistic UI update
       setOrders((prev) =>
         prev.map((o) =>
           o.id === orderId
-            ? { ...o, status: 'completed', deliveryStatus: 'received' }
+            ? {
+              ...o,
+              deliveryStatus: 'received',
+              status: isSellerDelivered ? 'completed' : o.status // Update status only if finalized
+            }
             : o
         )
       );
 
-      // Award ecoPoints (10 points per item)
-      const pointsToEarn = 10;
-      await addEcoPoints(order.buyerId, pointsToEarn);
-
-      alert(`Order completed! You earned ${pointsToEarn} EcoPoints!`);
     } catch (error) {
       console.error("Error completing order:", error);
-      alert("Failed to complete order. Please try again.");
+      alert("Failed to update order. Please try again.");
     } finally {
       setCompletingOrder(null);
     }
@@ -145,6 +177,9 @@ const MyPurchases = () => {
   const handleConfirmModalClose = () => {
     setConfirmModal({ type: null, order: null });
   };
+
+  const pendingOrders = orders.filter(o => o.status !== 'completed');
+  const completedOrders = orders.filter(o => o.status === 'completed');
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -189,55 +224,59 @@ const MyPurchases = () => {
         <h1 className="text-3xl font-black text-brand-purple tracking-tight">My Purchases</h1>
       </div>
 
-      <div className="max-w-6xl mx-auto">
-        {orders.length === 0 ? (
-          <div className="flex flex-col items-center justify-center w-full mt-10">
-            <div className="bg-white p-16 rounded-[2rem] text-center shadow-sm border border-gray-100 flex flex-col items-center justify-center min-h-[400px] max-w-2xl w-full">
-              <div className="bg-[#f3eefc] p-6 rounded-full mb-6">
-                <ShoppingBag size={64} className="text-[#59287a]" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">No purchases yet</h2>
-              <p className="text-gray-500 max-w-sm mx-auto mb-8 leading-relaxed">
-                Items you buy will appear here. Start browsing to find great deals!
-              </p>
-              <Link to="/marketplace" className="bg-brand-purple text-white px-8 py-4 rounded-xl font-bold hover:bg-purple-800 transition-all shadow-lg hover:shadow-purple-200 active:scale-95">
-                Browse Marketplace
-              </Link>
+      {/* [MODIFICATION] Completely replaced the main content area to support sections */}
+      <div className="max-w-6xl mx-auto space-y-12">
+        
+        {/* --- SECTION 1: PENDING ORDERS --- */}
+        <div>
+          <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <Clock className="text-yellow-600" /> Pending Orders
+          </h2>
+          {pendingOrders.length === 0 ? (
+            <div className="bg-white p-8 rounded-2xl border border-gray-100 text-center text-gray-500 italic">
+              No pending orders.
             </div>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {orders.map((order) => (
-              <div key={order.id} className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all">
-                <div className="p-6">
-                  <div className="flex flex-col md:flex-row gap-6">
-                    {/* Item Image */}
-                    <div className="relative w-full md:w-32 h-32 flex-shrink-0 rounded-xl overflow-hidden bg-gray-100">
-                      <img
-                        src={order.itemImage}
-                        alt={order.itemTitle}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute top-2 left-2">
-                        {getStatusBadge(order.status)}
-                      </div>
-                    </div>
-
-                    {/* Order Details */}
-                    <div className="flex-1 space-y-3">
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-1">{order.itemTitle}</h3>
-                        <p className="text-sm text-gray-500">Order ID: {order.id.substring(0, 8)}...</p>
+          ) : (
+            <div className="space-y-6">
+              {pendingOrders.map((order) => (
+                <div key={order.id} className="bg-white rounded-2xl overflow-hidden border border-yellow-200 shadow-sm hover:shadow-md transition-all">
+                  <div className="p-6">
+                    <div className="flex flex-col md:flex-row gap-6">
+                      {/* Image */}
+                      <div className="relative w-full md:w-40 h-40 flex-shrink-0 rounded-xl overflow-hidden bg-gray-100">
+                        <img src={order.itemImage} alt={order.itemTitle} className="w-full h-full object-cover"/>
+                        <span className="absolute top-2 left-2 px-2 py-1 bg-yellow-500 text-white text-[10px] font-bold rounded">PENDING</span>
                       </div>
 
-                      <div className="flex flex-wrap gap-4 text-sm">
+                      <div className="flex-1 space-y-4">
                         <div>
-                          <span className="text-gray-500">Seller:</span>
-                          <span className="font-semibold text-gray-900 ml-2">{order.sellerName}</span>
+                          <h3 className="text-xl font-bold text-gray-900">{order.itemTitle}</h3>
+                          <p className="text-sm text-gray-500">Order ID: {order.id.substring(0, 8)}...</p>
                         </div>
-                        <div>
-                          <span className="text-gray-500">Price:</span>
-                          <span className="font-bold text-brand-purple ml-2">RM {order.itemPrice}</span>
+
+                        {/* [MODIFICATION] Pickup Details Block */}
+                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                            <div className="flex items-start gap-2">
+                                <MapPin size={16} className="text-[#59287a] mt-0.5 shrink-0" />
+                                <div>
+                                    <p className="font-bold text-gray-700">Location</p>
+                                    <p className="text-gray-600">{order.meetupLocation || "Not specified"}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-2">
+                                <Calendar size={16} className="text-[#59287a] mt-0.5 shrink-0" />
+                                <div>
+                                    <p className="font-bold text-gray-700">Day</p>
+                                    <p className="text-gray-600">{order.meetupDay || "Not specified"}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-2">
+                                <Clock size={16} className="text-[#59287a] mt-0.5 shrink-0" />
+                                <div>
+                                    <p className="font-bold text-gray-700">Time</p>
+                                    <p className="text-gray-600">{order.meetupTime || "Not specified"}</p>
+                                </div>
+                            </div>
                         </div>
                         {order.createdAt && (
                           <div>
@@ -252,98 +291,73 @@ const MyPurchases = () => {
                         )}
                       </div>
 
-                      {/* Action Buttons */}
-                      <div className="flex flex-wrap gap-3 pt-2">
-                        <button
-                          onClick={() => {
-                            if (!order.itemId) return;
-                            // Use the same item-based chat thread as "Contact Seller"
-                            navigate(`/chat-item/${order.itemId}`);
-                          }}
-                          className="flex items-center gap-2 px-4 py-2 bg-brand-purple text-white rounded-xl font-semibold hover:bg-purple-800 transition-all active:scale-95"
-                        >
-                          <MessageCircle size={18} />
-                          Chat with Seller
-                        </button>
+                        {/* Status & Actions */}
+                        <div className="flex flex-wrap items-center justify-between gap-4">
+                           <div className="text-sm">
+                              <span className="text-gray-500">Seller:</span> <span className="font-semibold">{order.sellerName}</span>
+                              <span className="mx-2 text-gray-300">|</span>
+                              <span className="font-bold text-brand-purple">RM {order.itemPrice}</span>
+                           </div>
 
-                        {/* Delivery status: Received / Not received */}
-                        {(order.deliveryStatus !== 'received' && order.deliveryStatus !== 'auto_received') && (
-                          <button
-                            onClick={() =>
-                              setConfirmModal({
-                                type: 'received',
-                                order,
-                              })
-                            }
-                            disabled={completingOrder === order.id}
-                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {completingOrder === order.id ? (
-                              <>
-                                <Loader2 className="animate-spin" size={18} />
-                                Processing...
-                              </>
-                            ) : (
-                              <>
-                                <CheckCircle size={18} />
-                                Received
-                              </>
-                            )}
-                          </button>
-                        )}
-
-                        {(order.deliveryStatus === 'received' || order.deliveryStatus === 'auto_received') && (
-                          <div className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-xl font-semibold">
-                            <CheckCircle size={18} />
-                            {order.deliveryStatus === 'auto_received' ? 'Automatically marked as received' : 'Received'}
-                          </div>
-                        )}
-
-                        {(order.deliveryStatus !== 'received' && order.deliveryStatus !== 'auto_received') && (
-                          <button
-                            onClick={() =>
-                              setConfirmModal({
-                                type: 'notReceived',
-                                order,
-                              })
-                            }
-                            disabled={updatingDelivery === order.id}
-                            className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {updatingDelivery === order.id ? (
-                              <>
-                                <Loader2 className="animate-spin" size={18} />
-                                Updating...
-                              </>
-                            ) : (
-                              <>
-                                <Clock size={18} />
-                                Not received
-                              </>
-                            )}
-                          </button>
-                        )}
-
-                        {order.itemId && (
-                          <Link
-                            to={`/item/${order.itemId}`}
-                            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-all active:scale-95"
-                          >
-                            View Item
-                          </Link>
-                        )}
+                           <div className="flex gap-3">
+                              <button onClick={() => navigate(`/chat-item/${order.itemId}`)} className="flex items-center gap-2 px-4 py-2 bg-[#f3eefc] text-brand-purple rounded-xl font-bold hover:bg-[#e9dff7]">
+                                <MessageCircle size={18} /> Chat with Seller
+                              </button>
+                              
+                              {order.deliveryStatus !== 'received' && (
+                                <button onClick={() => setConfirmModal({ type: 'received', order })} disabled={completingOrder === order.id} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 disabled:opacity-50">
+                                  {completingOrder === order.id ? <Loader2 className="animate-spin" size={18}/> : <CheckCircle size={18} />} Received
+                                </button>
+                              )}
+                              
+                              {order.deliveryStatus === 'received' && (
+                                <div className="flex items-center gap-2 px-4 py-2 bg-yellow-50 text-yellow-700 rounded-xl font-bold border border-yellow-200">
+                                   <Clock size={18} /> Waiting for Seller
+                                </div>
+                              )}
+                           </div>
+                        </div>
                       </div>
-                      <p className="text-xs text-gray-500 mt-2">
-                        If you do not update this status within 7 days after purchase, it will automatically be marked as <span className="font-semibold">received</span>.
-                      </p>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* --- SECTION 2: PURCHASE HISTORY (COMPLETED) --- */}
+        <div>
+          <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <CheckCircle className="text-green-600" /> Purchase History
+          </h2>
+          {completedOrders.length === 0 ? (
+            <p className="text-gray-500 italic">No completed orders yet.</p>
+          ) : (
+            <div className="space-y-6">
+              {completedOrders.map((order) => (
+                <div key={order.id} className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all opacity-80 hover:opacity-100">
+                  <div className="p-5 flex gap-5 items-center">
+                    <div className="w-20 h-20 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
+                       <img src={order.itemImage} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1">
+                       <h3 className="font-bold text-gray-900">{order.itemTitle}</h3>
+                       <p className="text-sm text-gray-500">Sold by {order.sellerName} • RM {order.itemPrice}</p>
+                       <p className="text-xs text-gray-400 mt-1">Completed: {order.completedAt?.toDate ? order.completedAt.toDate().toLocaleDateString() : ''}</p>
+                    </div>
+                    <div className="px-4 py-2 bg-green-50 text-green-700 rounded-xl font-bold text-sm flex items-center gap-2">
+                       <CheckCircle size={16}/> Completed
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
       </div>
+
       <ConfirmModal
         open={!!confirmModal.type}
         title={
@@ -365,7 +379,7 @@ const MyPurchases = () => {
         onClose={handleConfirmModalClose}
         onConfirm={handleConfirmModalConfirm}
       />
-    </div>
+    </div >
   );
 };
 

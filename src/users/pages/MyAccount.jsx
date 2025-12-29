@@ -140,7 +140,7 @@ const MyAccount = () => {
 
             <MenuRow icon={Package} label="My Listings" subLabel={`${stats.activeListings} Active Items`} onClick={() => navigate('/mylistings')} />
             <MenuRow icon={ShoppingBag} label="My Sold Items" subLabel={`${stats.soldItems} Items Sold`} onClick={() => navigate('/solditems')} />
-            <MenuRow icon={Clock} label="Purchase History" subLabel="View past orders" isLast={true} onClick={() => navigate('/purchasehistory')} />
+            <MenuRow icon={Clock} label="My Purchases" subLabel="View past orders" isLast={true} onClick={() => navigate('/mypurchases')} />
           </div>
         </div>
 

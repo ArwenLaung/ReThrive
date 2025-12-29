@@ -370,7 +370,7 @@ const Header = ({ activeLink }) => {
                 <button className="dropdown-item" onClick={() => handleLinkClick('/mylistings')}>
                   <Package size={16} /> My Listings
                 </button>
-                <button className="dropdown-item" onClick={() => handleLinkClick('/purchasehistory')}>
+                <button className="dropdown-item" onClick={() => handleLinkClick('/mypurchases')}>
                   <ShoppingBag size={16} /> My Purchases
                 </button>
                 <button className="dropdown-item" onClick={() => handleLinkClick('/conversations')}>

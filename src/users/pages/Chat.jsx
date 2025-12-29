@@ -198,8 +198,8 @@ const Chat = () => {
               <p className="text-sm text-gray-500">RM {order.itemPrice}</p>
             </div>
             <span className={`px-3 py-1 rounded-full text-xs font-semibold ${order.status === 'completed' ? 'bg-green-100 text-green-800' :
-                order.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
-                  'bg-yellow-100 text-yellow-800'
+              order.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
+                'bg-yellow-100 text-yellow-800'
               }`}>
               {order.status?.toUpperCase() || 'PENDING'}
             </span>
@@ -227,8 +227,8 @@ const Chat = () => {
                 >
                   <div
                     className={`max-w-xs md:max-w-md px-4 py-3 rounded-2xl ${isOwnMessage
-                        ? 'bg-brand-purple text-white rounded-br-sm'
-                        : 'bg-gray-100 text-gray-900 rounded-bl-sm'
+                      ? 'bg-brand-purple text-white rounded-br-sm'
+                      : 'bg-gray-100 text-gray-900 rounded-bl-sm'
                       }`}
                   >
                     <p className="text-sm font-medium mb-1">{msg.senderName}</p>
@@ -284,12 +284,3 @@ const Chat = () => {
 };
 
 export default Chat;
-
-
-
-
-
-
-
-
-

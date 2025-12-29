@@ -8,6 +8,10 @@ import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { onAuthStateChanged } from 'firebase/auth';
 
+const AVAILABILITY_DAYS = ['Weekdays (Mon-Fri)', 'Weekends (Sat-Sun)', 'Flexible'];
+const AVAILABILITY_SLOTS = ['Morning (8am-12pm)', 'Afternoon (12pm-6pm)', 'Evening (After 6pm)'];
+const FORBIDDEN_CLASSES = ["Weapon / Dangerous Item", "Restricted Item"];
+
 const ListingDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -21,8 +25,12 @@ const ListingDetail = () => {
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [condition, setCondition] = useState("");
-  const [locationSelection, setLocationSelection] = useState("");
-  const [customLocation, setCustomLocation] = useState("");
+  const [locations, setLocations] = useState([]);
+  const [otherChecked, setOtherChecked] = useState(false);
+  const [otherLocation, setOtherLocation] = useState("");
+  const [availDays, setAvailDays] = useState([]);
+  const [availSlots, setAvailSlots] = useState([]);
+  const [unsafeKeywords, setUnsafeKeywords] = useState([]);
 
   // Seller Details
   const [sellerName, setSellerName] = useState("");
@@ -50,6 +58,21 @@ const ListingDetail = () => {
     "Good": "Lightly Used",
     "Fair": "Well Used"
   };
+
+  // Fetch unsafe keywords for moderation
+  useEffect(() => {
+    const fetchKeywords = async () => {
+      try {
+        const docRef = doc(db, "settings", "moderation");
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists() && docSnap.data().bannedKeywords) {
+           const list = docSnap.data().bannedKeywords.map(w => w.toLowerCase().trim());
+           setUnsafeKeywords(list);
+        }
+      } catch (e) { console.error("Error loading moderation list:", e); }
+    };
+    fetchKeywords();
+  }, []);
 
   // --- 1. FETCH DATA ---
   useEffect(() => {
@@ -84,6 +107,8 @@ const ListingDetail = () => {
           // Map Condition
           const normalizedCondition = CONDITION_MAP[data.condition] || data.condition;
           setCondition(normalizedCondition);
+          setAvailDays(data.availabilityDays || []);
+          setAvailSlots(data.availabilitySlots || []);
 
           // Handle Images
           if (data.images && Array.isArray(data.images)) {
@@ -96,11 +121,15 @@ const ListingDetail = () => {
           }
 
           // Handle Location
-          if (PREDEFINED_LOCATIONS.includes(data.location)) {
-            setLocationSelection(data.location);
-          } else {
-            setLocationSelection("Other");
-            setCustomLocation(data.location);
+          const savedLocations = data.locations || (data.location ? [data.location] : []);
+          
+          const standardLocs = savedLocations.filter(l => PREDEFINED_LOCATIONS.includes(l));
+          const customLoc = savedLocations.find(l => !PREDEFINED_LOCATIONS.includes(l));
+
+          setLocations(standardLocs);
+          if (customLoc) {
+            setOtherChecked(true);
+            setOtherLocation(customLoc);
           }
 
         } else {
@@ -132,23 +161,34 @@ const ListingDetail = () => {
       preview: URL.createObjectURL(file),
       isExisting: false
     }));
-    setImages((prev) => [...prev, ...newImages]);
 
-    if (newImages.length > 0) {
-      const img = document.createElement("img");
-      img.crossOrigin = "anonymous";
-      img.src = newImages[0].preview;
-      img.onload = async () => {
-        try {
-          const prediction = await classifyImage(img);
-          if (prediction?.className) setCategory(prediction.className);
-        } finally {
-          setIsAnalyzingImage(false);
+    const firstImgUrl = newImages[0].preview;
+    const imgElement = document.createElement("img");
+    imgElement.crossOrigin = "anonymous";
+    imgElement.src = firstImgUrl;
+
+    imgElement.onload = async () => {
+      try {
+        const prediction = await classifyImage(imgElement);
+        
+        // AI BLOCK: Check if forbidden
+        if (FORBIDDEN_CLASSES.includes(prediction?.className) && prediction?.probability > 0.8) {
+            alert(`Listing Blocked: Identified as '${prediction.className}'.`);
+            setIsAnalyzingImage(false);
+            return; // Stop execution
         }
-      };
-    } else {
-      setIsAnalyzingImage(false);
-    }
+
+        setImages((prev) => [...prev, ...newImages]);
+        // Auto-set category if valid
+        if (prediction?.className && !FORBIDDEN_CLASSES.includes(prediction.className)) {
+          setCategory(prediction.className);
+        }
+      } catch (error) {
+        console.error("AI Error:", error);
+      } finally {
+        setIsAnalyzingImage(false);
+      }
+    };
   };
 
   const removeImage = (index) => setImages((prev) => prev.filter((_, i) => i !== index));
@@ -157,9 +197,24 @@ const ListingDetail = () => {
     if (!keywords.trim() || !category) {
       alert("Select category & add keywords first."); return;
     }
+
+    // Check Keywords before generating
+    const foundKeyword = unsafeKeywords.find(word => keywords.toLowerCase().includes(word));
+    if (foundKeyword) {
+      alert(`Blocked: Contains restricted word "${foundKeyword}".`);
+      return; 
+    }
+
     setIsGeneratingText(true);
     try {
       const result = await generateDescription(keywords, category, null);
+      
+      // Check result title for violation flags from AI
+      if (result.title.includes("Violation")) {
+        alert("Safety Restriction: " + result.description);
+        return;
+      }
+      
       setTitle(result.title);
       setDescription(result.description);
     } catch (e) { console.error(e); } 
@@ -173,8 +228,27 @@ const ListingDetail = () => {
     }
     if (!sellerName.trim()) { setError("Name required."); return; }
 
-    const finalLocation = locationSelection === "Other" ? customLocation : locationSelection;
-    if (!finalLocation.trim()) { setError("Location required."); return; }
+    const finalLocations = [...locations];
+    if (otherChecked && otherLocation.trim()) {
+        finalLocations.push(otherLocation.trim());
+    }
+
+    if (finalLocations.length === 0) {
+        setError("Please select at least one pickup location."); return;
+    }
+    const primaryLocation = finalLocations[0];
+
+    // Validate Availability & Perform Final Moderation Check
+    if (availDays.length === 0 || availSlots.length === 0) {
+        setError("Please select availability days and slots."); return;
+    }
+
+    const combinedText = (title + " " + description).toLowerCase();
+    const foundKeyword = unsafeKeywords.find(word => combinedText.includes(word));
+    if (foundKeyword) {
+      alert(`Update Blocked: Description contains "${foundKeyword}".`);
+      return;
+    }
 
     setIsSubmitting(true);
     setError("");
@@ -196,8 +270,11 @@ const ListingDetail = () => {
         description: description.trim(),
         price: Number(price),
         category,
-        location: finalLocation.trim(),
+        location: primaryLocation,
+        locations: finalLocations,
         condition, 
+        availabilityDays: availDays,
+        availabilitySlots: availSlots,
         images: finalImageUrls,
         image: finalImageUrls[0],
         sellerName: sellerName.trim(),
@@ -336,21 +413,72 @@ const ListingDetail = () => {
 
               <hr className="border-gray-100" />
 
-              {/* Price & Location */}
+              {/* Price & Logistics */}
               <div>
-                <h2 className="text-lg font-bold text-gray-800 mb-4">Price & Location</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div><label className="block text-sm font-semibold text-gray-700 mb-2">Price (RM)</label><input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#59287a] outline-none" /></div>
-                  <div>
-                    <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
-                        <MapPin size={16} /> Location
-                    </label>
-                    <select value={locationSelection} onChange={(e) => setLocationSelection(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#59287a] outline-none bg-white mb-2">
-                      {PREDEFINED_LOCATIONS.map(loc => <option key={loc} value={loc}>{loc}</option>)}
-                      <option value="Other">Other</option>
-                    </select>
-                    {locationSelection === "Other" && <input type="text" placeholder="Enter location..." value={customLocation} onChange={(e) => setCustomLocation(e.target.value)} className="w-full p-3 rounded-xl border border-[#dccae8] bg-[#f3eefc] focus:ring-2 focus:ring-[#59287a] outline-none" />}
-                  </div>
+                <h2 className="text-lg font-bold text-gray-800 mb-4">Price & Logistics</h2>
+                <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">Price (RM)</label>
+                            <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#59287a] outline-none" />
+                        </div>
+                        {/* Pickup Location Selection (Matches SellItem) */}
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">Pickup Location(s)</label>
+                            <div className="grid grid-cols-1 gap-2 border p-3 rounded-xl border-gray-100 max-h-40 overflow-y-auto">
+                                {PREDEFINED_LOCATIONS.map((opt) => (
+                                <label key={opt} className="inline-flex items-center gap-2">
+                                    <input type="checkbox" checked={locations.includes(opt)} onChange={() => {
+                                    setLocations((prev) => prev.includes(opt) ? prev.filter((p) => p !== opt) : [...prev, opt]);
+                                    }} className="rounded text-[#59287a] focus:ring-[#59287a]" />
+                                    <span className="text-sm">{opt}</span>
+                                </label>
+                                ))}
+                                <label className="inline-flex items-center gap-2">
+                                    <input type="checkbox" checked={otherChecked} onChange={() => setOtherChecked((v) => !v)} className="rounded text-[#59287a]" />
+                                    <span className="text-sm">Other</span>
+                                </label>
+                            </div>
+                            {otherChecked && (
+                                <input type="text" placeholder="Enter other location..." value={otherLocation} onChange={(e) => setOtherLocation(e.target.value)} className="w-full mt-2 p-2 rounded-lg border border-[#dccae8] bg-[#f3eefc] text-sm" />
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Availability Section (Matches SellItem) */}
+                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                        <h3 className="text-sm font-bold text-gray-800 mb-3">When are you available to meet?</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Days */}
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Days</label>
+                                <div className="space-y-2">
+                                    {AVAILABILITY_DAYS.map((day) => (
+                                        <label key={day} className="flex items-center gap-2 cursor-pointer">
+                                            <input type="checkbox" checked={availDays.includes(day)} onChange={() => {
+                                                setAvailDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
+                                            }} className="rounded text-[#59287a]" />
+                                            <span className="text-sm text-gray-700">{day}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                            {/* Slots */}
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Time Slots</label>
+                                <div className="space-y-2">
+                                    {AVAILABILITY_SLOTS.map((slot) => (
+                                        <label key={slot} className="flex items-center gap-2 cursor-pointer">
+                                            <input type="checkbox" checked={availSlots.includes(slot)} onChange={() => {
+                                                setAvailSlots(prev => prev.includes(slot) ? prev.filter(s => s !== slot) : [...prev, slot]);
+                                            }} className="rounded text-[#59287a]" />
+                                            <span className="text-sm text-gray-700">{slot}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
               </div>
 

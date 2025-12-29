@@ -385,8 +385,8 @@ const ItemChat = () => {
                         previousMessagesCountRef.current = 0;
                       }}
                       className={`px-3 py-2 rounded-xl text-xs font-medium border ${isActive
-                          ? 'bg-brand-purple text-white border-brand-purple'
-                          : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                        ? 'bg-brand-purple text-white border-brand-purple'
+                        : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                         }`}
                     >
                       {chat.buyerName || 'Buyer'}
@@ -427,8 +427,8 @@ const ItemChat = () => {
                 >
                   <div
                     className={`max-w-xs md:max-w-md px-4 py-3 rounded-2xl ${isOwnMessage
-                        ? 'bg-brand-purple text-white rounded-br-sm'
-                        : 'bg-gray-100 text-gray-900 rounded-bl-sm'
+                      ? 'bg-brand-purple text-white rounded-br-sm'
+                      : 'bg-gray-100 text-gray-900 rounded-bl-sm'
                       }`}
                   >
                     <p className="text-sm font-medium mb-1">{msg.senderName}</p>
