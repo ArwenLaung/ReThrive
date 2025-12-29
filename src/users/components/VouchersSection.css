@@ -1,0 +1,107 @@
+.claim-vouchers-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.claim-vouchers-title {
+  text-align: center;
+  color: #3d0b37;
+  font-weight: bold;
+  font-size: 32px;
+}
+
+.available-vouchers-container {
+  display: flex;
+  justify-content: center;
+}
+
+.scroll-left-button,
+.scroll-right-button {
+  color: #3d0b37;
+  transition: all 0.2s ease;
+}
+
+.scroll-left-button:hover {
+  transform: scale(1.25);
+  color: #8cc63f;
+}
+
+.scroll-right-button:hover {
+  transform: scale(1.25);
+  color: #8cc63f;
+}
+
+.scroll-left-button:disabled,
+.scroll-left-button:disabled * {
+  opacity: 0.3;
+  cursor: not-allowed !important;
+}
+
+.scroll-right-button:disabled,
+.scroll-right-button:disabled * {
+  opacity: 0.3;
+  cursor: not-allowed !important;
+}
+
+.available-vouchers-section {
+  display: flex;
+  overflow-x: auto;
+  gap: 24px;
+  padding: 32px 8px;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  /* Firefox hide scrollbar */
+  -ms-overflow-style: none;
+}
+
+.available-vouchers-section::-webkit-scrollbar {
+  display: none;
+}
+
+.voucher {
+  flex-shrink: 0;
+  width: 288px;
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 30px;
+  border: 1px solid #f8f8f8;
+  scroll-snap-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.voucher:hover {
+  transform: scale(1.04);
+  box-shadow: 0 4px 20px #b6b6b6cc;
+}
+
+.voucher-description {
+  padding: 10px 0px;
+}
+
+.redemption-points {
+  font-size: 150%;
+  color: #3d0b37;
+  font-weight: bold;
+  padding-bottom: 5px;
+}
+
+.voucher-sponsor,
+.voucher-value {
+  font-weight: bold;
+}
+
+.claim-now-button {
+  color: #ffffff;
+  font-weight: bold;
+  background-color: #a266c7;
+  border-radius: 10px;
+  width: 100%;
+  padding: 10px 0px;
+  transition: all 0.2s ease;
+}
+
+.claim-now-button:hover {
+  background-color: #8cc63f;
+}
