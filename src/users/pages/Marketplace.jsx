@@ -34,7 +34,7 @@ const Marketplace = () => {
 
   const filteredItems = items
     // Hide items that have been sold
-    .filter((item) => item.status !== 'sold')
+    .filter((item) => item.status === 'active')
     .filter((item) => {
       const matchesCategory = selectedCategory === "All" || item.category === selectedCategory;
       const title = item.title ? item.title.toLowerCase() : "";
