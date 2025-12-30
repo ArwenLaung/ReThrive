@@ -33,6 +33,7 @@ const VoucherManagement = () => {
   const [form, setForm] = useState({
     sponsor: "",
     value: "",
+    tnc: [],
     ecoPoints: "",
     image: null,
     expiryDate: "",
@@ -77,6 +78,7 @@ const VoucherManagement = () => {
     setForm({
       sponsor: "",
       value: "",
+      tnc: [],
       ecoPoints: "",
       image: null,
       expiryDate: "",
@@ -244,6 +246,14 @@ const VoucherManagement = () => {
             type="number"
             value={form.value}
             onChange={(e) => setForm({ ...form, value: e.target.value })}
+          />
+
+          <TextField
+            label="Terms and Conditions"
+            multiline
+            minRows={3}
+            value={form.tnc.join("\n")}
+            onChange={(e) => setForm({ ...form, tnc: e.target.value.split("\n") })}
           />
 
           <TextField

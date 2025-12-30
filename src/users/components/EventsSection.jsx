@@ -35,10 +35,12 @@ const EventsSection = forwardRef((props, ref) => {
         const eventsCol = collection(db, "events");
         const q = query(eventsCol, orderBy("date", "asc"));
         const snapshot = await getDocs(q);
-        const eventsList = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+
+        const today = new Date().toISOString().split("T")[0]; // current date in YYYY-MM-DD
+        const eventsList = snapshot.docs
+          .map((doc) => ({ id: doc.id, ...doc.data() }))
+          .filter((event) => event.date >= today); // only future/ongoing events
+
         setEvents(eventsList);
       } catch (error) {
         console.error("Error fetching events:", error);
@@ -58,7 +60,7 @@ const EventsSection = forwardRef((props, ref) => {
     <section ref={ref} id="events" className="py-16 bg-white relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <h2 className="text-3xl font-extrabold text-center text-brand-darkText mb-12 relative inline-block left-1/2 transform -translate-x-1/2">
-          <span className="relative z-10 text-brand-purple">Events in USM</span>
+          <span className="relative z-10 text-brand-purple">EcoHub Events in USM</span>
           <span className="absolute bottom-1 left-0 w-full h-3 bg-brand-lightPurple -z-0 opacity-60"></span>
         </h2>
 

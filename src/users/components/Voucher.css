@@ -1,0 +1,197 @@
+.voucher-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.voucher-modal {
+  background: #ffffff;
+  width: 90%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 16px;
+  padding: 32px;
+  position: relative;
+  animation: popupFade 0.25s ease-out;
+}
+
+.voucher-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.voucher-modal-image {
+  width: 100%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.voucher-modal h2 {
+  font-weight: bold;
+  font-size: 24px;
+  color: #3d0b37;
+  margin-bottom: 8px;
+}
+
+.voucher-modal p {
+  margin: 4px 0;
+}
+
+.voucher-detail {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #555;
+}
+
+.voucher-use-btn {
+  width: 100%;
+  margin-top: 18px;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: #a266c7;
+  color: white;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.voucher-use-btn:hover {
+  background-color: #8cc63f;
+  opacity: 0.9;
+}
+
+.voucher-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 10000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.voucher-confirm-dialog {
+  background: white;
+  width: 90%;
+  max-width: 360px;
+  padding: 22px;
+  border-radius: 14px;
+  text-align: center;
+
+  animation: popupFade 0.25s ease-out;
+}
+
+.voucher-confirm-dialog h3 {
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.voucher-confirm-dialog p {
+  font-size: 14px;
+  color: #444;
+}
+
+.voucher-confirm-actions {
+  display: flex;
+  justify-content: space-evenly;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.voucher-confirm-btn {
+  background: #5b2d6f;
+  color: white;
+  border: none;
+  padding: 10px 22px;
+  border: 2px solid #5b2d6f !important;
+  border-radius: 999px !important;
+  cursor: pointer;
+}
+
+.voucher-confirm-btn:hover {
+  opacity: 0.9;
+}
+
+@keyframes popupFade {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* =========================
+   MOBILE RESPONSIVENESS
+========================= */
+@media (max-width: 768px) {
+  .voucher-modal {
+    width: 92%;
+    max-width: none;
+    padding: 24px;
+    border-radius: 14px;
+  }
+
+  .voucher-modal h2 {
+    font-size: 20px;
+  }
+
+  .voucher-modal-image {
+    margin-bottom: 12px;
+  }
+
+  .voucher-use-btn {
+    font-size: 14px;
+    padding: 12px;
+  }
+
+  .voucher-confirm-dialog {
+    width: 92%;
+    padding: 20px;
+  }
+}
+
+/* =========================
+   SMALL MOBILE (PHONES)
+========================= */
+@media (max-width: 480px) {
+  .voucher-modal {
+    padding: 20px;
+    max-height: 88vh;
+  }
+
+  .voucher-modal h2 {
+    font-size: 18px;
+  }
+
+  .voucher-detail,
+  .voucher-modal p {
+    font-size: 13px;
+  }
+
+  .voucher-confirm-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .voucher-confirm-btn {
+    width: 100%;
+    padding: 12px;
+  }
+}

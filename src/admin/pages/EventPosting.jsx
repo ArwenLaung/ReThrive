@@ -287,7 +287,7 @@ const EventPosting = () => {
           <TextField
             label="Eco Highlights (one per line)"
             multiline
-            minRows={3}
+            minRows={2}
             value={form.ecoHighlights.join("\n")}
             onChange={(e) =>
               setForm({

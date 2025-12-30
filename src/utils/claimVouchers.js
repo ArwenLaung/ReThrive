@@ -1,4 +1,4 @@
-import { doc, runTransaction } from "firebase/firestore";
+import { doc, runTransaction, arrayUnion } from "firebase/firestore";
 import { db } from "../firebase";
 
 export const claimVouchers = async (userId, voucher) => {
@@ -33,15 +33,15 @@ export const claimVouchers = async (userId, voucher) => {
       throw new Error("Voucher is out of stock");
     }
 
-    // ✅ Deduct points & save claimed voucher
+    // ✅ Deduct points & save claimed voucher safely with arrayUnion
     transaction.update(userRef, {
       ecoPoints: currentPoints - voucherData.ecoPoints,
-      claimedVouchers: [...claimedVouchers, voucher.id],
+      claimedVouchers: arrayUnion(voucher.id), // safer than [...claimedVouchers, voucher.id]
     });
 
     // ✅ Deduct remainingQuantity in voucher
     transaction.update(voucherRef, {
-      remainingQuantity: voucherData.remainingQuantity - 1, // only this field
+      remainingQuantity: voucherData.remainingQuantity - 1,
     });
   });
 };

@@ -13,32 +13,36 @@
 .available-vouchers-container {
   display: flex;
   justify-content: center;
+  align-items: center;
+  gap: 8px;
 }
 
-.scroll-left-button,
-.scroll-right-button {
+.scroll-left-button-container,
+.scroll-right-button-container {
   color: #3d0b37;
+  background: none;
+  border: none;
+  cursor: pointer;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.scroll-left-button:hover {
+.scroll-left-button-container:hover,
+.scroll-right-button-container:hover {
   transform: scale(1.25);
   color: #8cc63f;
 }
 
-.scroll-right-button:hover {
-  transform: scale(1.25);
-  color: #8cc63f;
-}
-
-.scroll-left-button:disabled,
-.scroll-left-button:disabled * {
+.scroll-left-button-container:disabled,
+.scroll-left-button-container:disabled * {
   opacity: 0.3;
   cursor: not-allowed !important;
 }
 
-.scroll-right-button:disabled,
-.scroll-right-button:disabled * {
+.scroll-right-button-container:disabled,
+.scroll-right-button-container:disabled * {
   opacity: 0.3;
   cursor: not-allowed !important;
 }
@@ -53,6 +57,8 @@
   scrollbar-width: none;
   /* Firefox hide scrollbar */
   -ms-overflow-style: none;
+  /* IE hide scrollbar */
+  flex-grow: 1;
 }
 
 .available-vouchers-section::-webkit-scrollbar {
@@ -61,7 +67,7 @@
 
 .voucher {
   flex-shrink: 0;
-  width: 288px;
+  width: 320px;
   background: #ffffff;
   border-radius: 24px;
   padding: 30px;
@@ -71,6 +77,20 @@
   transition: all 0.3s ease;
 }
 
+.voucher-image-container {
+  height: 200px;
+  border-radius: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.voucher-image {
+  height: 200px;
+  width: 100%;
+  object-fit: cover;
+  border-radius: 24px;
+}
+
 .voucher:hover {
   transform: scale(1.04);
   box-shadow: 0 4px 20px #b6b6b6cc;
@@ -78,6 +98,19 @@
 
 .voucher-description {
   padding: 10px 0px;
+  height: 180px;
+}
+
+.voucher-location {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.voucher-value-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .redemption-points {
@@ -90,6 +123,7 @@
 .voucher-sponsor,
 .voucher-value {
   font-weight: bold;
+  margin-bottom: 5px;
 }
 
 .claim-now-button {
@@ -100,8 +134,15 @@
   width: 100%;
   padding: 10px 0px;
   transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
 }
 
-.claim-now-button:hover {
+.claim-now-button:hover:not(:disabled) {
   background-color: #8cc63f;
+}
+
+.claim-now-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

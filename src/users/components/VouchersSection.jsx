@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { collection, getDocs, query, orderBy } from "firebase/firestore";
+import { MapPin, Banknote, X } from "lucide-react";
+import { doc, getDoc, collection, query, orderBy, onSnapshot } from "firebase/firestore";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { db } from "../../firebase";
 import { claimVouchers } from "../../utils/claimVouchers";
@@ -12,23 +13,48 @@ const VouchersSection = ({ ecoPoints, claimedVouchers, userId }) => {
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
+  // Local state to update UI immediately after claiming
+  const [localEcoPoints, setLocalEcoPoints] = useState(ecoPoints);
+  const [localClaimedVouchers, setLocalClaimedVouchers] = useState(claimedVouchers);
+
+  // Fetch latest user data on mount to persist claimed vouchers across refresh
   useEffect(() => {
-    const fetchVouchers = async () => {
+    const fetchUserData = async () => {
       try {
-        const q = query(collection(db, "vouchers"), orderBy("sponsor", "asc"));
-        const snapshot = await getDocs(q);
+        const userRef = doc(db, "users", userId);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          const data = userSnap.data();
+          setLocalClaimedVouchers(data.claimedVouchers || []);
+          setLocalEcoPoints(data.ecoPoints || 0);
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+
+    fetchUserData();
+  }, [userId]);
+
+  // Fetch vouchers in real-time
+  useEffect(() => {
+    const q = query(collection(db, "vouchers"), orderBy("sponsor", "asc"));
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
         setVouchers(
           snapshot.docs.map((doc) => ({
             id: doc.id,
             ...doc.data(),
           }))
         );
-      } catch (error) {
+      },
+      (error) => {
         console.error("Error fetching vouchers:", error);
       }
-    };
+    );
 
-    fetchVouchers();
+    return () => unsubscribe(); // cleanup listener
   }, []);
 
   const checkScroll = () => {
@@ -66,8 +92,8 @@ const VouchersSection = ({ ecoPoints, claimedVouchers, userId }) => {
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
           {vouchers.map((voucher) => {
-            const alreadyClaimed = claimedVouchers.includes(voucher.id);
-            const notEnoughPoints = ecoPoints < voucher.ecoPoints;
+            const alreadyClaimed = localClaimedVouchers.includes(voucher.id);
+            const notEnoughPoints = localEcoPoints < voucher.ecoPoints;
             const outOfStock = voucher.remainingQuantity <= 0;
             const disabled = alreadyClaimed || notEnoughPoints || outOfStock;
 
@@ -85,19 +111,31 @@ const VouchersSection = ({ ecoPoints, claimedVouchers, userId }) => {
                   <h2 className="redemption-points">
                     {voucher.ecoPoints} EcoPoints
                   </h2>
-                  <h3 className="voucher-sponsor">{voucher.sponsor}</h3>
-                  <h3 className="voucher-value">
-                    RM{voucher.value} rebate
-                  </h3>
+                  <div className="voucher-location">
+                    <div className="icon-container">
+                      <MapPin size={16} />
+                    </div>
+                    <h3 className="voucher-sponsor">{voucher.sponsor}</h3>
+                  </div>
+                  <div className="voucher-value-container">
+                    <Banknote size={16} />
+                    <h3 className="voucher-value">
+                      RM{voucher.value} rebate
+                    </h3>
+                  </div>
                 </div>
 
                 <button
                   disabled={disabled}
-                  className={`claim-now-button ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                  className={`claim-now-button ${disabled ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
                   onClick={async () => {
                     try {
                       await claimVouchers(userId, voucher);
                       alert("Voucher claimed successfully!");
+                      // Update local state to reflect immediately
+                      setLocalClaimedVouchers([...localClaimedVouchers, voucher.id]);
+                      setLocalEcoPoints(localEcoPoints - voucher.ecoPoints);
                     } catch (error) {
                       alert(error.message);
                     }
