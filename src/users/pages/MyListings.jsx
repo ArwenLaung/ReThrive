@@ -42,6 +42,44 @@ const MyListings = () => {
         
         setItems(userItems);
         setLoading(false);
+
+        // --- AUTO-COMPLETE LOGIC (Added) ---
+        userItems.forEach(async (item) => {
+          try {
+            // Check if item is PENDING (waiting for delivery) but older than 7 days
+            if (
+              item.status === 'pending' && 
+              !item.deliveryStatus && // Ensure we haven't already auto-marked it
+              item.soldAt && 
+              typeof item.soldAt.toDate === 'function'
+            ) {
+              const soldAtDate = item.soldAt.toDate();
+              const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+              const isOverdue = Date.now() - soldAtDate.getTime() > sevenDaysMs;
+
+              if (isOverdue) {
+                console.log(`Auto-marking item ${item.id} as delivered (Overdue)`);
+                await updateDoc(doc(db, "items", item.id), {
+                  deliveryStatus: 'auto_delivered',
+                  deliveryUpdatedAt: serverTimestamp(),
+                  autoCompleted: true,
+                });
+                
+                // Optional: You might also want to update the linked Order here if needed
+                if (item.currentOrderId) {
+                   await updateDoc(doc(db, "orders", item.currentOrderId), {
+                     sellerDeliveryStatus: 'delivered', // Matches your manual logic
+                     sellerDeliveryUpdatedAt: serverTimestamp()
+                   });
+                }
+              }
+            }
+          } catch (err) {
+            console.error("Error auto-marking item as delivered:", err);
+          }
+        });
+        // -----------------------------------
+
       }, (error) => {
         console.error("Error fetching listings:", error);
         setLoading(false);
@@ -210,13 +248,12 @@ const MyListings = () => {
                                       const chatId = `${item.id}_${orderDetail.buyerId}`;
                                       navigate(`/chat-item/${item.id}?chatId=${chatId}`);
                                     } else {
-                                      // Fallback if data is missing
                                       navigate(`/chat-item/${item.id}`);
                                     }
                                   }} 
                                   className="flex items-center gap-2 px-4 py-2 bg-[#f3eefc] text-brand-purple rounded-xl font-bold hover:bg-[#e9dff7]"
                                 >
-                                  <MessageCircle size={18} /> Chat with Buyer
+                                   <MessageCircle size={18} /> Chat with Buyer
                                 </button>
                                 
                                 <button onClick={() => handleMarkDelivered(item)} disabled={updatingId === item.id} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 disabled:opacity-50">
