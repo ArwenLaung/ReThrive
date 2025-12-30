@@ -203,8 +203,20 @@ const MyListings = () => {
                              </div>
 
                              <div className="flex gap-3">
-                                <button onClick={() => navigate(`/chat-item/${item.id}`)} className="flex items-center gap-2 px-4 py-2 bg-[#f3eefc] text-brand-purple rounded-xl font-bold hover:bg-[#e9dff7]">
-                                   <MessageCircle size={18} /> Chat with Buyer
+                                <button 
+                                  onClick={() => {
+                                    if (orderDetail && orderDetail.buyerId) {
+                                      // Create the specific Chat ID: ItemID_BuyerID
+                                      const chatId = `${item.id}_${orderDetail.buyerId}`;
+                                      navigate(`/chat-item/${item.id}?chatId=${chatId}`);
+                                    } else {
+                                      // Fallback if data is missing
+                                      navigate(`/chat-item/${item.id}`);
+                                    }
+                                  }} 
+                                  className="flex items-center gap-2 px-4 py-2 bg-[#f3eefc] text-brand-purple rounded-xl font-bold hover:bg-[#e9dff7]"
+                                >
+                                  <MessageCircle size={18} /> Chat with Buyer
                                 </button>
                                 
                                 <button onClick={() => handleMarkDelivered(item)} disabled={updatingId === item.id} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 disabled:opacity-50">

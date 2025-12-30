@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { LogIn, ChevronDown, LogOut, User, Gift, Package, ShoppingBag, ShoppingCart, MessageCircle, Bell, Heart } from 'lucide-react';
 import { auth, db } from '../../firebase';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, collectionGroup, query, where, onSnapshot } from 'firebase/firestore';
 import { onIdTokenChanged, signOut } from 'firebase/auth';
 import ReThriveLogo from '../assets/logo.svg';
 import DefaultProfilePic from '../assets/default_profile_pic.jpg'; 
@@ -37,6 +37,7 @@ const Header = ({ activeLink }) => {
   const unreadCount = notifItems.length;
 
   // Listen for unread chats for this user (buyer or seller)
+// Listen for unread chats (Marketplace + Donations)
   useEffect(() => {
     if (!user?.uid) {
       setNotifItems([]);
@@ -45,6 +46,7 @@ const Header = ({ activeLink }) => {
 
     const uid = user.uid;
 
+    // --- MARKETPLACE QUERIES (Existing) ---
     const itemChatsBuyerQ = query(
       collection(db, 'itemChats'),
       where('buyerId', '==', uid),
@@ -55,7 +57,6 @@ const Header = ({ activeLink }) => {
       where('sellerId', '==', uid),
       where('unreadForSeller', '==', true)
     );
-
     const ordersBuyerQ = query(
       collection(db, 'orders'),
       where('buyerId', '==', uid),
@@ -67,11 +68,27 @@ const Header = ({ activeLink }) => {
       where('unreadForSeller', '==', true)
     );
 
+    // --- DONATION QUERIES (New - using collectionGroup) ---
+    // This finds 'threads' subcollections anywhere in the DB
+    const donationDonorQ = query(
+      collectionGroup(db, 'threads'),
+      where('donorId', '==', uid),
+      where('unreadForDonor', '==', true)
+    );
+
+    const donationReceiverQ = query(
+      collectionGroup(db, 'threads'),
+      where('receiverId', '==', uid),
+      where('unreadForReceiver', '==', true)
+    );
+
     const buckets = {
       buyerItems: [],
       sellerItems: [],
       buyerOrders: [],
       sellerOrders: [],
+      donorItems: [],      // New bucket
+      receiverItems: []    // New bucket
     };
 
     const recompute = () => {
@@ -80,11 +97,14 @@ const Header = ({ activeLink }) => {
         ...buckets.sellerItems,
         ...buckets.buyerOrders,
         ...buckets.sellerOrders,
+        ...buckets.donorItems,    // Include donations
+        ...buckets.receiverItems  // Include donations
       ];
-      // Sort by createdAt desc if available
       merged.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
       setNotifItems(merged);
     };
+
+    // --- LISTENERS ---
 
     const unsubItemBuyer = onSnapshot(itemChatsBuyerQ, (snap) => {
       buckets.buyerItems = snap.docs.map((d) => {
@@ -96,9 +116,7 @@ const Header = ({ activeLink }) => {
           title: data.itemTitle || 'Marketplace item',
           subtitle: data.sellerName || 'Seller',
           route: `/chat-item/${data.itemId}`,
-          createdAt: data.lastMessageAt?.toMillis
-            ? data.lastMessageAt.toMillis()
-            : 0,
+          createdAt: data.lastMessageAt?.toMillis ? data.lastMessageAt.toMillis() : 0,
         };
       });
       recompute();
@@ -114,16 +132,13 @@ const Header = ({ activeLink }) => {
           title: data.itemTitle || 'Marketplace item',
           subtitle: data.buyerName || 'Buyer',
           route: `/chat-item/${data.itemId}`,
-          createdAt: data.lastMessageAt?.toMillis
-            ? data.lastMessageAt.toMillis()
-            : 0,
+          createdAt: data.lastMessageAt?.toMillis ? data.lastMessageAt.toMillis() : 0,
         };
       });
       recompute();
     });
 
     const unsubOrdersBuyer = onSnapshot(ordersBuyerQ, (snap) => {
-      // Map order notifications to the same item-based chat thread
       buckets.buyerOrders = snap.docs.map((d) => {
         const data = d.data();
         const chatId = `${data.itemId}_${data.buyerId}`;
@@ -133,39 +148,62 @@ const Header = ({ activeLink }) => {
           role: 'buyer',
           title: data.itemTitle || 'Order',
           subtitle: data.sellerName || 'Seller',
-          route: `/chat-item/${data.itemId}?chatId=${encodeURIComponent(
-            chatId
-          )}`,
-          createdAt: data.lastMessageAt?.toMillis
-            ? data.lastMessageAt.toMillis()
-            : 0,
+          route: `/chat-item/${data.itemId}?chatId=${encodeURIComponent(chatId)}`,
+          createdAt: data.lastMessageAt?.toMillis ? data.lastMessageAt.toMillis() : 0,
         };
       });
       recompute();
     });
 
     const unsubOrdersSeller = onSnapshot(ordersSellerQ, (snap) => {
-      // Seller order notifications also point to the same item chat thread
-      buckets.sellerOrders = snap.docs
-        .map((d) => {
-          const data = d.data();
-          if (!data.buyerId) return null;
-          const chatId = `${data.itemId}_${data.buyerId}`;
-          return {
-            id: chatId,
-            type: 'itemChat',
-            role: 'seller',
-            title: data.itemTitle || 'Order',
-            subtitle: data.buyerName || 'Buyer',
-            route: `/chat-item/${data.itemId}?chatId=${encodeURIComponent(
-              chatId
-            )}`,
-            createdAt: data.lastMessageAt?.toMillis
-              ? data.lastMessageAt.toMillis()
-              : 0,
-          };
-        })
-        .filter(Boolean);
+      buckets.sellerOrders = snap.docs.map((d) => {
+        const data = d.data();
+        // Since we are only looking at 'orders', we stick to marketplace logic here
+        return {
+          id: `${data.itemId}_${data.buyerId}`,
+          type: 'itemChat',
+          role: 'seller',
+          title: data.itemTitle || 'Order',
+          subtitle: data.buyerName || 'Buyer',
+          route: `/chat-item/${data.itemId}?chatId=${encodeURIComponent(`${data.itemId}_${data.buyerId}`)}`,
+          createdAt: data.lastMessageAt?.toMillis ? data.lastMessageAt.toMillis() : 0,
+        };
+      });
+      recompute();
+    });
+
+    // --- NEW DONATION LISTENERS ---
+    
+    const unsubDonationDonor = onSnapshot(donationDonorQ, (snap) => {
+      buckets.donorItems = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          type: 'donationChat',
+          role: 'donor',
+          title: data.donationTitle || 'Donation',
+          subtitle: data.receiverName || 'Receiver',
+          // Important: Link to the specific donation page to open chat
+          route: `/chat-donation/${data.donationId}`,
+          createdAt: data.lastMessageAt?.toMillis ? data.lastMessageAt.toMillis() : 0,
+        };
+      });
+      recompute();
+    });
+
+    const unsubDonationReceiver = onSnapshot(donationReceiverQ, (snap) => {
+      buckets.receiverItems = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          type: 'donationChat',
+          role: 'receiver',
+          title: data.donationTitle || 'Donation',
+          subtitle: data.donorName || 'Donor',
+          route: `/chat-donation/${data.donationId}`,
+          createdAt: data.lastMessageAt?.toMillis ? data.lastMessageAt.toMillis() : 0,
+        };
+      });
       recompute();
     });
 
@@ -174,6 +212,8 @@ const Header = ({ activeLink }) => {
       unsubItemSeller();
       unsubOrdersBuyer();
       unsubOrdersSeller();
+      unsubDonationDonor();
+      unsubDonationReceiver();
     };
   }, [user]);
 

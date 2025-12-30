@@ -171,11 +171,8 @@ const AppContent = ({ aboutRef, eventsRef, activeLink, setActiveLink, currentUse
         <Route path="/editprofile" element={isAdmin ? <Navigate to="/itemsApproval" /> : <EditProfile />} />
         <Route path="/mylistings" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyListings />} />
         <Route path="/listing/:id" element={isAdmin ? <Navigate to="/itemsApproval" /> : <ListingDetail />} />
-<<<<<<< HEAD
         <Route path="/purchasehistory" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyPurchases />} />
-=======
         <Route path="/mypurchases" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyPurchases />} />
->>>>>>> sy/bzx
         <Route path="/solditems" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MySoldItems />} />
         <Route path="/mydonations" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyDonations />} />
         <Route path="/mydonation/:id" element={isAdmin ? <Navigate to="/itemsApproval" /> : <MyDonationDetail />} />

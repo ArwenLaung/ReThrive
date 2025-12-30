@@ -5,6 +5,8 @@ import { auth, db } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import {
   doc,
+  setDoc,
+  getDocs,
   getDoc,
   collection,
   query,
@@ -108,12 +110,36 @@ const DonationChat = () => {
     setupThreading();
   }, [donation, currentUser]);
 
-  // 4. Subscribe to Messages
+// 4. Subscribe to Messages & Clear Unread Flags
   useEffect(() => {
-    if (!donationId || !activeThreadId) {
+    if (!donationId || !activeThreadId || !currentUser) { // Added currentUser check
       setMessages([]);
       return;
     }
+
+    // --- NEW LOGIC: Clear "Unread" flag when you open the chat ---
+    const clearUnread = async () => {
+      try {
+        const threadRef = doc(db, 'donations', donationId, 'threads', activeThreadId);
+        const docSnap = await getDoc(threadRef);
+        
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          const isDonor = data.donorId === currentUser.uid;
+          
+          // If I am the donor, I clear my unread flag. If receiver, clear mine.
+          if (isDonor && data.unreadForDonor) {
+            await setDoc(threadRef, { unreadForDonor: false }, { merge: true });
+          } else if (!isDonor && data.unreadForReceiver) {
+            await setDoc(threadRef, { unreadForReceiver: false }, { merge: true });
+          }
+        }
+      } catch (error) {
+        console.error("Error clearing unread status:", error);
+      }
+    };
+    clearUnread();
+    // -----------------------------------------------------------
 
     const messagesRef = collection(db, 'donations', donationId, 'threads', activeThreadId, 'messages');
     const q = query(messagesRef, orderBy('createdAt', 'asc'));
@@ -131,8 +157,9 @@ const DonationChat = () => {
     });
 
     return () => unsubscribe();
-  }, [donationId, activeThreadId]);
+  }, [donationId, activeThreadId, currentUser]); // Added currentUser to dependencies
 
+  // Updated Send Message Function
   const sendMessage = async () => {
     if (!newMessage.trim() || !currentUser || !activeThreadId) return;
 
@@ -141,6 +168,7 @@ const DonationChat = () => {
       const messagesRef = collection(db, 'donations', donationId, 'threads', activeThreadId, 'messages');
       const messageText = newMessage.trim();
 
+      // 1. Add the message
       await addDoc(messagesRef, {
         text: messageText,
         senderId: currentUser.uid,
@@ -148,9 +176,16 @@ const DonationChat = () => {
         createdAt: serverTimestamp(),
       });
 
+      // 2. Determine who is sending (Donor or Receiver?)
+      const isDonorSender = donation.donorId === currentUser.uid;
+
+      // 3. Update Thread with Last Message AND Unread Flags
       await setDoc(doc(db, 'donations', donationId, 'threads', activeThreadId), {
         lastMessage: messageText,
         lastMessageAt: serverTimestamp(),
+        // If Donor sent it, it is Unread for Receiver (and vice versa)
+        unreadForReceiver: isDonorSender, 
+        unreadForDonor: !isDonorSender
       }, { merge: true });
 
       setNewMessage('');
