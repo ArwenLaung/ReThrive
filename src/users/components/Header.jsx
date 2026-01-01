@@ -36,8 +36,7 @@ const Header = ({ activeLink }) => {
 
   const unreadCount = notifItems.length;
 
-  // Listen for unread chats for this user (buyer or seller)
-// Listen for unread chats (Marketplace + Donations)
+ 
   useEffect(() => {
     if (!user?.uid) {
       setNotifItems([]);
@@ -68,7 +67,7 @@ const Header = ({ activeLink }) => {
       where('unreadForSeller', '==', true)
     );
     
-    // --- ORDER NOTIFICATION QUERIES (New) ---
+    // --- ORDER NOTIFICATION QUERIES  ---
     const orderNotificationsBuyerQ = query(
       collection(db, 'orders'),
       where('buyerId', '==', uid),
@@ -80,8 +79,8 @@ const Header = ({ activeLink }) => {
       where('notificationForSeller', '==', true)
     );
 
-    // --- DONATION QUERIES (New - using collectionGroup) ---
-    // This finds 'threads' subcollections anywhere in the DB
+    // --- DONATION QUERIES ) ---
+
     const donationDonorQ = query(
       collectionGroup(db, 'threads'),
       where('donorId', '==', uid),
@@ -94,7 +93,7 @@ const Header = ({ activeLink }) => {
       where('unreadForReceiver', '==', true)
     );
     
-    // --- DONATION NOTIFICATION QUERIES (New) ---
+    // --- DONATION NOTIFICATION QUERIES ---
     const donationNotificationsDonorQ = query(
       collection(db, 'donations'),
       where('donorId', '==', uid),
@@ -111,12 +110,12 @@ const Header = ({ activeLink }) => {
       sellerItems: [],
       buyerOrders: [],
       sellerOrders: [],
-      donorItems: [],      // New bucket
-      receiverItems: [],   // New bucket
-      orderNotifsBuyer: [], // Order notifications for buyers
-      orderNotifsSeller: [], // Order notifications for sellers
-      donationNotifsDonor: [], // Donation notifications for donors
-      donationNotifsReceiver: [] // Donation notifications for receivers
+      donorItems: [],      
+      receiverItems: [],   
+      orderNotifsBuyer: [], 
+      orderNotifsSeller: [], 
+      donationNotifsDonor: [], 
+      donationNotifsReceiver: [] 
     };
 
     const recompute = () => {
@@ -125,12 +124,12 @@ const Header = ({ activeLink }) => {
         ...buckets.sellerItems,
         ...buckets.buyerOrders,
         ...buckets.sellerOrders,
-        ...buckets.donorItems,    // Include donations
-        ...buckets.receiverItems,  // Include donations
-        ...buckets.orderNotifsBuyer, // Order notifications
-        ...buckets.orderNotifsSeller, // Order notifications
-        ...buckets.donationNotifsDonor, // Donation notifications
-        ...buckets.donationNotifsReceiver // Donation notifications
+        ...buckets.donorItems,    
+        ...buckets.receiverItems,  
+        ...buckets.orderNotifsBuyer, 
+        ...buckets.orderNotifsSeller, 
+        ...buckets.donationNotifsDonor, 
+        ...buckets.donationNotifsReceiver 
       ];
       merged.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
       setNotifItems(merged);
@@ -146,7 +145,7 @@ const Header = ({ activeLink }) => {
           type: 'itemChat',
           role: 'buyer',
           title: data.itemTitle || 'Marketplace item',
-          subtitle: data.sellerName || 'Seller',
+          subtitle: `Message from ${data.sellerName || 'Seller'}`,
           route: `/chat-item/${data.itemId}`,
           createdAt: data.lastMessageAt?.toMillis ? data.lastMessageAt.toMillis() : 0,
         };
@@ -162,7 +161,7 @@ const Header = ({ activeLink }) => {
           type: 'itemChat',
           role: 'seller',
           title: data.itemTitle || 'Marketplace item',
-          subtitle: data.buyerName || 'Buyer',
+          subtitle: `Message from ${data.buyerName || 'Buyer'}`,
           route: `/chat-item/${data.itemId}`,
           createdAt: data.lastMessageAt?.toMillis ? data.lastMessageAt.toMillis() : 0,
         };
@@ -179,7 +178,7 @@ const Header = ({ activeLink }) => {
           type: 'itemChat',
           role: 'buyer',
           title: data.itemTitle || 'Order',
-          subtitle: data.sellerName || 'Seller',
+          subtitle: `Message from ${data.sellerName || 'Seller'}`,
           route: `/chat-item/${data.itemId}?chatId=${encodeURIComponent(chatId)}`,
           createdAt: data.lastMessageAt?.toMillis ? data.lastMessageAt.toMillis() : 0,
         };
@@ -190,13 +189,12 @@ const Header = ({ activeLink }) => {
     const unsubOrdersSeller = onSnapshot(ordersSellerQ, (snap) => {
       buckets.sellerOrders = snap.docs.map((d) => {
         const data = d.data();
-        // Since we are only looking at 'orders', we stick to marketplace logic here
         return {
           id: `${data.itemId}_${data.buyerId}`,
           type: 'itemChat',
           role: 'seller',
           title: data.itemTitle || 'Order',
-          subtitle: data.buyerName || 'Buyer',
+          subtitle: `Message from ${data.buyerName || 'Buyer'}`,
           route: `/chat-item/${data.itemId}?chatId=${encodeURIComponent(`${data.itemId}_${data.buyerId}`)}`,
           createdAt: data.lastMessageAt?.toMillis ? data.lastMessageAt.toMillis() : 0,
         };
@@ -204,7 +202,7 @@ const Header = ({ activeLink }) => {
       recompute();
     });
 
-    // --- NEW DONATION LISTENERS ---
+
     
     const unsubDonationDonor = onSnapshot(donationDonorQ, (snap) => {
       buckets.donorItems = snap.docs.map((d) => {
@@ -213,9 +211,8 @@ const Header = ({ activeLink }) => {
           id: d.id,
           type: 'donationChat',
           role: 'donor',
-          title: data.donationTitle || 'Donation',
-          subtitle: data.receiverName || 'Receiver',
-          // Important: Link to the specific donation page to open chat
+          title: `${data.donationTitle || 'Donation Item'}`,
+         subtitle: `Message from ${data.receiverName || 'Receiver'}`,
           route: `/chat-donation/${data.donationId}`,
           createdAt: data.lastMessageAt?.toMillis ? data.lastMessageAt.toMillis() : 0,
         };
@@ -231,7 +228,7 @@ const Header = ({ activeLink }) => {
           type: 'donationChat',
           role: 'receiver',
           title: data.donationTitle || 'Donation',
-          subtitle: data.donorName || 'Donor',
+          subtitle: `Message from ${data.donorName || 'Donor'}`,
           route: `/chat-donation/${data.donationId}`,
           createdAt: data.lastMessageAt?.toMillis ? data.lastMessageAt.toMillis() : 0,
         };
@@ -247,9 +244,9 @@ const Header = ({ activeLink }) => {
           id: d.id,
           type: 'orderNotification',
           role: 'buyer',
-          title: data.itemTitle || 'Order Update',
-          subtitle: data.sellerName || 'Seller',
-          route: '/mypurchases', // Navigate to pending purchases page
+          title: `${data.itemTitle || 'Item'}`,
+          subtitle: `Update on your order from ${data.sellerName || 'Seller'}`,
+          route: '/mypurchases',
           createdAt: data.sellerDeliveryUpdatedAt?.toMillis ? data.sellerDeliveryUpdatedAt.toMillis() : (data.createdAt?.toMillis ? data.createdAt.toMillis() : Date.now()),
         };
       });
@@ -263,9 +260,9 @@ const Header = ({ activeLink }) => {
           id: d.id,
           type: 'orderNotification',
           role: 'seller',
-          title: data.itemTitle || 'New Order',
-          subtitle: data.buyerName || 'Buyer',
-          route: '/mylistings', // Navigate to pending listings page
+          title: `${data.itemTitle || 'Marketplace Item'}`,
+          subtitle: `New order from ${data.buyerName || 'a buyer'}`,
+          route: '/mylistings', 
           createdAt: data.deliveryUpdatedAt?.toMillis ? data.deliveryUpdatedAt.toMillis() : (data.createdAt?.toMillis ? data.createdAt.toMillis() : Date.now()),
         };
       });
@@ -281,8 +278,8 @@ const Header = ({ activeLink }) => {
           type: 'donationNotification',
           role: 'donor',
           title: data.title || 'Donation Update',
-          subtitle: data.receiverName || 'Receiver',
-          route: '/mydonateditems', // Navigate to pending donations page
+          subtitle: `Item claimed by ${data.receiverName || 'someone'}!`,
+          route: '/mydonateditems', 
           createdAt: data.receiverStatusUpdatedAt?.toMillis ? data.receiverStatusUpdatedAt.toMillis() : (data.claimedAt?.toMillis ? data.claimedAt.toMillis() : (data.createdAt?.toMillis ? data.createdAt.toMillis() : Date.now())),
         };
       });
@@ -298,7 +295,7 @@ const Header = ({ activeLink }) => {
           role: 'receiver',
           title: data.title || 'Donation Update',
           subtitle: data.donorName || 'Donor',
-          route: '/myclaimeditems', // Navigate to pending claimed items page
+          route: '/myclaimeditems', 
           createdAt: data.donorDeliveryUpdatedAt?.toMillis ? data.donorDeliveryUpdatedAt.toMillis() : (data.createdAt?.toMillis ? data.createdAt.toMillis() : Date.now()),
         };
       });

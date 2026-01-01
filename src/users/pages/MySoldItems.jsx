@@ -179,12 +179,11 @@ const MySoldItems = () => {
                         )}
                       </div>
 
-                      {/* Action Buttons */}
+{/* Action Buttons */}
                       <div className="flex flex-wrap gap-3 pt-2">
                         <button
                           onClick={() => {
                             if (!order.itemId || !order.buyerId) return;
-                            // Open the dedicated item chat thread for this buyer + item
                             const chatId = `${order.itemId}_${order.buyerId}`;
                             navigate(`/chat-item/${order.itemId}?chatId=${encodeURIComponent(chatId)}`);
                           }}
@@ -194,7 +193,7 @@ const MySoldItems = () => {
                           Chat with Buyer
                         </button>
                         
-                        {/* Status chips */}
+                        {/* Status chips - Only show if NOT delivered */}
                         {!order.sellerDeliveryStatus && (
                           <>
                             {order.status === 'pending' && (
@@ -218,33 +217,32 @@ const MySoldItems = () => {
                           </>
                         )}
 
-                        {/* Seller delivery status controls */}
-                        {!order.sellerDeliveryStatus && (
-                          <button
-                            onClick={() => handleMarkDelivered(order.id)}
-                            disabled={updatingDelivery === order.id}
-                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {updatingDelivery === order.id ? (
-                              <>
-                                <Loader2 className="animate-spin" size={18} />
-                                Updating...
-                              </>
-                            ) : (
-                              <>
-                                <CheckCircle size={18} />
-                                Mark Delivered
-                              </>
-                            )}
-                          </button>
-                        )}
-
-                        {order.sellerDeliveryStatus === 'delivered' && (
-                          <div className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-xl font-semibold">
-                            <CheckCircle size={18} />
-                            Marked as delivered
-                          </div>
-                        )}
+         {/* Seller delivery status controls */}
+{!order.sellerDeliveryStatus ? (
+  <button
+    onClick={() => handleMarkDelivered(order.id)}
+    disabled={updatingDelivery === order.id}
+    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+  >
+    {updatingDelivery === order.id ? (
+      <>
+        <Loader2 className="animate-spin" size={18} />
+        Updating...
+      </>
+    ) : (
+      <>
+        <CheckCircle size={18} />
+        Mark Delivered
+      </>
+    )}
+  </button>
+) : (
+  /* This is the BLUE badge that appears after clicking */
+  <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl font-semibold">
+    <CheckCircle size={18} />
+    Item Delivered
+  </div>
+)}
 
                         {order.itemId && (
                           <Link
