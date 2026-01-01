@@ -261,6 +261,9 @@ const MyListings = () => {
                                 </button>
                              </div>
                           </div>
+                          <p className="text-xs text-gray-500 mt-3 p-2 bg-gray-50 rounded-lg">
+                            After the buyer confirms receipt, you must confirm the order within 7 days, or it will be automatically completed.
+                          </p>
 
                         </div>
                       </div>

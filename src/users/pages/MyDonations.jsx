@@ -147,6 +147,9 @@ const MyDonations = () => {
                              View Details
                            </Link>
                         </div>
+                        <p className="text-xs text-gray-500 mt-2 p-2 bg-[#7db038]/5 rounded-lg">
+                          Please confirm delivery within 7 days, or this donation will be automatically marked as completed.
+                        </p>
                       </div>
                     </div>
                   </div>

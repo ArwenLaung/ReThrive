@@ -305,6 +305,9 @@ const MyPurchases = () => {
                               )}
                            </div>
                         </div>
+                        <p className="text-xs text-gray-500 mt-3 p-2 bg-gray-50 rounded-lg">
+                          After the seller confirms delivery, you must confirm receipt within 7 days, or the order will be automatically completed.
+                        </p>
                       </div>
                     </div>
                   </div>
