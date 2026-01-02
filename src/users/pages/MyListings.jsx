@@ -15,6 +15,7 @@ const MyListings = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [updatingId, setUpdatingId] = useState(null);
   const [pendingOrdersDetails, setPendingOrdersDetails] = useState({});
+  const [confirmDeliveryItem, setConfirmDeliveryItem] = useState(null);
 
   // Check Auth & Fetch Data
   useEffect(() => {
@@ -111,11 +112,18 @@ const MyListings = () => {
   }, [items]);
 
   // Seller marks item as delivered
-  const handleMarkDelivered = async (item) => {
+  const handleRequestMarkDelivered = (item) => {
     if (!item.currentOrderId) {
         alert("Error: Order link missing. Cannot update status.");
         return;
     }
+    setConfirmDeliveryItem(item);
+  };
+
+  const confirmMarkDelivered = async () => {
+    if (!confirmDeliveryItem) return;
+    const item = confirmDeliveryItem; // Capture item
+    setConfirmDeliveryItem(null); // Close modal immediately
     setUpdatingId(item.id);
 
     try {
@@ -153,7 +161,7 @@ const MyListings = () => {
 
       await updateDoc(orderRef, updates);
 
-      // --- [NEW] Update Local State to show "Waiting for Buyer" immediately ---
+      // Update Local State to show "Waiting for Buyer" immediately
       setPendingOrdersDetails(prev => ({
         ...prev,
         [item.id]: {
@@ -201,7 +209,6 @@ const MyListings = () => {
           {pendingItems.length === 0 ? <p className="text-gray-500 italic bg-white p-6 rounded-2xl">No pending orders.</p> : (
             <div className="space-y-6">
               {pendingItems.map(item => {
-                // Get the extra details fetched in useEffect
                 const orderDetail = pendingOrdersDetails[item.id];
 
                 return (
@@ -262,14 +269,14 @@ const MyListings = () => {
                                    <MessageCircle size={18} /> Chat with Buyer
                                 </button>
                                 
-                                {/* --- CONDITIONAL BUTTON / BADGE --- */}
                                 {orderDetail?.sellerDeliveryStatus === 'delivered' ? (
                                   <div className="flex items-center gap-2 px-4 py-2 bg-yellow-50 text-yellow-700 rounded-xl font-bold border border-yellow-200">
                                      <Clock size={18} /> Waiting for Buyer
                                   </div>
                                 ) : (
                                   <button 
-                                    onClick={() => handleMarkDelivered(item)} 
+                                    /* --- [MODIFIED] Use the wrapper function to trigger modal --- */
+                                    onClick={() => handleRequestMarkDelivered(item)} 
                                     disabled={updatingId === item.id} 
                                     className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 disabled:opacity-50"
                                   >
@@ -357,6 +364,17 @@ const MyListings = () => {
         cancelText="Cancel"
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleConfirmDelete}
+      />
+      
+      {/* Confirmation Modal for Delivery --- */}
+      <ConfirmModal
+        open={!!confirmDeliveryItem}
+        title="Confirm Delivery?"
+        message="By clicking yes, you confirm that you have handed the item to the buyer."
+        confirmText="Yes, Delivered"
+        cancelText="Cancel"
+        onClose={() => setConfirmDeliveryItem(null)}
+        onConfirm={confirmMarkDelivered}
       />
     </div>
   );

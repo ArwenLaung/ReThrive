@@ -279,7 +279,7 @@ const Header = ({ activeLink }) => {
           role: 'donor',
           title: data.title || 'Donation Update',
           subtitle: `Item claimed by ${data.receiverName || 'someone'}!`,
-          route: '/mydonateditems', 
+          route: '/mydonations', 
           createdAt: data.receiverStatusUpdatedAt?.toMillis ? data.receiverStatusUpdatedAt.toMillis() : (data.claimedAt?.toMillis ? data.claimedAt.toMillis() : (data.createdAt?.toMillis ? data.createdAt.toMillis() : Date.now())),
         };
       });

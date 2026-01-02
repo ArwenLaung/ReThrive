@@ -86,7 +86,6 @@ const MyDonations = () => {
         if (transactionComplete) {
           alert("Transaction complete! You have earned 10 EcoPoints.");
         } else {
-          alert("Marked as delivered! Waiting for receiver to confirm.");
         }
 
       } catch (error) {
@@ -97,11 +96,10 @@ const MyDonations = () => {
       }
     };
 
-  // --- FILTERING ---
   // Active: No receiver yet
   const activeItems = items.filter(item => !item.receiverId);
-  // Pending Claims: Has receiver, but YOU haven't marked delivered yet
-  const pendingClaims = items.filter(item => item.receiverId && item.donorDeliveryStatus !== 'delivered');
+  // Pending Claims: Has receiver AND is not fully completed yet
+  const pendingClaims = items.filter(item => item.receiverId && item.status !== 'completed');
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-white">
@@ -110,7 +108,7 @@ const MyDonations = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] pb-32 pt-24 px-6">
+    <div className="min-h-screen bg-[#9af71e]/5 pb-32 pt-24 px-6">
       <div className="max-w-5xl mx-auto mb-10">
         <h1 className="text-3xl font-black text-[#364f15]">My Donations</h1>
       </div>
@@ -175,14 +173,21 @@ const MyDonations = () => {
                                  <MessageCircle size={18} /> Chat with Receiver
                               </button>
 
-                              <button 
-                                onClick={() => setConfirmDeliveryItem(item)}
-                                disabled={updatingId === item.id}
-                                className="flex items-center gap-2 px-4 py-2 bg-[#7db038] text-white rounded-xl font-bold hover:bg-[#4a6b1d] transition-colors disabled:opacity-50"
-                              >
-                                {updatingId === item.id ? <Loader2 className="animate-spin" size={18}/> : <CheckCircle size={18} />} 
-                                Mark Delivered
-                              </button>
+                              {/* Button Logic similar to MyListings */}
+                              {item.donorDeliveryStatus === 'delivered' ? (
+                                <div className="flex items-center gap-2 px-4 py-2 bg-yellow-50 text-yellow-700 rounded-xl font-bold border border-yellow-200">
+                                   <Clock size={18} /> Waiting for Receiver
+                                </div>
+                              ) : (
+                                <button 
+                                  onClick={() => setConfirmDeliveryItem(item)}
+                                  disabled={updatingId === item.id}
+                                  className="flex items-center gap-2 px-4 py-2 bg-[#7db038] text-white rounded-xl font-bold hover:bg-[#4a6b1d] transition-colors disabled:opacity-50"
+                                >
+                                  {updatingId === item.id ? <Loader2 className="animate-spin" size={18}/> : <CheckCircle size={18} />} 
+                                  Mark Delivered
+                                </button>
+                              )}
                            </div>
                         </div>
                         
@@ -198,7 +203,7 @@ const MyDonations = () => {
           )}
         </div>
 
-        {/* --- SECTION 2: ACTIVE LISTINGS --- */}
+        {/* SECTION 2: ACTIVE LISTINGS */}
         <div>
           <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
             <Package className="text-green-600" /> Active Listings
