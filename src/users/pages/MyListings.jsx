@@ -43,13 +43,12 @@ const MyListings = () => {
         setItems(userItems);
         setLoading(false);
 
-        // --- AUTO-COMPLETE LOGIC (Added) ---
+        // --- AUTO-COMPLETE LOGIC ---
         userItems.forEach(async (item) => {
           try {
-            // Check if item is PENDING (waiting for delivery) but older than 7 days
             if (
               item.status === 'pending' && 
-              !item.deliveryStatus && // Ensure we haven't already auto-marked it
+              !item.deliveryStatus && 
               item.soldAt && 
               typeof item.soldAt.toDate === 'function'
             ) {
@@ -65,10 +64,9 @@ const MyListings = () => {
                   autoCompleted: true,
                 });
                 
-                // Optional: You might also want to update the linked Order here if needed
                 if (item.currentOrderId) {
                    await updateDoc(doc(db, "orders", item.currentOrderId), {
-                     sellerDeliveryStatus: 'delivered', // Matches your manual logic
+                     sellerDeliveryStatus: 'delivered', 
                      sellerDeliveryUpdatedAt: serverTimestamp()
                    });
                 }
@@ -78,8 +76,6 @@ const MyListings = () => {
             console.error("Error auto-marking item as delivered:", err);
           }
         });
-        // -----------------------------------
-
       }, (error) => {
         console.error("Error fetching listings:", error);
         setLoading(false);
@@ -98,7 +94,6 @@ const MyListings = () => {
       const detailsMap = {};
       await Promise.all(pendingItems.map(async (item) => {
         try {
-          // Fetch the Order Document linked to this item
           const orderSnap = await getDoc(doc(db, "orders", item.currentOrderId));
           if (orderSnap.exists()) {
             detailsMap[item.id] = orderSnap.data();
@@ -134,29 +129,38 @@ const MyListings = () => {
       const updates = { 
         sellerDeliveryStatus: 'delivered', 
         sellerDeliveryUpdatedAt: serverTimestamp(),
-        notificationForSeller: false, // Clear seller notification
+        notificationForSeller: false, 
       };
       
       // Check has Buyer already received? If yes -> finalize transaction
       if (orderData.deliveryStatus === 'received') {
         updates.status = 'completed';
         updates.completedAt = serverTimestamp();
-        updates.notificationForBuyer = false; // Clear buyer notification
+        updates.notificationForBuyer = false; 
         
         // Finalize Item
         await updateDoc(doc(db, "items", item.id), { status: 'sold' });
         
-        // Award Points (Both parties)
+        // Award Points
         await addEcoPoints(orderData.buyerId, 10);
         if (orderData.sellerId) await addEcoPoints(orderData.sellerId, 10);
         
         alert("Transaction Completed! 10 EcoPoints awarded.");
       } else {
-        updates.notificationForBuyer = true; // Notify buyer that seller marked as delivered
-        alert("Marked as Delivered. Waiting for Buyer confirmation.");
+        updates.notificationForBuyer = true; 
+        // No alert needed if UI updates immediately
       }
 
       await updateDoc(orderRef, updates);
+
+      // --- [NEW] Update Local State to show "Waiting for Buyer" immediately ---
+      setPendingOrdersDetails(prev => ({
+        ...prev,
+        [item.id]: {
+          ...prev[item.id],
+          sellerDeliveryStatus: 'delivered'
+        }
+      }));
 
     } catch (error) {
       console.error("Error updating:", error);
@@ -212,7 +216,6 @@ const MyListings = () => {
                         </div>
                         
                         <div className="flex-1 space-y-4">
-                          {/* Title + Order ID Section */}
                           <div>
                             <h3 className="text-xl font-bold text-gray-900">{item.title}</h3>
                             <p className="text-sm text-gray-500">
@@ -220,7 +223,6 @@ const MyListings = () => {
                             </p>
                           </div>
 
-                          {/* Pickup Details Block */}
                           {orderDetail && (
                             <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                                 <div className="flex items-start gap-2">
@@ -238,7 +240,6 @@ const MyListings = () => {
                             </div>
                           )}
 
-                          {/* Footer with Buyer Info and Buttons aligned right */}
                           <div className="flex flex-wrap items-center justify-between gap-4">
                              <div className="text-sm">
                                 <span className="text-gray-500">Buyer:</span> <span className="font-semibold">{orderDetail?.buyerName || "Loading..."}</span>
@@ -250,7 +251,6 @@ const MyListings = () => {
                                 <button 
                                   onClick={() => {
                                     if (orderDetail && orderDetail.buyerId) {
-                                      // Create the specific Chat ID: ItemID_BuyerID
                                       const chatId = `${item.id}_${orderDetail.buyerId}`;
                                       navigate(`/chat-item/${item.id}?chatId=${chatId}`);
                                     } else {
@@ -262,9 +262,20 @@ const MyListings = () => {
                                    <MessageCircle size={18} /> Chat with Buyer
                                 </button>
                                 
-                                <button onClick={() => handleMarkDelivered(item)} disabled={updatingId === item.id} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 disabled:opacity-50">
-                                  {updatingId === item.id ? <Loader2 className="animate-spin" size={18}/> : <CheckCircle size={18} />} Mark Delivered
-                                </button>
+                                {/* --- CONDITIONAL BUTTON / BADGE --- */}
+                                {orderDetail?.sellerDeliveryStatus === 'delivered' ? (
+                                  <div className="flex items-center gap-2 px-4 py-2 bg-yellow-50 text-yellow-700 rounded-xl font-bold border border-yellow-200">
+                                     <Clock size={18} /> Waiting for Buyer
+                                  </div>
+                                ) : (
+                                  <button 
+                                    onClick={() => handleMarkDelivered(item)} 
+                                    disabled={updatingId === item.id} 
+                                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 disabled:opacity-50"
+                                  >
+                                    {updatingId === item.id ? <Loader2 className="animate-spin" size={18}/> : <CheckCircle size={18} />} Mark Delivered
+                                  </button>
+                                )}
                              </div>
                           </div>
                           <p className="text-xs text-gray-500 mt-3 p-2 bg-gray-50 rounded-lg">
@@ -295,13 +306,11 @@ const MyListings = () => {
             <div className="space-y-4">
               {activeItems.map(item => (
                 <div key={item.id} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col md:flex-row gap-6 items-center hover:shadow-md transition-shadow">
-                  {/* Image */}
                   <div className="w-full md:w-24 h-24 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 relative">
                     <img src={item.image} alt={item.title} className="w-full h-full object-cover"/>
                     <div className="absolute top-1 left-1 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded">ACTIVE</div>
                   </div>
 
-                  {/* Details */}
                   <div className="flex-1 w-full text-center md:text-left">
                     <h3 className="font-bold text-gray-900">{item.title}</h3>
                     <p className="text-brand-purple font-bold">RM {item.price}</p>
@@ -310,7 +319,6 @@ const MyListings = () => {
                     </div>
                   </div>
 
-                  {/* Actions for Active */}
                   <div className="flex flex-wrap gap-3 justify-center md:justify-end">
                     <button 
                       onClick={() => navigate(`/chat-item/${item.id}`)}
@@ -320,7 +328,7 @@ const MyListings = () => {
                     </button>
 
                     <Link 
-                      to={`/listing/${item.id}`} // Takes you to Update Listing Page
+                      to={`/listing/${item.id}`} 
                       className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-sm font-bold hover:bg-blue-100 transition-all"
                     >
                       <Edit size={16}/> Edit

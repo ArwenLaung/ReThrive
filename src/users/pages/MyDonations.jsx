@@ -23,6 +23,33 @@ const MyDonations = () => {
         userItems.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
         setItems(userItems);
         setLoading(false);
+        userItems.forEach(async (item) => {
+          try {
+            // Check if item is CLAIMED (has receiver) but NOT DELIVERED yet
+            if (
+              item.receiverId && 
+              item.donorDeliveryStatus !== 'delivered' && 
+              item.claimedAt && 
+              typeof item.claimedAt.toDate === 'function'
+            ) {
+              const claimedDate = item.claimedAt.toDate();
+              const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+              const isOverdue = Date.now() - claimedDate.getTime() > sevenDaysMs;
+
+              if (isOverdue) {
+                console.log(`Auto-completing donation ${item.id} (Overdue)`);
+                // Mark as delivered so it moves to History
+                await updateDoc(doc(db, "donations", item.id), {
+                  donorDeliveryStatus: 'delivered',
+                  donorDeliveryUpdatedAt: serverTimestamp(),
+                  autoCompleted: true,
+                });
+              }
+            }
+          } catch (err) {
+            console.error("Error auto-completing donation:", err);
+          }
+        });
       });
       return () => unsubscribeSnapshot();
     });
