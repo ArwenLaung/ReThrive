@@ -133,8 +133,9 @@ const ListingDetail = () => {
           }
 
         } else {
+          // Only redirect if explicitly not found
           setError("Item not found");
-          setTimeout(() => navigate('/mylistings'), 2000);
+          // setTimeout(() => navigate('/mylistings'), 2000); 
         }
       } catch (error) {
         console.error("Error fetching item:", error);
@@ -254,16 +255,29 @@ const ListingDetail = () => {
     setError("");
 
     try {
+      // 1. Process Images with better error handling
       const finalImageUrls = await Promise.all(
         images.map(async (imgObj, index) => {
           if (imgObj.isExisting) return imgObj.preview;
-          const cleanName = imgObj.file.name.replace(/[^a-zA-Z0-9.]/g, "_");
-          const storageRef = ref(storage, `items/${Date.now()}_${index}_${cleanName}`);
-          const snapshot = await uploadBytes(storageRef, imgObj.file);
-          return await getDownloadURL(snapshot.ref);
+          
+          try {
+            const cleanName = imgObj.file.name.replace(/[^a-zA-Z0-9.]/g, "_");
+            const storageRef = ref(storage, `items/${Date.now()}_${index}_${cleanName}`);
+            const snapshot = await uploadBytes(storageRef, imgObj.file);
+            return await getDownloadURL(snapshot.ref);
+          } catch (uploadErr) {
+            console.error("Image upload failed:", uploadErr);
+            throw new Error("Failed to upload image. Please check your connection or image size.");
+          }
         })
       );
 
+      // 2. Verify all images have URLs
+      if (finalImageUrls.some(url => !url)) {
+        throw new Error("One or more images failed to upload.");
+      }
+
+      // 3. Update Database
       const itemRef = doc(db, "items", id);
       await updateDoc(itemRef, {
         title: title.trim(),
@@ -286,7 +300,14 @@ const ListingDetail = () => {
       navigate('/mylistings');
     } catch (err) {
       console.error("Error updating:", err);
-      setError("Failed to update listing.");
+      // More specific error message
+      if (err.message.includes("permission")) {
+        setError("Permission denied. You may not be allowed to edit this.");
+      } else if (err.message.includes("upload")) {
+        setError(err.message);
+      } else {
+        setError("Failed to update listing. Please try again.");
+      }
     } finally {
       setIsSubmitting(false);
     }

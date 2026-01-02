@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { LogIn, ChevronDown, LogOut, User, Gift, Package, ShoppingBag, ShoppingCart, MessageCircle, Bell, Heart } from 'lucide-react';
 import { auth, db } from '../../firebase';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, collectionGroup, query, where, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { onIdTokenChanged, signOut } from 'firebase/auth';
 import ReThriveLogo from '../assets/logo.svg';
 import DefaultProfilePic from '../assets/default_profile_pic.jpg';
@@ -36,7 +36,7 @@ const Header = ({ activeLink }) => {
 
   const unreadCount = notifItems.length;
 
-  // Listen for unread chats for this user (buyer or seller)
+ 
   useEffect(() => {
     if (!user?.uid) {
       setNotifItems([]);
@@ -45,6 +45,7 @@ const Header = ({ activeLink }) => {
 
     const uid = user.uid;
 
+    // --- MARKETPLACE QUERIES (Existing) ---
     const itemChatsBuyerQ = query(
       collection(db, 'itemChats'),
       where('buyerId', '==', uid),
@@ -55,7 +56,6 @@ const Header = ({ activeLink }) => {
       where('sellerId', '==', uid),
       where('unreadForSeller', '==', true)
     );
-
     const ordersBuyerQ = query(
       collection(db, 'orders'),
       where('buyerId', '==', uid),
@@ -66,12 +66,56 @@ const Header = ({ activeLink }) => {
       where('sellerId', '==', uid),
       where('unreadForSeller', '==', true)
     );
+    
+    // --- ORDER NOTIFICATION QUERIES  ---
+    const orderNotificationsBuyerQ = query(
+      collection(db, 'orders'),
+      where('buyerId', '==', uid),
+      where('notificationForBuyer', '==', true)
+    );
+    const orderNotificationsSellerQ = query(
+      collection(db, 'orders'),
+      where('sellerId', '==', uid),
+      where('notificationForSeller', '==', true)
+    );
+
+    // --- DONATION QUERIES ) ---
+
+    const donationDonorQ = query(
+      collectionGroup(db, 'threads'),
+      where('donorId', '==', uid),
+      where('unreadForDonor', '==', true)
+    );
+
+    const donationReceiverQ = query(
+      collectionGroup(db, 'threads'),
+      where('receiverId', '==', uid),
+      where('unreadForReceiver', '==', true)
+    );
+    
+    // --- DONATION NOTIFICATION QUERIES ---
+    const donationNotificationsDonorQ = query(
+      collection(db, 'donations'),
+      where('donorId', '==', uid),
+      where('notificationForDonor', '==', true)
+    );
+    const donationNotificationsReceiverQ = query(
+      collection(db, 'donations'),
+      where('receiverId', '==', uid),
+      where('notificationForReceiver', '==', true)
+    );
 
     const buckets = {
       buyerItems: [],
       sellerItems: [],
       buyerOrders: [],
       sellerOrders: [],
+      donorItems: [],      
+      receiverItems: [],   
+      orderNotifsBuyer: [], 
+      orderNotifsSeller: [], 
+      donationNotifsDonor: [], 
+      donationNotifsReceiver: [] 
     };
 
     const recompute = () => {
@@ -80,11 +124,18 @@ const Header = ({ activeLink }) => {
         ...buckets.sellerItems,
         ...buckets.buyerOrders,
         ...buckets.sellerOrders,
+        ...buckets.donorItems,    
+        ...buckets.receiverItems,  
+        ...buckets.orderNotifsBuyer, 
+        ...buckets.orderNotifsSeller, 
+        ...buckets.donationNotifsDonor, 
+        ...buckets.donationNotifsReceiver 
       ];
-      // Sort by createdAt desc if available
       merged.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
       setNotifItems(merged);
     };
+
+    // --- LISTENERS ---
 
     const unsubItemBuyer = onSnapshot(itemChatsBuyerQ, (snap) => {
       buckets.buyerItems = snap.docs.map((d) => {
@@ -94,11 +145,9 @@ const Header = ({ activeLink }) => {
           type: 'itemChat',
           role: 'buyer',
           title: data.itemTitle || 'Marketplace item',
-          subtitle: data.sellerName || 'Seller',
+          subtitle: `Message from ${data.sellerName || 'Seller'}`,
           route: `/chat-item/${data.itemId}`,
-          createdAt: data.lastMessageAt?.toMillis
-            ? data.lastMessageAt.toMillis()
-            : 0,
+          createdAt: data.lastMessageAt?.toMillis ? data.lastMessageAt.toMillis() : 0,
         };
       });
       recompute();
@@ -112,18 +161,15 @@ const Header = ({ activeLink }) => {
           type: 'itemChat',
           role: 'seller',
           title: data.itemTitle || 'Marketplace item',
-          subtitle: data.buyerName || 'Buyer',
+          subtitle: `Message from ${data.buyerName || 'Buyer'}`,
           route: `/chat-item/${data.itemId}`,
-          createdAt: data.lastMessageAt?.toMillis
-            ? data.lastMessageAt.toMillis()
-            : 0,
+          createdAt: data.lastMessageAt?.toMillis ? data.lastMessageAt.toMillis() : 0,
         };
       });
       recompute();
     });
 
     const unsubOrdersBuyer = onSnapshot(ordersBuyerQ, (snap) => {
-      // Map order notifications to the same item-based chat thread
       buckets.buyerOrders = snap.docs.map((d) => {
         const data = d.data();
         const chatId = `${data.itemId}_${data.buyerId}`;
@@ -132,40 +178,127 @@ const Header = ({ activeLink }) => {
           type: 'itemChat',
           role: 'buyer',
           title: data.itemTitle || 'Order',
-          subtitle: data.sellerName || 'Seller',
-          route: `/chat-item/${data.itemId}?chatId=${encodeURIComponent(
-            chatId
-          )}`,
-          createdAt: data.lastMessageAt?.toMillis
-            ? data.lastMessageAt.toMillis()
-            : 0,
+          subtitle: `Message from ${data.sellerName || 'Seller'}`,
+          route: `/chat-item/${data.itemId}?chatId=${encodeURIComponent(chatId)}`,
+          createdAt: data.lastMessageAt?.toMillis ? data.lastMessageAt.toMillis() : 0,
         };
       });
       recompute();
     });
 
     const unsubOrdersSeller = onSnapshot(ordersSellerQ, (snap) => {
-      // Seller order notifications also point to the same item chat thread
-      buckets.sellerOrders = snap.docs
-        .map((d) => {
-          const data = d.data();
-          if (!data.buyerId) return null;
-          const chatId = `${data.itemId}_${data.buyerId}`;
-          return {
-            id: chatId,
-            type: 'itemChat',
-            role: 'seller',
-            title: data.itemTitle || 'Order',
-            subtitle: data.buyerName || 'Buyer',
-            route: `/chat-item/${data.itemId}?chatId=${encodeURIComponent(
-              chatId
-            )}`,
-            createdAt: data.lastMessageAt?.toMillis
-              ? data.lastMessageAt.toMillis()
-              : 0,
-          };
-        })
-        .filter(Boolean);
+      buckets.sellerOrders = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: `${data.itemId}_${data.buyerId}`,
+          type: 'itemChat',
+          role: 'seller',
+          title: data.itemTitle || 'Order',
+          subtitle: `Message from ${data.buyerName || 'Buyer'}`,
+          route: `/chat-item/${data.itemId}?chatId=${encodeURIComponent(`${data.itemId}_${data.buyerId}`)}`,
+          createdAt: data.lastMessageAt?.toMillis ? data.lastMessageAt.toMillis() : 0,
+        };
+      });
+      recompute();
+    });
+
+
+    
+    const unsubDonationDonor = onSnapshot(donationDonorQ, (snap) => {
+      buckets.donorItems = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          type: 'donationChat',
+          role: 'donor',
+          title: `${data.donationTitle || 'Donation Item'}`,
+         subtitle: `Message from ${data.receiverName || 'Receiver'}`,
+          route: `/chat-donation/${data.donationId}`,
+          createdAt: data.lastMessageAt?.toMillis ? data.lastMessageAt.toMillis() : 0,
+        };
+      });
+      recompute();
+    });
+
+    const unsubDonationReceiver = onSnapshot(donationReceiverQ, (snap) => {
+      buckets.receiverItems = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          type: 'donationChat',
+          role: 'receiver',
+          title: data.donationTitle || 'Donation',
+          subtitle: `Message from ${data.donorName || 'Donor'}`,
+          route: `/chat-donation/${data.donationId}`,
+          createdAt: data.lastMessageAt?.toMillis ? data.lastMessageAt.toMillis() : 0,
+        };
+      });
+      recompute();
+    });
+
+    // --- ORDER NOTIFICATION LISTENERS ---
+    const unsubOrderNotifBuyer = onSnapshot(orderNotificationsBuyerQ, (snap) => {
+      buckets.orderNotifsBuyer = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          type: 'orderNotification',
+          role: 'buyer',
+          title: `${data.itemTitle || 'Item'}`,
+          subtitle: `Update on your order from ${data.sellerName || 'Seller'}`,
+          route: '/mypurchases',
+          createdAt: data.sellerDeliveryUpdatedAt?.toMillis ? data.sellerDeliveryUpdatedAt.toMillis() : (data.createdAt?.toMillis ? data.createdAt.toMillis() : Date.now()),
+        };
+      });
+      recompute();
+    });
+
+    const unsubOrderNotifSeller = onSnapshot(orderNotificationsSellerQ, (snap) => {
+      buckets.orderNotifsSeller = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          type: 'orderNotification',
+          role: 'seller',
+          title: `${data.itemTitle || 'Marketplace Item'}`,
+          subtitle: `New order from ${data.buyerName || 'a buyer'}`,
+          route: '/mylistings', 
+          createdAt: data.deliveryUpdatedAt?.toMillis ? data.deliveryUpdatedAt.toMillis() : (data.createdAt?.toMillis ? data.createdAt.toMillis() : Date.now()),
+        };
+      });
+      recompute();
+    });
+
+    // --- DONATION NOTIFICATION LISTENER ---
+    const unsubDonationNotifDonor = onSnapshot(donationNotificationsDonorQ, (snap) => {
+      buckets.donationNotifsDonor = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          type: 'donationNotification',
+          role: 'donor',
+          title: data.title || 'Donation Update',
+          subtitle: `Item claimed by ${data.receiverName || 'someone'}!`,
+          route: '/mydonateditems', 
+          createdAt: data.receiverStatusUpdatedAt?.toMillis ? data.receiverStatusUpdatedAt.toMillis() : (data.claimedAt?.toMillis ? data.claimedAt.toMillis() : (data.createdAt?.toMillis ? data.createdAt.toMillis() : Date.now())),
+        };
+      });
+      recompute();
+    });
+
+    const unsubDonationNotifReceiver = onSnapshot(donationNotificationsReceiverQ, (snap) => {
+      buckets.donationNotifsReceiver = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          type: 'donationNotification',
+          role: 'receiver',
+          title: data.title || 'Donation Update',
+          subtitle: data.donorName || 'Donor',
+          route: '/myclaimeditems', 
+          createdAt: data.donorDeliveryUpdatedAt?.toMillis ? data.donorDeliveryUpdatedAt.toMillis() : (data.createdAt?.toMillis ? data.createdAt.toMillis() : Date.now()),
+        };
+      });
       recompute();
     });
 
@@ -174,6 +307,12 @@ const Header = ({ activeLink }) => {
       unsubItemSeller();
       unsubOrdersBuyer();
       unsubOrdersSeller();
+      unsubDonationDonor();
+      unsubDonationReceiver();
+      unsubOrderNotifBuyer();
+      unsubOrderNotifSeller();
+      unsubDonationNotifDonor();
+      unsubDonationNotifReceiver();
     };
   }, [user]);
 
@@ -301,7 +440,7 @@ const Header = ({ activeLink }) => {
                     <button
                       key={`${item.type}-${item.id}-${item.role}`}
                       className="notif-item"
-                      onClick={() => {
+                      onClick={async () => {
                         // Close dropdown and optimistically clear this notification
                         setIsNotifOpen(false);
                         setNotifItems((prev) =>
@@ -314,6 +453,32 @@ const Header = ({ activeLink }) => {
                               )
                           )
                         );
+                        
+                        // Clear notification flags in database
+                        if (item.type === 'orderNotification') {
+                          try {
+                            const orderRef = doc(db, 'orders', item.id);
+                            if (item.role === 'buyer') {
+                              await updateDoc(orderRef, { notificationForBuyer: false });
+                            } else if (item.role === 'seller') {
+                              await updateDoc(orderRef, { notificationForSeller: false });
+                            }
+                          } catch (error) {
+                            console.error('Error clearing order notification:', error);
+                          }
+                        } else if (item.type === 'donationNotification') {
+                          try {
+                            const donationRef = doc(db, 'donations', item.id);
+                            if (item.role === 'donor') {
+                              await updateDoc(donationRef, { notificationForDonor: false });
+                            } else if (item.role === 'receiver') {
+                              await updateDoc(donationRef, { notificationForReceiver: false });
+                            }
+                          } catch (error) {
+                            console.error('Error clearing donation notification:', error);
+                          }
+                        }
+                        
                         handleLinkClick(item.route);
                       }}
                     >
@@ -326,7 +491,10 @@ const Header = ({ activeLink }) => {
                         </span>
                       </div>
                       <span className="notif-item-tag">
-                        {item.type === 'itemChat' ? 'Item' : 'Order'}
+                        {item.type === 'itemChat' ? 'Item' : 
+                         item.type === 'orderNotification' ? 'Order' :
+                         item.type === 'donationNotification' ? 'Donation' :
+                         item.type === 'donationChat' ? 'Donation' : 'Order'}
                       </span>
                     </button>
                   ))}

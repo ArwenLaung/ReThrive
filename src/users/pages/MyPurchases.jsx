@@ -85,6 +85,7 @@ const MyPurchases = () => {
         deliveryStatus: 'received',
         deliveryUpdatedAt: serverTimestamp(),
         autoCompleted: false,
+        notificationForBuyer: false, // Clear buyer notification
       };
 
       // CHECK: Has the Seller already marked it as 'delivered'?
@@ -94,6 +95,7 @@ const MyPurchases = () => {
       if (isSellerDelivered) {
         updates.status = 'completed'; // Finalize Order
         updates.completedAt = serverTimestamp();
+        updates.notificationForSeller = false; // Clear seller notification
 
         // Try to update Item to 'sold'. Catch error if already sold.
         if (order.itemId) {
@@ -114,7 +116,8 @@ const MyPurchases = () => {
 
         alert(`Transaction Complete! Both you and the seller earned ${pointsToEarn} EcoPoints!`);
       } else {
-        // Seller hasn't clicked yet
+        // Seller hasn't clicked yet - notify seller
+        updates.notificationForSeller = true;
         alert("Marked as Received! Waiting for Seller to mark as Delivered to complete the order.");
       }
 
@@ -305,6 +308,9 @@ const MyPurchases = () => {
                             )}
                           </div>
                         </div>
+                        <p className="text-xs text-gray-500 mt-3 p-2 bg-gray-50 rounded-lg">
+                          After the seller confirms delivery, you must confirm receipt within 7 days, or the order will be automatically completed.
+                        </p>
                       </div>
                     </div>
                   </div>

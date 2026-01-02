@@ -184,7 +184,6 @@ const MySoldItems = () => {
                         <button
                           onClick={() => {
                             if (!order.itemId || !order.buyerId) return;
-                            // Open the dedicated item chat thread for this buyer + item
                             const chatId = `${order.itemId}_${order.buyerId}`;
                             navigate(`/chat-item/${order.itemId}?chatId=${encodeURIComponent(chatId)}`);
                           }}
@@ -195,6 +194,8 @@ const MySoldItems = () => {
                         </button>
 
                         {/* Status chips */}
+
+                        {/* Status chips - Only show if NOT delivered */}
                         {!order.sellerDeliveryStatus && (
                           <>
                             {order.status === 'pending' && (
@@ -219,7 +220,7 @@ const MySoldItems = () => {
                         )}
 
                         {/* Seller delivery status controls */}
-                        {!order.sellerDeliveryStatus && (
+                        {!order.sellerDeliveryStatus ? (
                           <button
                             onClick={() => handleMarkDelivered(order.id)}
                             disabled={updatingDelivery === order.id}
@@ -237,12 +238,11 @@ const MySoldItems = () => {
                               </>
                             )}
                           </button>
-                        )}
-
-                        {order.sellerDeliveryStatus === 'delivered' && (
-                          <div className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-xl font-semibold">
+                        ) : (
+                          /* This is the BLUE badge that appears after clicking */
+                          <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl font-semibold">
                             <CheckCircle size={18} />
-                            Marked as delivered
+                            Item Delivered
                           </div>
                         )}
 

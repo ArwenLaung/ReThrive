@@ -258,7 +258,7 @@ const DonateItem = () => {
     // Hide success prompt and redirect to marketplace (or donation list if you prefer)
     setShowSuccess(false);
     setPostedDonation(null);
-    navigate("/marketplace");
+    navigate("/donation");
   };
 
   return (
