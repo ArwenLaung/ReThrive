@@ -16,6 +16,7 @@ import "./MyRewards.css";
 import { auth, db } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { serverTimestamp } from "firebase/firestore";
 
 const MyRewards = () => {
   const navigate = useNavigate();
@@ -35,15 +36,22 @@ const MyRewards = () => {
   const days = [1, 2, 3, 4, 5, 6, 7];
 
   // Helper: Get today's date string (YYYY-MM-DD)
-  const getToday = () => new Date().toISOString().split("T")[0];
+  const getToday = () => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString().slice(0, 10);
+  };
 
   // Helper: Get start of current week (Monday)
   const getWeekStart = () => {
     const d = new Date();
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday start
-    const weekStart = new Date(d.setDate(diff));
-    return weekStart.toISOString().split("T")[0];
+    const day = d.getDay(); // 0 = Sunday
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+
+    const monday = new Date(d.setDate(diff));
+    monday.setHours(0, 0, 0, 0);
+
+    return monday.toISOString().slice(0, 10);
   };
 
   // --- 1. LOAD USER DATA AND REAL-TIME ECOPOINTS ---
@@ -124,7 +132,8 @@ const MyRewards = () => {
       const newCheckedDays = [...checkedDays, day];
       await updateDoc(userRef, {
         checkedDays: newCheckedDays,
-        lastCheckInDate: today
+        lastCheckInDate: today,
+        lastCheckInAt: serverTimestamp()
       });
 
       // Update local state

@@ -124,7 +124,7 @@ const DataVisualisation = () => {
 
       {/* 🔹 Event Registrations Bar Chart */}
       <div className="event-registration-number-section">
-        <h2>Event Registration Numbers</h2>
+        <h2>EcoHub Event Registration Numbers</h2>
         <BarChart
           width={700}
           height={400}
