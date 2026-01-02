@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Loader2, ArrowUpDown } from 'lucide-react'; 
 import { db } from '../../firebase';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, where } from 'firebase/firestore';
 
 const CATEGORIES = ["All", "Hostel Essentials", "Books", "Electronics", "Stationery", "Fashion & Accessories", "Others"];
 
@@ -17,7 +17,7 @@ const Marketplace = () => {
 
   useEffect(() => {
     // Fetch all items, we'll hide sold ones on the client
-    const itemsQuery = query(collection(db, "items"), orderBy("createdAt", "desc"));
+    const itemsQuery = query(collection(db, "items"), where("status", "==", "active"), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(itemsQuery, (snapshot) => {
       const itemsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setItems(itemsList);

@@ -217,6 +217,7 @@ const ClaimDonation = () => {
       const itemRef = doc(db, "donations", id);
 
       await updateDoc(itemRef, {
+        status: "pending",
         receiverId: user.uid,
         receiverName: name.trim(),
         receiverEmail: email.trim(),

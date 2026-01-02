@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, Loader2, Gift } from 'lucide-react';
 
 import { db } from '../../firebase';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, where } from 'firebase/firestore';
 
 const CATEGORIES = ["All", "Hostel Essentials", "Books", "Electronics", "Stationery", "Fashion & Accessories", "Others"];
 
@@ -16,7 +16,7 @@ const DonationCorner = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
 
   useEffect(() => {
-    const itemsQuery = query(collection(db, "donations"), orderBy("createdAt", "desc"));
+    const itemsQuery = query(collection(db, "donations"), where("status", "==", "active"), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(itemsQuery, (snapshot) => {
       const itemsList = snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() }))
