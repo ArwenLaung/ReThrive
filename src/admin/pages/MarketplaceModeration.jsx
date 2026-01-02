@@ -39,6 +39,7 @@ const MarketplaceModeration = () => {
 
   // 🔹 Filter items by status
   const activeItems = items.filter((item) => item.status === "active");
+  const pendingItems = items.filter((item) => item.status === "pending");
   const soldItems = items.filter((item) => item.status === "sold");
 
   const handleView = async (item) => {
@@ -132,8 +133,9 @@ const MarketplaceModeration = () => {
           onChange={(e, newValue) => setActiveTab(newValue)}
           className="item-tabs"
         >
-          <Tab label="Active Items" />
-          <Tab label="Sold Items" />
+          <Tab label="Active" />
+          <Tab label="Pending" />
+          <Tab label="Sold" />
         </Tabs>
       </div>
 
@@ -150,8 +152,21 @@ const MarketplaceModeration = () => {
         </div>
       )}
 
-      {/* 🔹 Sold Items */}
+      {/* 🔹 Pending Items */}
       {activeTab === 1 && (
+        <div className="item-table-card">
+          <DataGrid
+            autoHeight
+            rows={pendingItems}
+            columns={columns}
+            pageSize={5}
+            rowsPerPageOptions={[5]}
+          />
+        </div>
+      )}
+
+      {/* 🔹 Sold Items */}
+      {activeTab === 2 && (
         <div className="item-table-card">
           <DataGrid
             autoHeight

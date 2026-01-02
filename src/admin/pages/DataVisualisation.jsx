@@ -143,7 +143,7 @@ const DataVisualisation = () => {
             <Label
               value="Title"
               position="bottom"   // place outside
-              offset={50}         // adjust distance from tick labels
+              offset={80}         // adjust distance from tick labels
               style={{ fontWeight: "bold", fontSize: 14 }}
             />
           </XAxis>

@@ -40,9 +40,7 @@ import ClaimDonation from "./users/pages/ClaimDonation.jsx";
 import MarketplaceModeration from "./admin/pages/MarketplaceModeration.jsx";
 import DonationModeration from "./admin/pages/DonationModeration.jsx";
 import EventPosting from "./admin/pages/EventPosting.jsx";
-import TransactionModeration from "./admin/pages/TransactionModeration.jsx";
 import VoucherManagement from "./admin/pages/VoucherManagement.jsx";
-import ReportModeration from "./admin/pages/ReportModeration.jsx";
 import DataVisualisation from "./admin/pages/DataVisualisation.jsx";
 import LeftColumnBar from "./admin/components/LeftColumnBar.jsx";
 
@@ -191,9 +189,7 @@ const AppContent = ({ aboutRef, eventsRef, activeLink, setActiveLink, currentUse
         <Route path="/marketplaceModeration" element={isAdmin ? adminWrapper(<MarketplaceModeration />) : <Navigate to="/" />} />
         <Route path="/donationModeration" element={isAdmin ? adminWrapper(<DonationModeration />) : <Navigate to="/" />} />
         <Route path="/eventPosting" element={isAdmin ? adminWrapper(<EventPosting />) : <Navigate to="/" />} />
-        <Route path="/transactionModeration" element={isAdmin ? adminWrapper(<TransactionModeration />) : <Navigate to="/" />} />
         <Route path="/voucherManagement" element={isAdmin ? adminWrapper(<VoucherManagement />) : <Navigate to="/" />} />
-        <Route path="/reportModeration" element={isAdmin ? adminWrapper(<ReportModeration />) : <Navigate to="/" />} />
         <Route path="/dataVisualisation" element={isAdmin ? adminWrapper(<DataVisualisation />) : <Navigate to="/" />} />
       </Routes>
 

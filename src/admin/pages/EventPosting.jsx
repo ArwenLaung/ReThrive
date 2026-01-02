@@ -176,8 +176,8 @@ const EventPosting = () => {
             value={tab}
             onChange={(e, newValue) => setTab(newValue)}
           >
-            <Tab label="Ongoing Events" />
-            <Tab label="Past Events" />
+            <Tab label="Ongoing" />
+            <Tab label="Past" />
           </Tabs>
         </div>
 

@@ -39,6 +39,7 @@ const DonationModeration = () => {
 
   // 🔹 Filter donations by status
   const activeDonations = donations.filter((d) => d.status === "active");
+  const pendingDonations = donations.filter((d) => d.status === "pending");
   const completedDonations = donations.filter((d) => d.status === "completed");
 
   const handleView = async (donation) => {
@@ -127,8 +128,9 @@ const DonationModeration = () => {
 
       <div className="item-tabs-wrapper">
         <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} className="item-tabs">
-          <Tab label="Active Donations" />
-          <Tab label="Completed Donations" />
+          <Tab label="Active" />
+          <Tab label="Pending" />
+          <Tab label="Completed" />
         </Tabs>
       </div>
 
@@ -139,8 +141,15 @@ const DonationModeration = () => {
         </div>
       )}
 
-      {/* 🔹 Completed Donations */}
+      {/* 🔹 Pending Donations */}
       {activeTab === 1 && (
+        <div className="item-table-card">
+          <DataGrid autoHeight rows={pendingDonations} columns={columns} pageSize={5} rowsPerPageOptions={[5]} />
+        </div>
+      )}
+
+      {/* 🔹 Completed Donations */}
+      {activeTab === 2 && (
         <div className="item-table-card">
           <DataGrid autoHeight rows={completedDonations} columns={columns} pageSize={5} rowsPerPageOptions={[5]} />
         </div>
