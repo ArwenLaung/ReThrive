@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MessageCircle, Loader2 } from 'lucide-react';
+import { MessageCircle, Loader2, Gift } from 'lucide-react'; // Added Gift icon for donations
 import { auth, db } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, collectionGroup } from 'firebase/firestore';
 
 const Conversations = () => {
   const navigate = useNavigate();
@@ -12,8 +12,12 @@ const Conversations = () => {
 
   useEffect(() => {
     let unsubscribeAuth = () => {};
+    // Marketplace Unsubscribers
     let unsubBuyer = () => {};
     let unsubSeller = () => {};
+    // Donation Unsubscribers
+    let unsubDonor = () => {};
+    let unsubReceiver = () => {};
 
     unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       if (!currentUser) {
@@ -23,6 +27,7 @@ const Conversations = () => {
 
       const uid = currentUser.uid;
 
+      // 1. Marketplace Queries
       const buyerQ = query(
         collection(db, 'itemChats'),
         where('buyerId', '==', uid),
@@ -32,13 +37,31 @@ const Conversations = () => {
         where('sellerId', '==', uid),
       );
 
+      // 2. Donation Queries (Using collectionGroup to find nested threads)
+      const donationDonorQ = query(
+        collectionGroup(db, 'threads'),
+        where('donorId', '==', uid)
+      );
+      const donationReceiverQ = query(
+        collectionGroup(db, 'threads'),
+        where('receiverId', '==', uid)
+      );
+
       const buckets = {
         buyer: [],
         seller: [],
+        donor: [],
+        receiver: []
       };
 
       const recompute = () => {
-        const merged = [...buckets.buyer, ...buckets.seller];
+        const merged = [
+          ...buckets.buyer, 
+          ...buckets.seller,
+          ...buckets.donor,
+          ...buckets.receiver
+        ];
+        // Sort by newest message first
         merged.sort(
           (a, b) =>
             (b.lastMessageAt || 0) - (a.lastMessageAt || 0)
@@ -47,44 +70,84 @@ const Conversations = () => {
         setLoading(false);
       };
 
+      // --- LISTENERS ---
+
+      // A. Marketplace Buyer
       unsubBuyer = onSnapshot(buyerQ, (snap) => {
         buckets.buyer = snap.docs
           .map((d) => {
             const data = d.data();
             return {
               id: d.id,
+              type: 'marketplace',
               role: 'buyer',
               itemId: data.itemId,
               itemTitle: data.itemTitle || 'Marketplace item',
               otherName: data.sellerName || 'Seller',
               lastMessage: data.lastMessage || '',
-              lastMessageAt: data.lastMessageAt?.toMillis
-                ? data.lastMessageAt.toMillis()
-                : 0,
+              lastMessageAt: data.lastMessageAt?.toMillis ? data.lastMessageAt.toMillis() : 0,
             };
           })
-          // Only keep conversations that have at least one message
           .filter((c) => c.lastMessage && c.lastMessage !== '');
         recompute();
       });
 
+      // B. Marketplace Seller
       unsubSeller = onSnapshot(sellerQ, (snap) => {
         buckets.seller = snap.docs
           .map((d) => {
             const data = d.data();
             return {
               id: d.id,
+              type: 'marketplace',
               role: 'seller',
               itemId: data.itemId,
               itemTitle: data.itemTitle || 'Marketplace item',
               otherName: data.buyerName || 'Buyer',
               lastMessage: data.lastMessage || '',
-              lastMessageAt: data.lastMessageAt?.toMillis
-                ? data.lastMessageAt.toMillis()
-                : 0,
+              lastMessageAt: data.lastMessageAt?.toMillis ? data.lastMessageAt.toMillis() : 0,
             };
           })
-          // Only keep conversations that have at least one message
+          .filter((c) => c.lastMessage && c.lastMessage !== '');
+        recompute();
+      });
+
+      // C. Donation Donor
+      unsubDonor = onSnapshot(donationDonorQ, (snap) => {
+        buckets.donor = snap.docs
+          .map((d) => {
+            const data = d.data();
+            return {
+              id: d.id,
+              type: 'donation',
+              role: 'donor',
+              routeId: data.donationId, // ID needed for navigation
+              itemTitle: data.donationTitle || 'Donation Item',
+              otherName: data.receiverName || 'Receiver',
+              lastMessage: data.lastMessage || '',
+              lastMessageAt: data.lastMessageAt?.toMillis ? data.lastMessageAt.toMillis() : 0,
+            };
+          })
+          .filter((c) => c.lastMessage && c.lastMessage !== '');
+        recompute();
+      });
+
+      // D. Donation Receiver
+      unsubReceiver = onSnapshot(donationReceiverQ, (snap) => {
+        buckets.receiver = snap.docs
+          .map((d) => {
+            const data = d.data();
+            return {
+              id: d.id,
+              type: 'donation',
+              role: 'receiver',
+              routeId: data.donationId, // ID needed for navigation
+              itemTitle: data.donationTitle || 'Donation Item',
+              otherName: data.donorName || 'Donor',
+              lastMessage: data.lastMessage || '',
+              lastMessageAt: data.lastMessageAt?.toMillis ? data.lastMessageAt.toMillis() : 0,
+            };
+          })
           .filter((c) => c.lastMessage && c.lastMessage !== '');
         recompute();
       });
@@ -94,6 +157,8 @@ const Conversations = () => {
       unsubscribeAuth();
       unsubBuyer();
       unsubSeller();
+      unsubDonor();
+      unsubReceiver();
     };
   }, [navigate]);
 
@@ -115,16 +180,19 @@ const Conversations = () => {
         {conversations.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
             <p className="text-gray-500">
-              You have no conversations yet. Start by contacting a seller or buyer.
+              You have no conversations yet.
             </p>
           </div>
         ) : (
           <div className="space-y-3">
             {conversations.map((conv) => (
               <button
-                key={conv.id}
+                key={`${conv.type}-${conv.id}`}
                 onClick={() => {
-                  if (conv.role === 'buyer') {
+                  // Navigation Logic
+                  if (conv.type === 'donation') {
+                    navigate(`/chat-donation/${conv.routeId}`);
+                  } else if (conv.role === 'buyer') {
                     navigate(`/chat-item/${conv.itemId}`);
                   } else {
                     navigate(`/chat-item/${conv.itemId}?chatId=${conv.id}`);
@@ -132,16 +200,30 @@ const Conversations = () => {
                 }}
                 className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors"
               >
-                <div className="w-10 h-10 rounded-full bg-brand-purple/10 flex items-center justify-center">
-                  <MessageCircle size={18} className="text-brand-purple" />
+                {/* Icon based on Type */}
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  conv.type === 'donation' ? 'bg-[#7db038]/10' : 'bg-brand-purple/10'
+                }`}>
+                  {conv.type === 'donation' ? (
+                    <Gift size={18} className="text-[#7db038]" />
+                  ) : (
+                    <MessageCircle size={18} className="text-brand-purple" />
+                  )}
                 </div>
+
                 <div className="flex-1 text-left">
                   <div className="flex items-center justify-between gap-2">
                     <p className="font-semibold text-gray-900 line-clamp-1">
                       {conv.itemTitle}
                     </p>
-                    <span className="text-xs uppercase tracking-wide text-gray-400">
-                      {conv.role === 'buyer' ? 'Seller' : 'Buyer'}
+                    <span className={`text-xs uppercase tracking-wide ${
+                      conv.type === 'donation' ? 'text-[#7db038]' : 'text-gray-400'
+                    }`}>
+                      {/* Dynamic Label */}
+                      {conv.type === 'donation' 
+                        ? (conv.role === 'donor' ? 'Donor' : 'Receiver')
+                        : (conv.role === 'buyer' ? 'Seller' : 'Buyer')
+                      }
                     </span>
                   </div>
                   <p className="text-xs text-gray-500">
@@ -163,5 +245,3 @@ const Conversations = () => {
 };
 
 export default Conversations;
-
-

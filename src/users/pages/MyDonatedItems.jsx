@@ -61,6 +61,8 @@ const MyDonatedItems = () => {
       await updateDoc(doc(db, 'donations', donationId), {
         donorDeliveryStatus: 'delivered',
         donorDeliveryUpdatedAt: serverTimestamp(),
+        notificationForDonor: false, // Clear donor notification
+        notificationForReceiver: true, // Notify receiver that donor marked as delivered
       });
     } catch (error) {
       console.error('Error marking donation as delivered:', error);

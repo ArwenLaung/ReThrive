@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Gift, Loader2, MapPin, MessageCircle, CheckCircle } from 'lucide-react';
 import { auth, db } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import ConfirmModal from '../../components/ConfirmModal';
 
 const MyClaimedItems = () => {
@@ -30,10 +30,25 @@ const MyClaimedItems = () => {
   const handleMarkReceived = async (itemId) => {
     setUpdatingStatus(itemId);
     try {
-      await updateDoc(doc(db, 'donations', itemId), {
+      // Get current donation data to check if donor has marked as delivered
+      const donationRef = doc(db, 'donations', itemId);
+      const donationSnap = await getDoc(donationRef);
+      const donationData = donationSnap.exists() ? donationSnap.data() : {};
+      
+      const updates = {
         receiverStatus: 'received',
         receiverStatusUpdatedAt: serverTimestamp(),
-      });
+        notificationForReceiver: false, // Clear receiver notification
+      };
+      
+      // If donor hasn't marked as delivered yet, notify them
+      if (donationData.donorDeliveryStatus !== 'delivered') {
+        updates.notificationForDonor = true;
+      } else {
+        updates.notificationForDonor = false; // Both parties confirmed
+      }
+      
+      await updateDoc(donationRef, updates);
       // Optimistic update
       setItems((prev) =>
         prev.map((it) =>

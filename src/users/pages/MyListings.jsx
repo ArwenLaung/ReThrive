@@ -42,6 +42,44 @@ const MyListings = () => {
         
         setItems(userItems);
         setLoading(false);
+
+        // --- AUTO-COMPLETE LOGIC (Added) ---
+        userItems.forEach(async (item) => {
+          try {
+            // Check if item is PENDING (waiting for delivery) but older than 7 days
+            if (
+              item.status === 'pending' && 
+              !item.deliveryStatus && // Ensure we haven't already auto-marked it
+              item.soldAt && 
+              typeof item.soldAt.toDate === 'function'
+            ) {
+              const soldAtDate = item.soldAt.toDate();
+              const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+              const isOverdue = Date.now() - soldAtDate.getTime() > sevenDaysMs;
+
+              if (isOverdue) {
+                console.log(`Auto-marking item ${item.id} as delivered (Overdue)`);
+                await updateDoc(doc(db, "items", item.id), {
+                  deliveryStatus: 'auto_delivered',
+                  deliveryUpdatedAt: serverTimestamp(),
+                  autoCompleted: true,
+                });
+                
+                // Optional: You might also want to update the linked Order here if needed
+                if (item.currentOrderId) {
+                   await updateDoc(doc(db, "orders", item.currentOrderId), {
+                     sellerDeliveryStatus: 'delivered', // Matches your manual logic
+                     sellerDeliveryUpdatedAt: serverTimestamp()
+                   });
+                }
+              }
+            }
+          } catch (err) {
+            console.error("Error auto-marking item as delivered:", err);
+          }
+        });
+        // -----------------------------------
+
       }, (error) => {
         console.error("Error fetching listings:", error);
         setLoading(false);
@@ -93,12 +131,17 @@ const MyListings = () => {
       const orderData = orderSnap.data();
 
       // Update Seller Status
-      const updates = { sellerDeliveryStatus: 'delivered', sellerDeliveryUpdatedAt: serverTimestamp() };
+      const updates = { 
+        sellerDeliveryStatus: 'delivered', 
+        sellerDeliveryUpdatedAt: serverTimestamp(),
+        notificationForSeller: false, // Clear seller notification
+      };
       
       // Check has Buyer already received? If yes -> finalize transaction
       if (orderData.deliveryStatus === 'received') {
         updates.status = 'completed';
         updates.completedAt = serverTimestamp();
+        updates.notificationForBuyer = false; // Clear buyer notification
         
         // Finalize Item
         await updateDoc(doc(db, "items", item.id), { status: 'sold' });
@@ -109,6 +152,7 @@ const MyListings = () => {
         
         alert("Transaction Completed! 10 EcoPoints awarded.");
       } else {
+        updates.notificationForBuyer = true; // Notify buyer that seller marked as delivered
         alert("Marked as Delivered. Waiting for Buyer confirmation.");
       }
 
@@ -203,7 +247,18 @@ const MyListings = () => {
                              </div>
 
                              <div className="flex gap-3">
-                                <button onClick={() => navigate(`/chat-item/${item.id}`)} className="flex items-center gap-2 px-4 py-2 bg-[#f3eefc] text-brand-purple rounded-xl font-bold hover:bg-[#e9dff7]">
+                                <button 
+                                  onClick={() => {
+                                    if (orderDetail && orderDetail.buyerId) {
+                                      // Create the specific Chat ID: ItemID_BuyerID
+                                      const chatId = `${item.id}_${orderDetail.buyerId}`;
+                                      navigate(`/chat-item/${item.id}?chatId=${chatId}`);
+                                    } else {
+                                      navigate(`/chat-item/${item.id}`);
+                                    }
+                                  }} 
+                                  className="flex items-center gap-2 px-4 py-2 bg-[#f3eefc] text-brand-purple rounded-xl font-bold hover:bg-[#e9dff7]"
+                                >
                                    <MessageCircle size={18} /> Chat with Buyer
                                 </button>
                                 
@@ -212,6 +267,9 @@ const MyListings = () => {
                                 </button>
                              </div>
                           </div>
+                          <p className="text-xs text-gray-500 mt-3 p-2 bg-gray-50 rounded-lg">
+                            After the buyer confirms receipt, you must confirm the order within 7 days, or it will be automatically completed.
+                          </p>
 
                         </div>
                       </div>
