@@ -245,15 +245,6 @@ const MySoldItems = () => {
                             Item Delivered
                           </div>
                         )}
-
-                        {order.itemId && (
-                          <Link
-                            to={`/item/${order.itemId}`}
-                            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-all active:scale-95"
-                          >
-                            View Item
-                          </Link>
-                        )}
                       </div>
                     </div>
                   </div>

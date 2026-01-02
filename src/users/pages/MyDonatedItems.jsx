@@ -58,7 +58,7 @@ const MyDonatedItems = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] pb-32 pt-24 px-6">
+    <div className="min-h-screen bg-[#9af71e]/5 pb-32 pt-24 px-6">
       <div className="max-w-5xl mx-auto mb-10 flex items-center gap-4">
         <h1 className="text-3xl font-black text-[#364f15] tracking-tight">My Donated Items</h1>
       </div>
@@ -112,17 +112,30 @@ const MyDonatedItems = () => {
                       <div className="flex-1 space-y-3">
                         <div>
                           <h3 className="text-xl font-bold text-gray-900 mb-1">{item.title}</h3>
-                          <div className="flex items-center gap-1 text-xs text-gray-500">
-                            <MapPin size={12} />
-                            <span>{item.location}</span>
-                          </div>
+                          
+                          {/* Info Block (Receiver + Claim Date) */}
+                          <div className="flex flex-wrap gap-4 text-sm mt-2">
+                            <div>
+                                <span className="text-gray-500">Receiver:</span>
+                                <span className="font-semibold text-gray-900 ml-2">{item.receiverName || "Unknown"}</span>
+                            </div>
+                            
+                            {item.claimedAt && (
+                                <div>
+                                <span className="text-gray-500">Claimed:</span>
+                                <span className="text-gray-700 ml-2">
+                                    {item.claimedAt.toDate ? new Date(item.claimedAt.toDate()).toLocaleDateString() : 'Recently'}
+                                </span>
+                                </div>
+                            )}
+                         </div>
                         </div>
 
                         {/* Action buttons */}
                         <div className="flex flex-wrap gap-3 pt-2">
                           <button
                             onClick={() => navigate(`/chat-donation/${item.id}`)}
-                            className="inline-flex items-center justify-center gap-2 px-4 py-2 min-w-[150px] bg-brand-purple text-white rounded-xl font-semibold hover:bg-purple-800 transition-all active:scale-95"
+                            className="flex items-center gap-2 px-4 py-2 bg-[#f2f9e6] text-[#7db038] rounded-xl font-bold hover:bg-[#e4f0d5] transition-colors"
                           >
                             <MessageCircle size={18} />
                             Chat with Receiver
@@ -139,13 +152,6 @@ const MyDonatedItems = () => {
                               Waiting for Receiver to Confirm
                             </div>
                           )}
-
-                          <Link
-                            to={`/donation/${item.id}`}
-                            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-all active:scale-95"
-                          >
-                            View Details
-                          </Link>
                         </div>
                       </div>
                     </div>

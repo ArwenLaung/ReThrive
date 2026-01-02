@@ -14,15 +14,18 @@ const MyAccount = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState({ name: "Student", email: "Loading...", avatar: DefaultProfilePic });
 
-  // Stats state including the split for donations
+  // Stats state
   const [stats, setStats] = useState({
-    activeListings: 0,
-    soldItems: 0,
-    points: 0,
-    activeDonations: 0,
-    completedDonations: 0,
-    cartItems: 0
+    myListingsCount: 0,
+    soldItemsCount: 0,
+    purchasesCount: 0,
+    myDonationsCount: 0,
+    donatedHistoryCount: 0,
+    claimedItemsCount: 0,
+    cartItems: 0,
+    points: 0
   });
+
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
@@ -36,38 +39,66 @@ const MyAccount = () => {
           avatar: currentUser.photoURL || DefaultProfilePic
         });
 
-        // 1. Marketplace Stats (Active & Sold)
+        // --- 1. MARKETPLACE STATS ---
+
+        // A. My Listings: Count "active" AND "pending"
         const itemsRef = collection(db, "items");
-        const activeSnap = await getCountFromServer(query(itemsRef, where("sellerId", "==", currentUser.uid), where("status", "==", "active")));
-        const soldSnap = await getCountFromServer(query(itemsRef, where("sellerId", "==", currentUser.uid), where("status", "==", "sold")));
+        const listingsSnap = await getCountFromServer(
+          query(itemsRef, where("sellerId", "==", currentUser.uid), where("status", "in", ["active", "pending"]))
+        );
 
-        // 2. Donation Stats (Active vs Completed)
-        // We fetch ALL donations for the user first to ensure reliability, then filter in JS
-        const donationQuery = query(collection(db, "donations"), where("donorId", "==", currentUser.uid));
-        const donationSnapshot = await getDocs(donationQuery);
+        // B. My Sold Items: Count "sold"
+        const soldSnap = await getCountFromServer(
+          query(itemsRef, where("sellerId", "==", currentUser.uid), where("status", "==", "sold"))
+        );
 
-        const allDonations = donationSnapshot.docs.map(doc => doc.data());
-        const completedCount = allDonations.filter(d => d.receiverId).length; // Items with a receiver
-        const activeCount = allDonations.length - completedCount; // Total - Completed
+        // C. My Purchases: Count ORDERS where buyer is user and status is "completed"
+        const ordersRef = collection(db, "orders");
+        const purchasesSnap = await getCountFromServer(
+          query(ordersRef, where("buyerId", "==", currentUser.uid), where("status", "==", "completed"))
+        );
 
-        // 3. Cart Items
+        // --- 2. DONATION STATS ---
+
+        // Fetch all donations where user is DONOR to split them into Active/History
+        const donationsRef = collection(db, "donations");
+        const donorQuery = query(donationsRef, where("donorId", "==", currentUser.uid));
+        const donorSnapshot = await getDocs(donorQuery);
+        const donorDocs = donorSnapshot.docs.map(doc => doc.data());
+
+        // D. My Donations (Active & Pending): Status is NOT 'completed'
+        const myDonationsCount = donorDocs.filter(d => d.status !== 'completed').length;
+
+        // E. My Donated Items (History): Status IS 'completed'
+        const donatedHistoryCount = donorDocs.filter(d => d.status === 'completed').length;
+
+        // F. My Claimed Items: User is RECEIVER (Count all pending & completed)
+        const claimedSnap = await getCountFromServer(
+          query(donationsRef, where("receiverId", "==", currentUser.uid))
+        );
+
+        // Cart Items
         const cartSnap = await getCountFromServer(query(collection(db, "carts"), where("userId", "==", currentUser.uid)));
 
-        // 4. EcoPoints
+        // EcoPoints
         let currentPoints = 0;
         try {
           const userDoc = await getDoc(doc(db, "users", currentUser.uid));
           if (userDoc.exists()) currentPoints = userDoc.data().ecoPoints || 0;
         } catch (e) { }
 
+        // SET STATE
         setStats({
-          activeListings: activeSnap.data().count,
-          soldItems: soldSnap.data().count,
-          points: currentPoints,
-          activeDonations: activeCount,
-          completedDonations: completedCount,
-          cartItems: cartSnap.data().count
+          myListingsCount: listingsSnap.data().count,
+          soldItemsCount: soldSnap.data().count,
+          purchasesCount: purchasesSnap.data().count,
+          myDonationsCount: myDonationsCount,
+          donatedHistoryCount: donatedHistoryCount,
+          claimedItemsCount: claimedSnap.data().count,
+          cartItems: cartSnap.data().count,
+          points: currentPoints
         });
+
       } catch (error) { console.error("Error fetching account data:", error); }
     });
     return () => unsubscribe();
@@ -136,27 +167,33 @@ const MyAccount = () => {
         <div>
           <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 px-2">Marketplace</h3>
           <div className="bg-[#FEFAE0] rounded-[2rem] p-6 shadow-sm hover:shadow-md transition-shadow duration-300">
+            {/* Cart */}
             <MenuRow icon={ShoppingCart} label="My Cart" subLabel={`${stats.cartItems} Items in cart`} onClick={() => navigate('/mycart')} />
 
-            <MenuRow icon={Package} label="My Listings" subLabel={`${stats.activeListings} Active Items`} onClick={() => navigate('/mylistings')} />
-            <MenuRow icon={ShoppingBag} label="My Sold Items" subLabel={`${stats.soldItems} Items Sold`} onClick={() => navigate('/solditems')} />
-            <MenuRow icon={Clock} label="My Purchases" subLabel="View past orders" isLast={true} onClick={() => navigate('/mypurchases')} />
+            {/* My Listings (Active + Pending) */}
+            <MenuRow icon={Package} label="My Listings" subLabel={`${stats.myListingsCount} Active Items`} onClick={() => navigate('/mylistings')} />
+
+            {/* My Sold Items (Sold) */}
+            <MenuRow icon={ShoppingBag} label="My Sold Items" subLabel={`${stats.soldItemsCount} Items Sold`} onClick={() => navigate('/solditems')} />
+
+            {/* My Purchases (Completed Orders) */}
+            <MenuRow icon={Clock} label="My Purchases" subLabel={`${stats.purchasesCount} Completed Orders`} isLast={true} onClick={() => navigate('/mypurchases')} />
           </div>
         </div>
 
-        {/* 3. DONATIONS - UPDATED SECTION */}
+        {/* 3. DONATIONS */}
         <div>
           <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 px-2">Donations</h3>
           <div className="bg-[#FEFAE0] rounded-[2rem] p-6 shadow-sm hover:shadow-md transition-shadow duration-300">
 
-            {/* Active Donations */}
-            <MenuRow icon={Gift} label="My Donations" subLabel={`${stats.activeDonations} Active Donations`} onClick={() => navigate('/mydonations')} />
+            {/* My Donations (Active + Pending) */}
+            <MenuRow icon={Gift} label="My Donations" subLabel={`${stats.myDonationsCount} Active Donations`} onClick={() => navigate('/mydonations')} />
 
-            {/* My Donated Items */}
-            <MenuRow icon={PackageCheck} label="My Donated Items" subLabel={`${stats.completedDonations} Items given away`} onClick={() => navigate('/mydonateditems')} />
+            {/* My Donated Items (Completed) */}
+            <MenuRow icon={PackageCheck} label="My Donated Items" subLabel={`${stats.donatedHistoryCount} Items given away`} onClick={() => navigate('/mydonateditems')} />
 
-            {/* Claimed Items */}
-            <MenuRow icon={Heart} label="My Claimed Items" subLabel="Items received from community" isLast={true} onClick={() => navigate('/myclaimeditems')} />
+            {/* Claimed Items (Pending + Completed) */}
+            <MenuRow icon={Heart} label="My Claimed Items" subLabel={`${stats.claimedItemsCount} Items received from community`} isLast={true} onClick={() => navigate('/myclaimeditems')} />
           </div>
         </div>
 
