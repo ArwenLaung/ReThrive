@@ -36,7 +36,7 @@ const Header = ({ activeLink }) => {
 
   const unreadCount = notifItems.length;
 
- 
+
   useEffect(() => {
     if (!user?.uid) {
       setNotifItems([]);
@@ -66,7 +66,7 @@ const Header = ({ activeLink }) => {
       where('sellerId', '==', uid),
       where('unreadForSeller', '==', true)
     );
-    
+
     // --- ORDER NOTIFICATION QUERIES  ---
     const orderNotificationsBuyerQ = query(
       collection(db, 'orders'),
@@ -92,7 +92,7 @@ const Header = ({ activeLink }) => {
       where('receiverId', '==', uid),
       where('unreadForReceiver', '==', true)
     );
-    
+
     // --- DONATION NOTIFICATION QUERIES ---
     const donationNotificationsDonorQ = query(
       collection(db, 'donations'),
@@ -110,12 +110,12 @@ const Header = ({ activeLink }) => {
       sellerItems: [],
       buyerOrders: [],
       sellerOrders: [],
-      donorItems: [],      
-      receiverItems: [],   
-      orderNotifsBuyer: [], 
-      orderNotifsSeller: [], 
-      donationNotifsDonor: [], 
-      donationNotifsReceiver: [] 
+      donorItems: [],
+      receiverItems: [],
+      orderNotifsBuyer: [],
+      orderNotifsSeller: [],
+      donationNotifsDonor: [],
+      donationNotifsReceiver: []
     };
 
     const recompute = () => {
@@ -124,12 +124,12 @@ const Header = ({ activeLink }) => {
         ...buckets.sellerItems,
         ...buckets.buyerOrders,
         ...buckets.sellerOrders,
-        ...buckets.donorItems,    
-        ...buckets.receiverItems,  
-        ...buckets.orderNotifsBuyer, 
-        ...buckets.orderNotifsSeller, 
-        ...buckets.donationNotifsDonor, 
-        ...buckets.donationNotifsReceiver 
+        ...buckets.donorItems,
+        ...buckets.receiverItems,
+        ...buckets.orderNotifsBuyer,
+        ...buckets.orderNotifsSeller,
+        ...buckets.donationNotifsDonor,
+        ...buckets.donationNotifsReceiver
       ];
       merged.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
       setNotifItems(merged);
@@ -203,7 +203,7 @@ const Header = ({ activeLink }) => {
     });
 
 
-    
+
     const unsubDonationDonor = onSnapshot(donationDonorQ, (snap) => {
       buckets.donorItems = snap.docs.map((d) => {
         const data = d.data();
@@ -212,7 +212,7 @@ const Header = ({ activeLink }) => {
           type: 'donationChat',
           role: 'donor',
           title: `${data.donationTitle || 'Donation Item'}`,
-         subtitle: `Message from ${data.receiverName || 'Receiver'}`,
+          subtitle: `Message from ${data.receiverName || 'Receiver'}`,
           route: `/chat-donation/${data.donationId}`,
           createdAt: data.lastMessageAt?.toMillis ? data.lastMessageAt.toMillis() : 0,
         };
@@ -262,7 +262,7 @@ const Header = ({ activeLink }) => {
           role: 'seller',
           title: `${data.itemTitle || 'Marketplace Item'}`,
           subtitle: `New order from ${data.buyerName || 'a buyer'}`,
-          route: '/mylistings', 
+          route: '/mylistings',
           createdAt: data.deliveryUpdatedAt?.toMillis ? data.deliveryUpdatedAt.toMillis() : (data.createdAt?.toMillis ? data.createdAt.toMillis() : Date.now()),
         };
       });
@@ -279,7 +279,7 @@ const Header = ({ activeLink }) => {
           role: 'donor',
           title: data.title || 'Donation Update',
           subtitle: `Item claimed by ${data.receiverName || 'someone'}!`,
-          route: '/mydonateditems', 
+          route: '/mydonations',
           createdAt: data.receiverStatusUpdatedAt?.toMillis ? data.receiverStatusUpdatedAt.toMillis() : (data.claimedAt?.toMillis ? data.claimedAt.toMillis() : (data.createdAt?.toMillis ? data.createdAt.toMillis() : Date.now())),
         };
       });
@@ -295,7 +295,7 @@ const Header = ({ activeLink }) => {
           role: 'receiver',
           title: data.title || 'Donation Update',
           subtitle: data.donorName || 'Donor',
-          route: '/myclaimeditems', 
+          route: '/myclaimeditems',
           createdAt: data.donorDeliveryUpdatedAt?.toMillis ? data.donorDeliveryUpdatedAt.toMillis() : (data.createdAt?.toMillis ? data.createdAt.toMillis() : Date.now()),
         };
       });
@@ -453,7 +453,7 @@ const Header = ({ activeLink }) => {
                               )
                           )
                         );
-                        
+
                         // Clear notification flags in database
                         if (item.type === 'orderNotification') {
                           try {
@@ -478,7 +478,7 @@ const Header = ({ activeLink }) => {
                             console.error('Error clearing donation notification:', error);
                           }
                         }
-                        
+
                         handleLinkClick(item.route);
                       }}
                     >
@@ -491,10 +491,10 @@ const Header = ({ activeLink }) => {
                         </span>
                       </div>
                       <span className="notif-item-tag">
-                        {item.type === 'itemChat' ? 'Item' : 
-                         item.type === 'orderNotification' ? 'Order' :
-                         item.type === 'donationNotification' ? 'Donation' :
-                         item.type === 'donationChat' ? 'Donation' : 'Order'}
+                        {item.type === 'itemChat' ? 'Item' :
+                          item.type === 'orderNotification' ? 'Order' :
+                            item.type === 'donationNotification' ? 'Donation' :
+                              item.type === 'donationChat' ? 'Donation' : 'Order'}
                       </span>
                     </button>
                   ))}
