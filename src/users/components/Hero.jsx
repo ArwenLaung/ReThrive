@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { 
-  ShoppingBag, 
-  Heart, 
-  Calendar, 
-  Leaf, 
-  CheckCircle, 
-  Ticket, 
-  ArrowRight 
+import {
+  ShoppingBag,
+  Heart,
+  Calendar,
+  Leaf,
+  CheckCircle,
+  Ticket,
+  ArrowRight
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import usm1 from "../assets/usm1.jpeg";
@@ -73,13 +73,12 @@ const Hero = () => {
         {HERO_IMAGES.map((img, index) => (
           <div
             key={index}
-            className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ease-in-out ${
-              index === currentImage ? "opacity-60" : "opacity-0"
-            }`}
+            className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ease-in-out ${index === currentImage ? "opacity-60" : "opacity-0"
+              }`}
           >
-            <img 
-              src={img} 
-              alt={`Slide ${index + 1}`} 
+            <img
+              src={img}
+              alt={`Slide ${index + 1}`}
               className="w-full h-full object-cover"
             />
           </div>
@@ -88,23 +87,23 @@ const Hero = () => {
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-4">
 
           <div className="bg-white/30 backdrop-blur-sm border border-white/10 p-10 md:p-14 rounded-3xl shadow-2xl max-w-4xl transition-all">
-            
+
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 drop-shadow-md">
               Welcome to <span className="text-[#8E24AA]">Re</span><span className="text-[#AAD11D]">Thrive</span>
             </h1>
-            
+
             <h2 className="text-xl md:text-2xl font-semibold text-gray-100 mb-8 tracking-wide">
               Your campus community marketplace
             </h2>
-            
+
             <p className="text-gray-200 max-w-2xl mx-auto mb-8 text-sm md:text-lg leading-relaxed font-medium shadow-black drop-shadow-md">
               A secure platform for USM students to buy, sell, and donate second-hand items.
               Join the movement to reduce waste and thrive together.
             </p>
-            
+
             <div className="flex justify-center">
-              <Link 
-                to="/marketplace" 
+              <Link
+                to="/marketplace"
                 className="bg-[#59287a] hover:bg-[#451d5e] text-white px-10 py-4 rounded-full font-bold transition-transform hover:scale-105 shadow-lg flex items-center gap-2 text-lg"
               >
                 Start Exploring <ArrowRight size={22} />
@@ -114,7 +113,7 @@ const Hero = () => {
         </div>
       </section>
 
-      {/* --- FEATURES SECTION --- */}
+      {/* FEATURES SECTION */}
       <section className="py-24 px-6 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
@@ -128,8 +127,8 @@ const Hero = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {FEATURES.map((feature, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className="group p-8 rounded-[2rem] border border-gray-100 bg-white hover:shadow-xl hover:shadow-purple-500/5 transition-all duration-300 hover:-translate-y-2"
               >
                 <div className={`w-16 h-16 rounded-2xl ${feature.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>

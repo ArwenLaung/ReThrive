@@ -84,9 +84,6 @@
   }
 }
 
-/* =========================
-   MOBILE RESPONSIVENESS
-========================= */
 @media (max-width: 480px) {
   .my-vouchers-title {
     font-size: 22px;

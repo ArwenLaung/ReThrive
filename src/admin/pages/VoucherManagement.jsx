@@ -320,7 +320,7 @@ const VoucherManagement = () => {
         </DialogActions>
       </Dialog>
 
-      {/* DELETE CONFIRMATION MODAL (MATCHES EVENT POSTING) */}
+      {/* DELETE CONFIRMATION MODAL */}
       {showConfirmationModal && (
         <div className="delete-modal">
           <div className="delete-modal-content">

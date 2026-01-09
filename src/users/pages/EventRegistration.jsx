@@ -83,7 +83,7 @@ const EventRegistration = () => {
     }
 
     try {
-      // 1️⃣ Save registration in Firestore
+      // Save registration in Firestore
       await addDoc(collection(db, "eventRegistrations"), {
         userId: user.uid,
         eventId: id,
@@ -94,12 +94,12 @@ const EventRegistration = () => {
         createdAt: serverTimestamp(),
       });
 
-      // 2️⃣ Add EcoPoints for this event
+      // Add EcoPoints for this event
       if (event && event.ecoPoints) {
         await addEcoPoints(user.uid, event.ecoPoints); // Call your helper
       }
 
-      // 3️⃣ Send confirmation email
+      // Send confirmation email
       const templateParams = {
         email: formData.email,
         event: {
@@ -112,10 +112,10 @@ const EventRegistration = () => {
       };
 
       await emailjs.send(
-        'CAT302_ReThrive@USM',     // Service ID
-        'template_gkjo3dy',        // Template ID
+        'CAT302_ReThrive@USM', // Service ID
+        'template_gkjo3dy', // Template ID
         templateParams,
-        'CpxvKuwCITdZkZdck'       // Public Key
+        'CpxvKuwCITdZkZdck' // Public Key
       );
 
       setSubmitted(true);

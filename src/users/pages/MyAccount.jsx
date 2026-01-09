@@ -39,9 +39,9 @@ const MyAccount = () => {
           avatar: currentUser.photoURL || DefaultProfilePic
         });
 
-        // --- 1. MARKETPLACE STATS ---
+        // 1. MARKETPLACE STATS
 
-        // A. My Listings: Count "active" AND "pending"
+        // A. My Listings: Count "active" and "pending"
         const itemsRef = collection(db, "items");
         const listingsSnap = await getCountFromServer(
           query(itemsRef, where("sellerId", "==", currentUser.uid), where("status", "in", ["active", "pending"]))
@@ -58,7 +58,7 @@ const MyAccount = () => {
           query(ordersRef, where("buyerId", "==", currentUser.uid), where("status", "==", "completed"))
         );
 
-        // --- 2. DONATION STATS ---
+        // 2. DONATION STATS
 
         // Fetch all donations where user is DONOR to split them into Active/History
         const donationsRef = collection(db, "donations");
@@ -66,13 +66,13 @@ const MyAccount = () => {
         const donorSnapshot = await getDocs(donorQuery);
         const donorDocs = donorSnapshot.docs.map(doc => doc.data());
 
-        // D. My Donations (Active & Pending): Status is NOT 'completed'
+        // D. My Donations (Active and Pending): Status is NOT 'completed'
         const myDonationsCount = donorDocs.filter(d => d.status !== 'completed').length;
 
         // E. My Donated Items (History): Status IS 'completed'
         const donatedHistoryCount = donorDocs.filter(d => d.status === 'completed').length;
 
-        // F. My Claimed Items: User is RECEIVER (Count all pending & completed)
+        // F. My Claimed Items: User is RECEIVER (Count all pending and completed)
         const claimedSnap = await getCountFromServer(
           query(donationsRef, where("receiverId", "==", currentUser.uid))
         );
@@ -202,7 +202,7 @@ const MyAccount = () => {
           <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 px-2">Settings</h3>
           <div className="bg-[#FEFAE0] rounded-[2rem] p-6 shadow-sm hover:shadow-md transition-shadow duration-300">
             <MenuRow icon={User} label="Account Details" onClick={() => navigate('/accountdetails')} />
-            <MenuRow icon={Lock} label="Change Password" isLast={true} onClick={() => alert("Change password feature coming soon!")} />
+            <MenuRow icon={Lock} label="Change Password" isLast={true} onClick={() => navigate('/changepassword')} />
           </div>
         </div>
 

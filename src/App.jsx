@@ -16,6 +16,7 @@ import DonateItem from "./users/pages/DonateItem.jsx";
 import MyAccount from "./users/pages/MyAccount.jsx";
 import AccountDetails from "./users/pages/AccountDetails.jsx";
 import EditProfile from "./users/pages/EditProfile.jsx";
+import ChangePassword from "./users/pages/ChangePassword.jsx";
 import MyCart from "./users/pages/MyCart.jsx";
 import MyRewards from "./users/pages/MyRewards.jsx";
 import MyListings from "./users/pages/MyListings.jsx";
@@ -48,7 +49,7 @@ import LeftColumnBar from "./admin/components/LeftColumnBar.jsx";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebase";
 
-// --- SCROLL COMPONENTS ---
+// SCROLL COMPONENTS
 const ScrollToTop = () => {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -168,6 +169,7 @@ const AppContent = ({ aboutRef, eventsRef, activeLink, setActiveLink, currentUse
         <Route path="/myrewards" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <MyRewards />} />
         <Route path="/accountdetails" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <AccountDetails />} />
         <Route path="/editprofile" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <EditProfile />} />
+        <Route path="/changepassword" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <ChangePassword />} />
         <Route path="/mylistings" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <MyListings />} />
         <Route path="/listing/:id" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <ListingDetail />} />
         <Route path="/mypurchases" element={isAdmin ? <Navigate to="/marketplaceModeration" /> : <MyPurchases />} />

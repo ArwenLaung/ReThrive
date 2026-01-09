@@ -33,7 +33,7 @@ const MyCart = () => {
   }, [navigate]);
 
   const removeFromCart = async (id) => {
-    // open confirmation modal instead of native confirm
+    // Open confirmation modal instead of native confirm
     setRemoveTarget(id);
     setShowRemoveConfirm(true);
   };
@@ -88,7 +88,7 @@ const MyCart = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-            {/* --- LEFT COLUMN: Cart Items --- */}
+            {/* LEFT COLUMN: Cart Items */}
             <div className="lg:col-span-2 space-y-6">
               {items.map((item) => (
                 <div key={item.id} className="bg-white p-5 rounded-[1.5rem] shadow-sm border border-gray-100 flex gap-6 items-center hover:shadow-md transition-shadow">
@@ -113,7 +113,7 @@ const MyCart = () => {
               ))}
             </div>
 
-            {/* --- RIGHT COLUMN: Checkout Summary --- */}
+            {/* RIGHT COLUMN: Checkout Summary */}
             <div className="lg:col-span-1">
               <div className="bg-white p-8 rounded-[2rem] shadow-lg shadow-purple-500/5 border border-purple-50 sticky top-28">
                 <h3 className="text-xl font-black text-gray-800 mb-6">Order Summary</h3>

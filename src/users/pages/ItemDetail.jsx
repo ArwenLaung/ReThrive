@@ -137,7 +137,7 @@ const ItemDetail = () => {
         availabilitySlots: item.availabilitySlots || [],
         createdAt: serverTimestamp()
       });
-      // show a quick success toast then navigate
+      // show a quick success message then navigate
       setNotifType('info');
       setNotifMessage('Item added to cart! Redirecting...');
       setTimeout(() => navigate('/mycart'), 800);

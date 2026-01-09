@@ -29,7 +29,7 @@ const ClaimDonation = () => {
 
   const CLAIM_COST = 10;
 
-  // --- VALIDATION HELPERS ---
+  // VALIDATION HELPERS
   const isPhoneValid = (phoneStr) => {
     if (!phoneStr) return true;
     const cleanPhone = phoneStr.replace(/\D/g, '');
@@ -85,7 +85,6 @@ const ClaimDonation = () => {
 
     return null; // Valid
   };
-  // --------------------------
 
   const getDayOptions = (sellerDays) => {
     if (!sellerDays || sellerDays.length === 0) {
@@ -224,7 +223,7 @@ const ClaimDonation = () => {
         receiverPhone: phone.trim(),
         meetupLocation: selectedLocation,
         meetupDay: selectedDay,
-        meetupTime: selectedTime.trim(), // We save the specific time typed
+        meetupTime: selectedTime.trim(),
         meetupSlot: selectedSlot,        // Optional: save the slot category too if needed
         claimedAt: serverTimestamp(),
         notificationForDonor: true, // Notify donor that item was claimed
@@ -332,7 +331,7 @@ const ClaimDonation = () => {
             </div>
           </div>
 
-          {/* Meetup config */}
+          {/* Meetup configuration */}
           <div className="space-y-4 mb-6">
             <h2 className="text-lg font-bold text-[#364f15]">Meetup Details</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -366,11 +365,6 @@ const ClaimDonation = () => {
                 <Clock size={14} /> Preferred Time *
               </label>
               <div className="flex gap-3">
-                {/* SLOT DROPDOWN: 
-                   - We bind this to `selectedSlot`.
-                   - We REMOVED the logic that auto-types into `selectedTime`.
-                   - It only sets the 'context' for validation now.
-                */}
                 <select
                   className="w-1/3 p-2.5 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#7db038] outline-none bg-white"
                   value={selectedSlot}
@@ -386,8 +380,8 @@ const ClaimDonation = () => {
                 <input
                   type="text"
                   className={`flex-1 p-2.5 text-sm border rounded-xl focus:ring-2 outline-none ${selectedTime && getTimeError(selectedTime, selectedSlot)
-                      ? 'border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:ring-[#7db038]'
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 focus:ring-[#7db038]'
                     }`}
                   placeholder="Specific Time (e.g. 9:00 AM)"
                   value={selectedTime}

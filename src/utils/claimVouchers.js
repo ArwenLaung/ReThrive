@@ -18,28 +18,28 @@ export const claimVouchers = async (userId, voucher) => {
     const currentPoints = userData.ecoPoints || 0;
     const claimedVouchers = userData.claimedVouchers || [];
 
-    // ❌ Already claimed
+    // Already claimed
     if (claimedVouchers.includes(voucher.id)) {
       throw new Error("Voucher already claimed");
     }
 
-    // ❌ Not enough points
+    // Not enough points
     if (currentPoints < voucherData.ecoPoints) {
       throw new Error("Not enough EcoPoints");
     }
 
-    // ❌ No remaining quantity
+    // No remaining quantity
     if ((voucherData.remainingQuantity || 0) <= 0) {
       throw new Error("Voucher is out of stock");
     }
 
-    // ✅ Deduct points & save claimed voucher safely with arrayUnion
+    // Deduct points & save claimed voucher safely with arrayUnion
     transaction.update(userRef, {
       ecoPoints: currentPoints - voucherData.ecoPoints,
-      claimedVouchers: arrayUnion(voucher.id), // safer than [...claimedVouchers, voucher.id]
+      claimedVouchers: arrayUnion(voucher.id),
     });
 
-    // ✅ Deduct remainingQuantity in voucher
+    // Deduct remainingQuantity in voucher
     transaction.update(voucherRef, {
       remainingQuantity: voucherData.remainingQuantity - 1,
     });

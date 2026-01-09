@@ -24,7 +24,7 @@ const AVAILABILITY_SLOTS = ['Morning (8am-12pm)', 'Afternoon (12pm-6pm)', 'Eveni
 const SellItem = () => {
   const navigate = useNavigate();
 
-  // --- STATE ---
+  // STATE
   const [images, setImages] = useState([]);
   const [category, setCategory] = useState("");
   const [keywords, setKeywords] = useState("");
@@ -37,7 +37,7 @@ const SellItem = () => {
   const [availSlots, setAvailSlots] = useState([]);
   const [otherChecked, setOtherChecked] = useState(false);
   const [otherLocation, setOtherLocation] = useState("");
-  // --- SUCCESS STATE ---
+  // SUCCESS STATE
   const [showSuccess, setShowSuccess] = useState(false);
   const [postedItem, setPostedItem] = useState(null);
 
@@ -423,7 +423,7 @@ const SellItem = () => {
                     </div>
                   </div>
 
-                  {/* [NEW] Availability Section */}
+                  {/* Availability Section */}
                   <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
                     <h3 className="text-sm font-bold text-gray-800 mb-3">When are you available to meet?</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -460,7 +460,7 @@ const SellItem = () => {
                 </div>
               </div>
 
-              {/* Bank Information - only shown until saved once */}
+              {/* Bank Information: only shown until saved once */}
               <div className="mt-6">
                 <div className="bg-[#FEFAE0] rounded-2xl p-4 border border-amber-200">
                   <h3 className="text-sm font-bold text-gray-800 mb-2">

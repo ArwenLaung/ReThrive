@@ -4,7 +4,7 @@ import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import ReThriveLogo from "../assets/logo.svg";
 import { auth } from '../../firebase';
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 
 import BadmintonHall from "../assets/badminton-hall.mp4";
 import ConvoSite from "../assets/convo-site.mp4";
@@ -34,7 +34,7 @@ const Login = () => {
     }
 
     try {
-      // 1. Firebase Login & Capture User Credential
+      // 1. Firebase Login and Capture User Credential
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const uid = userCredential.user.uid;
 
@@ -53,7 +53,6 @@ const Login = () => {
       if (err.code === 'auth/invalid-credential') {
         setError('Incorrect email or password.');
       } else if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
-        // Combining these two common errors for a generic message
         setError('Incorrect email or password.');
       } else {
         setError('Login failed. Please try again later.');
@@ -62,6 +61,18 @@ const Login = () => {
       setIsLoading(false);
     }
   }
+
+  const handleResetPassword = async (email) => {
+    try {
+      await sendPasswordResetEmail(auth, email, {
+        url: "https://re-thrive.vercel.app/login" // redirect after reset
+      });
+      alert("If an account exists, a reset email has been sent.");
+    } catch (error) {
+      alert("If an account exists, a reset email has been sent.");
+      console.error("Password reset error:", error);
+    }
+  };
 
   return (
     <div className="login-body">
@@ -123,7 +134,7 @@ const Login = () => {
               </div>
             </div>
 
-            {/* --- FOOTER SECTION --- */}
+            {/* Footer Section */}
             <div className="form-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
               <div>
                 <span style={{ fontSize: '13px', color: '#6e6e6e' }}>New to us? </span>
@@ -131,7 +142,15 @@ const Login = () => {
                   Create Account
                 </Link>
               </div>
-              <a href="https://self.usm.my/selfpasswordmanagement/" className="forgot-password-link">
+              <a
+                href="#!"
+                className="forgot-password-link"
+                onClick={() => {
+                  const userEmail = prompt("Enter your USM email to reset password:");
+                  if (userEmail) handleResetPassword(userEmail);
+                }}
+
+              >
                 Forgot Password?
               </a>
             </div>

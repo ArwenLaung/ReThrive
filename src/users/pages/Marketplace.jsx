@@ -16,7 +16,7 @@ const Marketplace = () => {
   const [sortOption, setSortOption] = useState("newest"); // Options: 'newest', 'low', 'high'
 
   useEffect(() => {
-    // Fetch all items, we'll hide sold ones on the client
+    // Fetch all items, hide sold ones on the client
     const itemsQuery = query(collection(db, "items"), where("status", "==", "active"), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(itemsQuery, (snapshot) => {
       const itemsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));

@@ -14,7 +14,7 @@ export const addEcoPoints = async (uid, points) => {
     newPoints = currentPoints + points;
     await updateDoc(userRef, { ecoPoints: newPoints });
   } else {
-    // use setDoc if user doesn't exist yet
+    // use setDoc if user does not exist yet
     await setDoc(userRef, { ecoPoints: points }, { merge: true });
   }
 

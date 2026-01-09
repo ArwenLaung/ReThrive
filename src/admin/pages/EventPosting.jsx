@@ -210,7 +210,7 @@ const EventPosting = () => {
         </div>
       </Box>
 
-      {/* ADD / EDIT DIALOG (unchanged) */}
+      {/* ADD / EDIT DIALOG */}
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle className="event-dialog-title">
           {editId ? "Edit Event" : "Add Event"}
@@ -308,7 +308,7 @@ const EventPosting = () => {
         </DialogActions>
       </Dialog>
 
-      {/* DELETE CONFIRMATION (unchanged) */}
+      {/* DELETE CONFIRMATION */}
       {showConfirmationModal && (
         <div className="delete-modal">
           <div className="delete-modal-content">

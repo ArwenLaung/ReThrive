@@ -17,7 +17,7 @@ const MyListings = () => {
   const [pendingOrdersDetails, setPendingOrdersDetails] = useState({});
   const [confirmDeliveryItem, setConfirmDeliveryItem] = useState(null);
 
-  // Check Auth & Fetch Data
+  // Check Auth and Fetch Data
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       if (!currentUser) {
@@ -44,7 +44,7 @@ const MyListings = () => {
         setItems(userItems);
         setLoading(false);
 
-        // --- AUTO-COMPLETE LOGIC ---
+        // AUTO-COMPLETE LOGIC
         userItems.forEach(async (item) => {
           try {
             if (
@@ -140,13 +140,13 @@ const MyListings = () => {
         notificationForSeller: false,
       };
 
-      // Check has Buyer already received? If yes -> finalize transaction
+      // Check has Buyer already received? If yes: finalise transaction
       if (orderData.deliveryStatus === 'received') {
         updates.status = 'completed';
         updates.completedAt = serverTimestamp();
         updates.notificationForBuyer = false;
 
-        // Finalize Item
+        // Finalise Item
         await updateDoc(doc(db, "items", item.id), { status: 'sold' });
 
         // Award Points
@@ -203,7 +203,7 @@ const MyListings = () => {
 
       <div className="max-w-6xl mx-auto space-y-12">
 
-        {/* --- SECTION 1: PENDING ORDERS --- */}
+        {/* PENDING ORDERS */}
         <div>
           <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2"><Clock className="text-yellow-600" /> Pending Orders</h2>
           {pendingItems.length === 0 ? <p className="text-gray-500 italic bg-white p-6 rounded-2xl">No pending orders.</p> : (
@@ -275,7 +275,7 @@ const MyListings = () => {
                                 </div>
                               ) : (
                                 <button
-                                  /* --- [MODIFIED] Use the wrapper function to trigger modal --- */
+                                  /* Use the wrapper function to trigger modal */
                                   onClick={() => handleRequestMarkDelivered(item)}
                                   disabled={updatingId === item.id}
                                   className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 disabled:opacity-50"
@@ -299,7 +299,7 @@ const MyListings = () => {
           )}
         </div>
 
-        {/* --- SECTION 2: ACTIVE LISTINGS --- */}
+        {/* ACTIVE LISTINGS */}
         <div>
           <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
             <Package className="text-green-600" /> Active Listings
@@ -366,7 +366,7 @@ const MyListings = () => {
         onConfirm={handleConfirmDelete}
       />
 
-      {/* Confirmation Modal for Delivery --- */}
+      {/* Confirmation Modal for Delivery */}
       <ConfirmModal
         open={!!confirmDeliveryItem}
         title="Confirm Delivery?"

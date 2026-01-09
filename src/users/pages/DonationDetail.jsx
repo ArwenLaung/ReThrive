@@ -50,7 +50,7 @@ const DonationDetail = () => {
 
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          // Exclude current item AND claimed items
+          // Exclude current item and claimed items
           if (doc.id !== item.id && !data.receiverId) {
             items.push({ id: doc.id, ...data });
           }

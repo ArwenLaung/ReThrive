@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { DataGrid } from "@mui/x-data-grid";
 import { db } from "../../firebase";
-import { collection, onSnapshot, deleteDoc, doc, updateDoc } from "firebase/firestore"; // ✅ added updateDoc
+import { collection, onSnapshot, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import {
   TextField,
   Dialog,
@@ -23,21 +23,21 @@ const DonationModeration = () => {
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
 
-  // 🔹 Fetch donations from Firestore
+  // Fetch donations from Firestore
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "donations"), (snap) => {
       setDonations(
         snap.docs.map((d) => ({
           ...d.data(),
           id: d.id,
-          checked: d.data().checked || false // ✅ default to false if missing
+          checked: d.data().checked || false // default to false if missing
         }))
       );
     });
     return unsub;
   }, []);
 
-  // 🔹 Filter donations by status
+  // Filter donations by status
   const activeDonations = donations.filter((d) => d.status === "active");
   const pendingDonations = donations.filter((d) => d.status === "pending");
   const completedDonations = donations.filter((d) => d.status === "completed");
@@ -134,28 +134,28 @@ const DonationModeration = () => {
         </Tabs>
       </div>
 
-      {/* 🔹 Active Donations */}
+      {/* Active Donations */}
       {activeTab === 0 && (
         <div className="item-table-card">
           <DataGrid autoHeight rows={activeDonations} columns={columns} pageSize={5} rowsPerPageOptions={[5]} />
         </div>
       )}
 
-      {/* 🔹 Pending Donations */}
+      {/* Pending Donations */}
       {activeTab === 1 && (
         <div className="item-table-card">
           <DataGrid autoHeight rows={pendingDonations} columns={columns} pageSize={5} rowsPerPageOptions={[5]} />
         </div>
       )}
 
-      {/* 🔹 Completed Donations */}
+      {/* Completed Donations */}
       {activeTab === 2 && (
         <div className="item-table-card">
           <DataGrid autoHeight rows={completedDonations} columns={columns} pageSize={5} rowsPerPageOptions={[5]} />
         </div>
       )}
 
-      {/* 🔹 View Donation Dialog */}
+      {/* View Donation Dialog */}
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle className="item-dialog-title">Donation Details</DialogTitle>
         <DialogContent dividers>
@@ -207,7 +207,7 @@ const DonationModeration = () => {
         </DialogActions>
       </Dialog>
 
-      {/* 🔹 Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal */}
       {showConfirmationModal && (
         <div className="delete-modal">
           <div className="delete-modal-content">

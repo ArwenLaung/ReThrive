@@ -55,9 +55,7 @@
   scroll-behavior: smooth;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
-  /* Firefox hide scrollbar */
   -ms-overflow-style: none;
-  /* IE hide scrollbar */
   flex-grow: 1;
 }
 

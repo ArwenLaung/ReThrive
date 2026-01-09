@@ -17,7 +17,7 @@ const ListingDetail = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
-  // --- STATE ---
+  // STATE
   const [images, setImages] = useState([]);
   const [category, setCategory] = useState("");
   const [keywords, setKeywords] = useState("");
@@ -45,9 +45,9 @@ const ListingDetail = () => {
   const [error, setError] = useState("");
 
   const PREDEFINED_LOCATIONS = [
-    "Desasiswa Restu", "Desasiswa Saujana", "Desasiswa Tekun", 
-    "Desasiswa Aman Damai", "Desasiswa Indah Kembara", 
-    "Desasiswa Fajar Harapan", "Desasiswa Bakti Permai", 
+    "Desasiswa Restu", "Desasiswa Saujana", "Desasiswa Tekun",
+    "Desasiswa Aman Damai", "Desasiswa Indah Kembara",
+    "Desasiswa Fajar Harapan", "Desasiswa Bakti Permai",
     "Desasiswa Cahaya Gemilang", "Main Library"
   ];
 
@@ -66,15 +66,15 @@ const ListingDetail = () => {
         const docRef = doc(db, "settings", "moderation");
         const docSnap = await getDoc(docRef);
         if (docSnap.exists() && docSnap.data().bannedKeywords) {
-           const list = docSnap.data().bannedKeywords.map(w => w.toLowerCase().trim());
-           setUnsafeKeywords(list);
+          const list = docSnap.data().bannedKeywords.map(w => w.toLowerCase().trim());
+          setUnsafeKeywords(list);
         }
       } catch (e) { console.error("Error loading moderation list:", e); }
     };
     fetchKeywords();
   }, []);
 
-  // --- 1. FETCH DATA ---
+  // 1. FETCH DATA
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -103,7 +103,7 @@ const ListingDetail = () => {
           setCategory(data.category);
           setSellerName(data.sellerName || "");
           setSellerEmail(data.sellerEmail || "");
-          
+
           // Map Condition
           const normalizedCondition = CONDITION_MAP[data.condition] || data.condition;
           setCondition(normalizedCondition);
@@ -122,7 +122,7 @@ const ListingDetail = () => {
 
           // Handle Location
           const savedLocations = data.locations || (data.location ? [data.location] : []);
-          
+
           const standardLocs = savedLocations.filter(l => PREDEFINED_LOCATIONS.includes(l));
           const customLoc = savedLocations.find(l => !PREDEFINED_LOCATIONS.includes(l));
 
@@ -148,7 +148,7 @@ const ListingDetail = () => {
     return () => unsubscribe();
   }, [id, navigate]);
 
-  // --- 2. HANDLERS ---
+  // 2. HANDLERS
   const handleImageChange = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
@@ -171,12 +171,12 @@ const ListingDetail = () => {
     imgElement.onload = async () => {
       try {
         const prediction = await classifyImage(imgElement);
-        
+
         // AI BLOCK: Check if forbidden
         if (FORBIDDEN_CLASSES.includes(prediction?.className) && prediction?.probability > 0.8) {
-            alert(`Listing Blocked: Identified as '${prediction.className}'.`);
-            setIsAnalyzingImage(false);
-            return; // Stop execution
+          alert(`Listing Blocked: Identified as '${prediction.className}'.`);
+          setIsAnalyzingImage(false);
+          return; // Stop execution
         }
 
         setImages((prev) => [...prev, ...newImages]);
@@ -203,22 +203,22 @@ const ListingDetail = () => {
     const foundKeyword = unsafeKeywords.find(word => keywords.toLowerCase().includes(word));
     if (foundKeyword) {
       alert(`Blocked: Contains restricted word "${foundKeyword}".`);
-      return; 
+      return;
     }
 
     setIsGeneratingText(true);
     try {
       const result = await generateDescription(keywords, category, null);
-      
+
       // Check result title for violation flags from AI
       if (result.title.includes("Violation")) {
         alert("Safety Restriction: " + result.description);
         return;
       }
-      
+
       setTitle(result.title);
       setDescription(result.description);
-    } catch (e) { console.error(e); } 
+    } catch (e) { console.error(e); }
     finally { setIsGeneratingText(false); }
   };
 
@@ -231,17 +231,17 @@ const ListingDetail = () => {
 
     const finalLocations = [...locations];
     if (otherChecked && otherLocation.trim()) {
-        finalLocations.push(otherLocation.trim());
+      finalLocations.push(otherLocation.trim());
     }
 
     if (finalLocations.length === 0) {
-        setError("Please select at least one pickup location."); return;
+      setError("Please select at least one pickup location."); return;
     }
     const primaryLocation = finalLocations[0];
 
     // Validate Availability & Perform Final Moderation Check
     if (availDays.length === 0 || availSlots.length === 0) {
-        setError("Please select availability days and slots."); return;
+      setError("Please select availability days and slots."); return;
     }
 
     const combinedText = (title + " " + description).toLowerCase();
@@ -259,7 +259,7 @@ const ListingDetail = () => {
       const finalImageUrls = await Promise.all(
         images.map(async (imgObj, index) => {
           if (imgObj.isExisting) return imgObj.preview;
-          
+
           try {
             const cleanName = imgObj.file.name.replace(/[^a-zA-Z0-9.]/g, "_");
             const storageRef = ref(storage, `items/${Date.now()}_${index}_${cleanName}`);
@@ -286,7 +286,7 @@ const ListingDetail = () => {
         category,
         location: primaryLocation,
         locations: finalLocations,
-        condition, 
+        condition,
         availabilityDays: availDays,
         availabilitySlots: availSlots,
         images: finalImageUrls,
@@ -343,15 +343,15 @@ const ListingDetail = () => {
 
       <main className="max-w-7xl mx-auto px-4 mt-6">
         {error && (
-            <div className="bg-red-50 text-red-600 p-4 rounded-xl flex items-center gap-3 mb-6 animate-pulse">
+          <div className="bg-red-50 text-red-600 p-4 rounded-xl flex items-center gap-3 mb-6 animate-pulse">
             <AlertCircle size={20} />
             <p className="font-medium">{error}</p>
-            </div>
+          </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch">
-          
-          {/* --- LEFT COLUMN: Photos (Sticky) --- */}
+
+          {/* LEFT COLUMN: Photos (Sticky) */}
           <div className="md:col-span-4 flex flex-col">
             <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 sticky top-24 h-full flex flex-col">
               <h2 className="text-lg font-bold text-gray-800 mb-4">Items Photos (Max 3)</h2>
@@ -372,10 +372,10 @@ const ListingDetail = () => {
             </section>
           </div>
 
-          {/* --- RIGHT COLUMN: Details Form --- */}
+          {/* RIGHT COLUMN: Details Form */}
           <div className="md:col-span-8 flex flex-col">
             <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 space-y-6 h-full">
-              
+
               {/* Item Details */}
               <div>
                 <h2 className="text-lg font-bold text-gray-800 mb-4">Item Details</h2>
@@ -434,72 +434,72 @@ const ListingDetail = () => {
 
               <hr className="border-gray-100" />
 
-              {/* Price & Logistics */}
+              {/* Price and Logistics */}
               <div>
                 <h2 className="text-lg font-bold text-gray-800 mb-4">Price & Logistics</h2>
                 <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Price (RM)</label>
-                            <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#59287a] outline-none" />
-                        </div>
-                        {/* Pickup Location Selection (Matches SellItem) */}
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Pickup Location(s)</label>
-                            <div className="grid grid-cols-1 gap-2 border p-3 rounded-xl border-gray-100 max-h-40 overflow-y-auto">
-                                {PREDEFINED_LOCATIONS.map((opt) => (
-                                <label key={opt} className="inline-flex items-center gap-2">
-                                    <input type="checkbox" checked={locations.includes(opt)} onChange={() => {
-                                    setLocations((prev) => prev.includes(opt) ? prev.filter((p) => p !== opt) : [...prev, opt]);
-                                    }} className="rounded text-[#59287a] focus:ring-[#59287a]" />
-                                    <span className="text-sm">{opt}</span>
-                                </label>
-                                ))}
-                                <label className="inline-flex items-center gap-2">
-                                    <input type="checkbox" checked={otherChecked} onChange={() => setOtherChecked((v) => !v)} className="rounded text-[#59287a]" />
-                                    <span className="text-sm">Other</span>
-                                </label>
-                            </div>
-                            {otherChecked && (
-                                <input type="text" placeholder="Enter other location..." value={otherLocation} onChange={(e) => setOtherLocation(e.target.value)} className="w-full mt-2 p-2 rounded-lg border border-[#dccae8] bg-[#f3eefc] text-sm" />
-                            )}
-                        </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Price (RM)</label>
+                      <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#59287a] outline-none" />
                     </div>
+                    {/* Pickup Location Selection (Matches SellItem) */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Pickup Location(s)</label>
+                      <div className="grid grid-cols-1 gap-2 border p-3 rounded-xl border-gray-100 max-h-40 overflow-y-auto">
+                        {PREDEFINED_LOCATIONS.map((opt) => (
+                          <label key={opt} className="inline-flex items-center gap-2">
+                            <input type="checkbox" checked={locations.includes(opt)} onChange={() => {
+                              setLocations((prev) => prev.includes(opt) ? prev.filter((p) => p !== opt) : [...prev, opt]);
+                            }} className="rounded text-[#59287a] focus:ring-[#59287a]" />
+                            <span className="text-sm">{opt}</span>
+                          </label>
+                        ))}
+                        <label className="inline-flex items-center gap-2">
+                          <input type="checkbox" checked={otherChecked} onChange={() => setOtherChecked((v) => !v)} className="rounded text-[#59287a]" />
+                          <span className="text-sm">Other</span>
+                        </label>
+                      </div>
+                      {otherChecked && (
+                        <input type="text" placeholder="Enter other location..." value={otherLocation} onChange={(e) => setOtherLocation(e.target.value)} className="w-full mt-2 p-2 rounded-lg border border-[#dccae8] bg-[#f3eefc] text-sm" />
+                      )}
+                    </div>
+                  </div>
 
-                    {/* Availability Section (Matches SellItem) */}
-                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                        <h3 className="text-sm font-bold text-gray-800 mb-3">When are you available to meet?</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Days */}
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Days</label>
-                                <div className="space-y-2">
-                                    {AVAILABILITY_DAYS.map((day) => (
-                                        <label key={day} className="flex items-center gap-2 cursor-pointer">
-                                            <input type="checkbox" checked={availDays.includes(day)} onChange={() => {
-                                                setAvailDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
-                                            }} className="rounded text-[#59287a]" />
-                                            <span className="text-sm text-gray-700">{day}</span>
-                                        </label>
-                                    ))}
-                                </div>
-                            </div>
-                            {/* Slots */}
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Time Slots</label>
-                                <div className="space-y-2">
-                                    {AVAILABILITY_SLOTS.map((slot) => (
-                                        <label key={slot} className="flex items-center gap-2 cursor-pointer">
-                                            <input type="checkbox" checked={availSlots.includes(slot)} onChange={() => {
-                                                setAvailSlots(prev => prev.includes(slot) ? prev.filter(s => s !== slot) : [...prev, slot]);
-                                            }} className="rounded text-[#59287a]" />
-                                            <span className="text-sm text-gray-700">{slot}</span>
-                                        </label>
-                                    ))}
-                                </div>
-                            </div>
+                  {/* Availability Section (Matches SellItem) */}
+                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <h3 className="text-sm font-bold text-gray-800 mb-3">When are you available to meet?</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Days */}
+                      <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Days</label>
+                        <div className="space-y-2">
+                          {AVAILABILITY_DAYS.map((day) => (
+                            <label key={day} className="flex items-center gap-2 cursor-pointer">
+                              <input type="checkbox" checked={availDays.includes(day)} onChange={() => {
+                                setAvailDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
+                              }} className="rounded text-[#59287a]" />
+                              <span className="text-sm text-gray-700">{day}</span>
+                            </label>
+                          ))}
                         </div>
+                      </div>
+                      {/* Slots */}
+                      <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Time Slots</label>
+                        <div className="space-y-2">
+                          {AVAILABILITY_SLOTS.map((slot) => (
+                            <label key={slot} className="flex items-center gap-2 cursor-pointer">
+                              <input type="checkbox" checked={availSlots.includes(slot)} onChange={() => {
+                                setAvailSlots(prev => prev.includes(slot) ? prev.filter(s => s !== slot) : [...prev, slot]);
+                              }} className="rounded text-[#59287a]" />
+                              <span className="text-sm text-gray-700">{slot}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
                     </div>
+                  </div>
                 </div>
               </div>
 

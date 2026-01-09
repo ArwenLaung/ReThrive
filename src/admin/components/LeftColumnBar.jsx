@@ -18,7 +18,6 @@ const LeftColumnBar = ({ onCollapseChange }) => {
       .catch((error) => console.log(error));
   };
 
-  // notify parent whenever collapsed changes
   useEffect(() => {
     onCollapseChange?.(collapsed);
   }, [collapsed, onCollapseChange]);

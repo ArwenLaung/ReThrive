@@ -41,7 +41,7 @@ const MyPurchases = () => {
         setOrders(orderList);
         setLoading(false);
 
-        // Auto-mark as received after 7 days if buyer hasn't responded
+        // Auto-mark as received after 7 days if buyer has not responded
         orderList.forEach(async (order) => {
           try {
             if (
@@ -93,7 +93,7 @@ const MyPurchases = () => {
 
       // Only "Complete" the order if BOTH parties have confirmed
       if (isSellerDelivered) {
-        updates.status = 'completed'; // Finalize Order
+        updates.status = 'completed'; // Finalise Order
         updates.completedAt = serverTimestamp();
         updates.notificationForSeller = false; // Clear seller notification
 
@@ -102,12 +102,12 @@ const MyPurchases = () => {
           try {
             await updateDoc(doc(db, "items", order.itemId), { status: 'sold' });
           } catch (itemError) {
-            // If item is already sold, this error happens. We ignore it so we can finish the Order.
+            // If item is already sold, this error happens. Ignore it so we can finish the Order.
             console.warn("Item status update skipped (likely already sold):", itemError.message);
           }
         }
 
-        // Award EcoPoints to BOTH Buyer and Seller
+        // Award EcoPoints to both Buyer and Seller
         const pointsToEarn = 10;
         await addEcoPoints(order.buyerId, pointsToEarn); // Buyer
         if (order.sellerId) {
@@ -116,7 +116,7 @@ const MyPurchases = () => {
 
         alert(`Transaction Complete! Both you and the seller earned ${pointsToEarn} EcoPoints!`);
       } else {
-        // Seller hasn't clicked yet - notify seller
+        // Seller has not clicked yet: notify seller
         updates.notificationForSeller = true;
         alert("Marked as Received! Waiting for Seller to mark as Delivered to complete the order.");
       }
@@ -227,10 +227,9 @@ const MyPurchases = () => {
         <h1 className="text-3xl font-black text-brand-purple tracking-tight">My Purchases</h1>
       </div>
 
-      {/* [MODIFICATION] Completely replaced the main content area to support sections */}
       <div className="max-w-6xl mx-auto space-y-12">
 
-        {/* --- SECTION 1: PENDING ORDERS --- */}
+        {/* PENDING ORDERS */}
         <div>
           <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
             <Clock className="text-yellow-600" /> Pending Orders
@@ -257,7 +256,7 @@ const MyPurchases = () => {
                           <p className="text-sm text-gray-500">Order ID: {order.id.substring(0, 8)}...</p>
                         </div>
 
-                        {/* [MODIFICATION] Pickup Details Block */}
+                        {/* Pickup Details Block */}
                         <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                           <div className="flex items-start gap-2">
                             <MapPin size={16} className="text-[#59287a] mt-0.5 shrink-0" />
@@ -282,7 +281,7 @@ const MyPurchases = () => {
                           </div>
                         </div>
 
-                        {/* Status & Actions */}
+                        {/* Status and Actions */}
                         <div className="flex flex-wrap items-center justify-between gap-4">
                           <div className="text-sm">
                             <span className="text-gray-500">Seller:</span> <span className="font-semibold">{order.sellerName}</span>
@@ -320,7 +319,7 @@ const MyPurchases = () => {
           )}
         </div>
 
-        {/* --- SECTION 2: PURCHASE HISTORY (COMPLETED) --- */}
+        {/* PURCHASE HISTORY (COMPLETED) */}
         <div>
           <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
             <CheckCircle className="text-green-600" /> Purchase History

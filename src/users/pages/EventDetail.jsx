@@ -109,10 +109,10 @@ const EventDetail = () => {
               <button
                 onClick={() => {
                   if (auth.currentUser) {
-                    // User is logged in → go to registration
+                    // User is logged in, go to registration
                     navigate(`/register/${id}`);
                   } else {
-                    // User not logged in → go to login page
+                    // User not logged in, go to login page
                     navigate("/login");
                   }
                 }}

@@ -45,7 +45,7 @@ const Header = ({ activeLink }) => {
 
     const uid = user.uid;
 
-    // --- MARKETPLACE QUERIES (Existing) ---
+    // MARKETPLACE QUERIES (Existing)
     const itemChatsBuyerQ = query(
       collection(db, 'itemChats'),
       where('buyerId', '==', uid),
@@ -67,7 +67,7 @@ const Header = ({ activeLink }) => {
       where('unreadForSeller', '==', true)
     );
 
-    // --- ORDER NOTIFICATION QUERIES  ---
+    // ORDER NOTIFICATION QUERIES
     const orderNotificationsBuyerQ = query(
       collection(db, 'orders'),
       where('buyerId', '==', uid),
@@ -79,7 +79,7 @@ const Header = ({ activeLink }) => {
       where('notificationForSeller', '==', true)
     );
 
-    // --- DONATION QUERIES ) ---
+    // DONATION QUERIES
 
     const donationDonorQ = query(
       collectionGroup(db, 'threads'),
@@ -93,7 +93,7 @@ const Header = ({ activeLink }) => {
       where('unreadForReceiver', '==', true)
     );
 
-    // --- DONATION NOTIFICATION QUERIES ---
+    // DONATION NOTIFICATION QUERIES
     const donationNotificationsDonorQ = query(
       collection(db, 'donations'),
       where('donorId', '==', uid),
@@ -135,7 +135,7 @@ const Header = ({ activeLink }) => {
       setNotifItems(merged);
     };
 
-    // --- LISTENERS ---
+    // LISTENERS
 
     const unsubItemBuyer = onSnapshot(itemChatsBuyerQ, (snap) => {
       buckets.buyerItems = snap.docs.map((d) => {
@@ -236,7 +236,7 @@ const Header = ({ activeLink }) => {
       recompute();
     });
 
-    // --- ORDER NOTIFICATION LISTENERS ---
+    // ORDER NOTIFICATION LISTENERS
     const unsubOrderNotifBuyer = onSnapshot(orderNotificationsBuyerQ, (snap) => {
       buckets.orderNotifsBuyer = snap.docs.map((d) => {
         const data = d.data();
@@ -269,7 +269,7 @@ const Header = ({ activeLink }) => {
       recompute();
     });
 
-    // --- DONATION NOTIFICATION LISTENER ---
+    // DONATION NOTIFICATION LISTENER
     const unsubDonationNotifDonor = onSnapshot(donationNotificationsDonorQ, (snap) => {
       buckets.donationNotifsDonor = snap.docs.map((d) => {
         const data = d.data();

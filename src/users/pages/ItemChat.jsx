@@ -81,7 +81,7 @@ const ItemChat = () => {
           const chatId = `${item.id}_${currentUser.uid}`;
           const chatRef = doc(db, 'itemChats', chatId);
 
-          // Create or update minimal chat metadata; messages are handled separately
+          // Create or update minimal chat metadata, messages are handled separately
           const newChat = {
             itemId: item.id,
             itemTitle: item.title || '',

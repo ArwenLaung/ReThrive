@@ -25,10 +25,10 @@ const DonationChat = () => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
-  
+
   const [activeThreadId, setActiveThreadId] = useState(null);
-  const [availableThreads, setAvailableThreads] = useState([]); 
-  
+  const [availableThreads, setAvailableThreads] = useState([]);
+
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
 
@@ -74,7 +74,7 @@ const DonationChat = () => {
         try {
           const threadId = `${donation.id}_${currentUser.uid}`;
           const threadRef = doc(db, 'donations', donation.id, 'threads', threadId);
-          
+
           const threadData = {
             donationId: donation.id,
             donationTitle: donation.title || '',
@@ -85,7 +85,7 @@ const DonationChat = () => {
             receiverName: currentUser.displayName || currentUser.email?.split('@')[0] || 'Receiver',
             lastMessageAt: serverTimestamp(),
           };
-          
+
           await setDoc(threadRef, threadData, { merge: true });
           setActiveThreadId(threadId);
         } catch (error) {
@@ -96,7 +96,7 @@ const DonationChat = () => {
           const threadsRef = collection(db, 'donations', donation.id, 'threads');
           const snapshot = await getDocs(threadsRef);
           const threads = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-          
+
           setAvailableThreads(threads);
           if (threads.length > 0) {
             setActiveThreadId(threads[0].id);
@@ -110,23 +110,23 @@ const DonationChat = () => {
     setupThreading();
   }, [donation, currentUser]);
 
-// 4. Subscribe to Messages & Clear Unread Flags
+  // 4. Subscribe to Messages and Clear Unread Flags
   useEffect(() => {
     if (!donationId || !activeThreadId || !currentUser) { // Added currentUser check
       setMessages([]);
       return;
     }
 
-    // --- NEW LOGIC: Clear "Unread" flag when you open the chat ---
+    // Clear "Unread" flag when opening the chat
     const clearUnread = async () => {
       try {
         const threadRef = doc(db, 'donations', donationId, 'threads', activeThreadId);
         const docSnap = await getDoc(threadRef);
-        
+
         if (docSnap.exists()) {
           const data = docSnap.data();
           const isDonor = data.donorId === currentUser.uid;
-          
+
           // If I am the donor, I clear my unread flag. If receiver, clear mine.
           if (isDonor && data.unreadForDonor) {
             await setDoc(threadRef, { unreadForDonor: false }, { merge: true });
@@ -139,7 +139,6 @@ const DonationChat = () => {
       }
     };
     clearUnread();
-    // -----------------------------------------------------------
 
     const messagesRef = collection(db, 'donations', donationId, 'threads', activeThreadId, 'messages');
     const q = query(messagesRef, orderBy('createdAt', 'asc'));
@@ -179,12 +178,12 @@ const DonationChat = () => {
       // 2. Determine who is sending (Donor or Receiver?)
       const isDonorSender = donation.donorId === currentUser.uid;
 
-      // 3. Update Thread with Last Message AND Unread Flags
+      // 3. Update Thread with Last Message and Unread Flags
       await setDoc(doc(db, 'donations', donationId, 'threads', activeThreadId), {
         lastMessage: messageText,
         lastMessageAt: serverTimestamp(),
         // If Donor sent it, it is Unread for Receiver (and vice versa)
-        unreadForReceiver: isDonorSender, 
+        unreadForReceiver: isDonorSender,
         unreadForDonor: !isDonorSender
       }, { merge: true });
 
@@ -291,11 +290,10 @@ const DonationChat = () => {
                       onClick={() => {
                         setActiveThreadId(thread.id);
                       }}
-                      className={`px-3 py-2 rounded-xl text-xs font-medium border ${
-                        isActive
+                      className={`px-3 py-2 rounded-xl text-xs font-medium border ${isActive
                           ? 'bg-[#7db038] text-white border-[#7db038]'
                           : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
-                      }`}
+                        }`}
                     >
                       {thread.receiverName || 'Receiver'}
                     </button>
@@ -315,7 +313,7 @@ const DonationChat = () => {
         <div className="max-w-4xl mx-auto space-y-4">
           {!activeThreadId ? (
             <div className="text-center py-12 text-gray-500">
-               {isDonor ? 'Select a buyer conversation above to start chatting.' : 'Setting up your chat...'}
+              {isDonor ? 'Select a buyer conversation above to start chatting.' : 'Setting up your chat...'}
             </div>
           ) : messages.length === 0 ? (
             <div className="text-center py-12 text-gray-500">No messages yet. Start the conversation!</div>
@@ -328,25 +326,23 @@ const DonationChat = () => {
                   className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-xs md:max-w-md px-4 py-3 rounded-2xl ${
-                      isOwnMessage
+                    className={`max-w-xs md:max-w-md px-4 py-3 rounded-2xl ${isOwnMessage
                         ? 'bg-[#7db038] text-white rounded-br-sm'
                         : 'bg-gray-100 text-gray-900 rounded-bl-sm'
-                    }`}
+                      }`}
                   >
                     <p className="text-sm font-medium mb-1">{msg.senderName}</p>
                     <p className="text-sm whitespace-pre-wrap break-words">{msg.text}</p>
                     {msg.createdAt && (
                       <p
-                        className={`text-xs mt-1 ${
-                          isOwnMessage ? 'text-lime-100' : 'text-gray-500'
-                        }`}
+                        className={`text-xs mt-1 ${isOwnMessage ? 'text-lime-100' : 'text-gray-500'
+                          }`}
                       >
                         {msg.createdAt.toDate
                           ? new Date(msg.createdAt.toDate()).toLocaleTimeString([], {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })
                           : 'Just now'}
                       </p>
                     )}

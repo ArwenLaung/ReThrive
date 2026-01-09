@@ -195,7 +195,7 @@ const MySoldItems = () => {
 
                         {/* Status chips */}
 
-                        {/* Status chips - Only show if NOT delivered */}
+                        {/* Status chips: Only show if NOT delivered */}
                         {!order.sellerDeliveryStatus && (
                           <>
                             {order.status === 'pending' && (
@@ -239,7 +239,6 @@ const MySoldItems = () => {
                             )}
                           </button>
                         ) : (
-                          /* This is the BLUE badge that appears after clicking */
                           <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl font-semibold">
                             <CheckCircle size={18} />
                             Item Delivered

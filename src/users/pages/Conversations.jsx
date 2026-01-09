@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MessageCircle, Loader2, Gift } from 'lucide-react'; // Added Gift icon for donations
+import { MessageCircle, Loader2, Gift } from 'lucide-react';
 import { auth, db } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, onSnapshot, collectionGroup } from 'firebase/firestore';
@@ -11,13 +11,13 @@ const Conversations = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let unsubscribeAuth = () => {};
+    let unsubscribeAuth = () => { };
     // Marketplace Unsubscribers
-    let unsubBuyer = () => {};
-    let unsubSeller = () => {};
+    let unsubBuyer = () => { };
+    let unsubSeller = () => { };
     // Donation Unsubscribers
-    let unsubDonor = () => {};
-    let unsubReceiver = () => {};
+    let unsubDonor = () => { };
+    let unsubReceiver = () => { };
 
     unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       if (!currentUser) {
@@ -37,7 +37,7 @@ const Conversations = () => {
         where('sellerId', '==', uid),
       );
 
-      // 2. Donation Queries (Using collectionGroup to find nested threads)
+      // 2. Donation Queries 
       const donationDonorQ = query(
         collectionGroup(db, 'threads'),
         where('donorId', '==', uid)
@@ -56,7 +56,7 @@ const Conversations = () => {
 
       const recompute = () => {
         const merged = [
-          ...buckets.buyer, 
+          ...buckets.buyer,
           ...buckets.seller,
           ...buckets.donor,
           ...buckets.receiver
@@ -70,7 +70,7 @@ const Conversations = () => {
         setLoading(false);
       };
 
-      // --- LISTENERS ---
+      // LISTENERS
 
       // A. Marketplace Buyer
       unsubBuyer = onSnapshot(buyerQ, (snap) => {
@@ -201,9 +201,8 @@ const Conversations = () => {
                 className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors"
               >
                 {/* Icon based on Type */}
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  conv.type === 'donation' ? 'bg-[#7db038]/10' : 'bg-brand-purple/10'
-                }`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${conv.type === 'donation' ? 'bg-[#7db038]/10' : 'bg-brand-purple/10'
+                  }`}>
                   {conv.type === 'donation' ? (
                     <Gift size={18} className="text-[#7db038]" />
                   ) : (
@@ -216,11 +215,10 @@ const Conversations = () => {
                     <p className="font-semibold text-gray-900 line-clamp-1">
                       {conv.itemTitle}
                     </p>
-                    <span className={`text-xs uppercase tracking-wide ${
-                      conv.type === 'donation' ? 'text-[#7db038]' : 'text-gray-400'
-                    }`}>
+                    <span className={`text-xs uppercase tracking-wide ${conv.type === 'donation' ? 'text-[#7db038]' : 'text-gray-400'
+                      }`}>
                       {/* Dynamic Label */}
-                      {conv.type === 'donation' 
+                      {conv.type === 'donation'
                         ? (conv.role === 'donor' ? 'Donor' : 'Receiver')
                         : (conv.role === 'buyer' ? 'Seller' : 'Buyer')
                       }

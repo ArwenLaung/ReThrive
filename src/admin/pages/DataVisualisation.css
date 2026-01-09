@@ -33,7 +33,6 @@
   margin: 0 auto;
 }
 
-/* Tooltip styling (optional, for better visibility) */
 .recharts-tooltip-wrapper {
   font-size: 0.9rem;
   background: rgba(255, 255, 255, 0.95);

@@ -25,7 +25,7 @@ const Checkout = () => {
   const [selectedTimes, setSelectedTimes] = useState({}); // Text input (e.g. "9:00 AM")
   const [selectedSlots, setSelectedSlots] = useState({}); // Dropdown selection (e.g. "Morning...")
 
-  // --- VALIDATION HELPERS ---
+  // VALIDATION HELPERS
   const isPhoneValid = (phoneStr) => {
     if (!phoneStr) return true;
     const cleanPhone = phoneStr.replace(/\D/g, '');
@@ -82,7 +82,6 @@ const Checkout = () => {
 
     return null; // Valid
   };
-  // --------------------------
 
   const getDayOptions = (sellerDays) => {
     if (!sellerDays || sellerDays.length === 0) return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -337,8 +336,8 @@ const Checkout = () => {
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:border-transparent ${phone && !isPhoneValid(phone)
-                          ? 'border-red-500 focus:ring-red-500'
-                          : 'border-gray-300 focus:ring-brand-purple'
+                        ? 'border-red-500 focus:ring-red-500'
+                        : 'border-gray-300 focus:ring-brand-purple'
                         }`}
                       placeholder="012-345-6789"
                       required
@@ -430,8 +429,8 @@ const Checkout = () => {
                               type="text"
                               placeholder="Specific Time (e.g. 6:30 PM)"
                               className={`flex-1 p-2.5 text-sm border rounded-lg focus:ring-2 outline-none ${selectedTimes[item.id] && getTimeError(selectedTimes[item.id], selectedSlots[item.id])
-                                  ? 'border-red-500 focus:ring-red-500'
-                                  : 'border-gray-300 focus:ring-[#59287a]'
+                                ? 'border-red-500 focus:ring-red-500'
+                                : 'border-gray-300 focus:ring-[#59287a]'
                                 }`}
                               value={selectedTimes[item.id] || ''}
                               onChange={(e) => setSelectedTimes({ ...selectedTimes, [item.id]: e.target.value })}

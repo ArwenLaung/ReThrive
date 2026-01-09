@@ -13,7 +13,7 @@ const DataVisualisation = () => {
   const [categoryData, setCategoryData] = useState([]);
   const [eventData, setEventData] = useState([]);
 
-  // 🔹 Fetch marketplace items for category stats
+  // Fetch marketplace items for category stats
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "items"), (snap) => {
       const counts = {
@@ -42,7 +42,7 @@ const DataVisualisation = () => {
     return () => unsub();
   }, []);
 
-  // 🔹 Fetch events and their registration counts
+  // Fetch events and their registration counts
   useEffect(() => {
     let eventsList = [];
     let registrationsList = [];
@@ -100,7 +100,7 @@ const DataVisualisation = () => {
 
   return (
     <div className="admin-page-content">
-      {/* 🔹 Top Traded Categories Pie Chart */}
+      {/* Top Traded Categories Pie Chart */}
       <div className="top-traded-category-section">
         <h2>Top Traded Categories</h2>
         <PieChart width={700} height={400}>
@@ -122,7 +122,7 @@ const DataVisualisation = () => {
         </PieChart>
       </div>
 
-      {/* 🔹 Event Registrations Bar Chart */}
+      {/* Event Registrations Bar Chart */}
       <div className="event-registration-number-section">
         <h2>EcoHub Event Registration Numbers</h2>
         <BarChart

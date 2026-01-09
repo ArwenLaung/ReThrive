@@ -12,7 +12,7 @@ import VouchersSection from "../components/VouchersSection.jsx";
 import MyVouchers from "../components/MyVouchersSection.jsx";
 import "./MyRewards.css";
 
-// --- FIREBASE IMPORTS ---
+// FIREBASE IMPORTS
 import { auth, db } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, onSnapshot } from 'firebase/firestore';
@@ -54,7 +54,7 @@ const MyRewards = () => {
     return monday.toISOString().slice(0, 10);
   };
 
-  // --- 1. LOAD USER DATA AND REAL-TIME ECOPOINTS ---
+  // 1. LOAD USER DATA AND REAL-TIME ECOPOINTS
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
       if (!currentUser) {
@@ -88,7 +88,7 @@ const MyRewards = () => {
             setLastCheckInDate(null);
           }
         } else {
-          // Create user document if doesn't exist
+          // Create user document if does not exist
           await setDoc(userRef, {
             email: currentUser.email,
             ecoPoints: 0,
@@ -110,7 +110,7 @@ const MyRewards = () => {
     return () => unsubscribeAuth();
   }, [navigate]);
 
-  // --- 2. HANDLE DAILY CHECK-IN ---
+  // 2. HANDLE DAILY CHECK-IN
   const handleCheckIn = async (day) => {
     if (!user) return;
 

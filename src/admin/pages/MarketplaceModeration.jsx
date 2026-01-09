@@ -37,7 +37,7 @@ const MarketplaceModeration = () => {
     return unsub;
   }, []);
 
-  // 🔹 Filter items by status
+  // Filter items by status
   const activeItems = items.filter((item) => item.status === "active");
   const pendingItems = items.filter((item) => item.status === "pending");
   const soldItems = items.filter((item) => item.status === "sold");
@@ -139,7 +139,7 @@ const MarketplaceModeration = () => {
         </Tabs>
       </div>
 
-      {/* 🔹 active Items */}
+      {/* Active Items */}
       {activeTab === 0 && (
         <div className="item-table-card">
           <DataGrid
@@ -152,7 +152,7 @@ const MarketplaceModeration = () => {
         </div>
       )}
 
-      {/* 🔹 Pending Items */}
+      {/* Pending Items */}
       {activeTab === 1 && (
         <div className="item-table-card">
           <DataGrid
@@ -165,7 +165,7 @@ const MarketplaceModeration = () => {
         </div>
       )}
 
-      {/* 🔹 Sold Items */}
+      {/* Sold Items */}
       {activeTab === 2 && (
         <div className="item-table-card">
           <DataGrid
@@ -178,7 +178,7 @@ const MarketplaceModeration = () => {
         </div>
       )}
 
-      {/* 🔹 View Item Dialog */}
+      {/* View Item Dialog */}
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle className="item-dialog-title">Item Details</DialogTitle>
         <DialogContent dividers>
@@ -211,7 +211,7 @@ const MarketplaceModeration = () => {
         </DialogActions>
       </Dialog>
 
-      {/* 🔹 Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal */}
       {showConfirmationModal && (
         <div className="delete-modal">
           <div className="delete-modal-content">

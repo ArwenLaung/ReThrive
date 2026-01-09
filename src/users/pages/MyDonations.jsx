@@ -98,7 +98,7 @@ const MyDonations = () => {
 
   // Active: No receiver yet
   const activeItems = items.filter(item => !item.receiverId);
-  // Pending Claims: Has receiver AND is not fully completed yet
+  // Pending Claims: Has receiver and is not fully completed yet
   const pendingClaims = items.filter(item => item.receiverId && item.status !== 'completed');
 
   if (loading) return (
