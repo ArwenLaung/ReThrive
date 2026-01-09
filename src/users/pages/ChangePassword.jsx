@@ -59,7 +59,9 @@ const ChangePassword = () => {
 
   const handleResetEmail = async () => {
     try {
-      await sendPasswordResetEmail(auth, user.email);
+      await sendPasswordResetEmail(auth, user.email, {
+        url: "https://re-thrive.vercel.app/login" // redirect after reset
+      });
       alert("Password reset email sent.");
     } catch (error) {
       alert(error.message);
